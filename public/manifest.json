@@ -1,0 +1,9 @@
+{
+  "name": "Venue Inventory Tracking",
+  "short_name": "VenueInv",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#1f2937",
+  "icons": []
+}

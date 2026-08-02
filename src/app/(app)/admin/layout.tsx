@@ -1,0 +1,30 @@
+import Link from "next/link";
+
+const SECTIONS = [
+  { href: "/admin/stands", label: "Stands" },
+  { href: "/admin/events", label: "Events" },
+  { href: "/admin/suppliers", label: "Suppliers" },
+  { href: "/admin/products", label: "Products" },
+  { href: "/admin/thresholds", label: "Thresholds" },
+  { href: "/admin/users", label: "Users" },
+  { href: "/admin/yellow-dog-mapping", label: "Yellow Dog CSV Mapping" },
+];
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex gap-8">
+      <nav className="w-48 shrink-0 space-y-1 text-sm">
+        {SECTIONS.map((s) => (
+          <Link
+            key={s.href}
+            href={s.href}
+            className="block rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100"
+          >
+            {s.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="flex-1">{children}</div>
+    </div>
+  );
+}
