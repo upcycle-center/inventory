@@ -21,7 +21,8 @@ export default async function AdminProductsPage() {
           className="grid gap-3 rounded-md border border-gray-200 bg-white p-4"
         >
           <p className="text-sm font-medium">Add a product</p>
-          <input name="sku" placeholder="SKU" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <input name="sku" placeholder="SKU (internal code)" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <input name="upc" placeholder="UPC (optional, if known)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
           <input name="description" placeholder="Description" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
           <select name="supplier_id" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
             <option value="">No supplier</option>
@@ -33,9 +34,19 @@ export default async function AdminProductsPage() {
           </select>
           <div className="grid grid-cols-2 gap-3">
             <input name="unit_cost" type="number" step="0.01" placeholder="Unit cost" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            <input name="unit_of_measure" placeholder="Unit (each, bottle...)" defaultValue="each" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            <select name="unit_of_measure" defaultValue="each" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <option value="each">Each</option>
+              <option value="bottle">Bottle</option>
+              <option value="can">Can</option>
+              <option value="box">Box</option>
+              <option value="bag">Bag</option>
+              <option value="keg">Keg</option>
+            </select>
           </div>
-          <input name="pack_size" placeholder="Pack size (e.g. case of 12)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <label className="text-sm text-gray-600">
+            Case size (units per case)
+            <input name="case_size" type="number" step="1" min={0} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
           <label className="text-sm text-gray-600">
             Photo (for the count screen&apos;s photo grid)
             <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
@@ -62,8 +73,10 @@ export default async function AdminProductsPage() {
             <p className="text-sm font-medium">{p.description}</p>
             <p className="text-xs text-gray-500">
               {p.sku} · {p.unit_of_measure}
+              {p.case_size ? ` · case of ${p.case_size}` : ""}
               {!p.active && " · inactive"}
             </p>
+            {p.upc && <p className="text-xs text-gray-400">UPC {p.upc}</p>}
             <form action={toggleProductActive} className="mt-2">
               <input type="hidden" name="id" value={p.id} />
               <input type="hidden" name="active" value={String(p.active)} />

@@ -10,10 +10,11 @@ export async function createProduct(formData: FormData) {
   const description = String(formData.get("description") || "").trim();
   if (!sku || !description) return;
 
+  const upc = String(formData.get("upc") || "").trim() || null;
   const supplierId = String(formData.get("supplier_id") || "") || null;
   const unitCostRaw = String(formData.get("unit_cost") || "").trim();
   const unitOfMeasure = String(formData.get("unit_of_measure") || "each").trim() || "each";
-  const packSize = String(formData.get("pack_size") || "").trim() || null;
+  const caseSizeRaw = String(formData.get("case_size") || "").trim();
 
   let photoUrl: string | null = null;
   const photo = formData.get("photo");
@@ -38,11 +39,12 @@ export async function createProduct(formData: FormData) {
     .from("products")
     .insert({
       sku,
+      upc,
       description,
       supplier_id: supplierId,
       unit_cost: unitCostRaw ? Number(unitCostRaw) : null,
       unit_of_measure: unitOfMeasure,
-      pack_size: packSize,
+      case_size: caseSizeRaw ? Number(caseSizeRaw) : null,
       photo_url: photoUrl,
       created_by: user?.id ?? null,
     })
@@ -51,8 +53,12 @@ export async function createProduct(formData: FormData) {
 
   if (!error && product) {
     // Auto-generated internal barcode: the SKU itself, Code128-printable on
-    // cheat sheets — no manufacturer UPC lookup needed.
-    await supabase.from("product_barcodes").insert({ product_id: product.id, barcode: sku });
+    // cheat sheets — no manufacturer UPC lookup needed. If a real UPC was
+    // supplied too, register it as an additional scannable barcode so
+    // warehouse receiving can eventually scan the actual delivered product.
+    const barcodes = [{ product_id: product.id, barcode: sku }];
+    if (upc) barcodes.push({ product_id: product.id, barcode: upc });
+    await supabase.from("product_barcodes").insert(barcodes);
   }
 
   revalidatePath("/admin/products");

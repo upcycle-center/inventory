@@ -59,10 +59,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
 
   const header = rows[0].map((h) => h.trim().toLowerCase());
   const skuIdx = header.indexOf("sku");
+  const upcIdx = header.indexOf("upc");
   const descIdx = header.indexOf("description");
   const costIdx = header.indexOf("unit_cost");
   const uomIdx = header.indexOf("unit_of_measure");
-  const packIdx = header.indexOf("pack_size");
+  const caseSizeIdx = header.indexOf("case_size");
 
   if (skuIdx === -1 || descIdx === -1) {
     return { message: "CSV must have at least 'sku' and 'description' columns." };
@@ -84,9 +85,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
       continue;
     }
 
+    const upc = upcIdx !== -1 && cols[upcIdx]?.trim() ? cols[upcIdx].trim() : null;
     const unitCost = costIdx !== -1 && cols[costIdx]?.trim() ? Number(cols[costIdx]) : null;
     const unitOfMeasure = uomIdx !== -1 && cols[uomIdx]?.trim() ? cols[uomIdx].trim() : "each";
-    const packSize = packIdx !== -1 && cols[packIdx]?.trim() ? cols[packIdx].trim() : null;
+    const caseSize = caseSizeIdx !== -1 && cols[caseSizeIdx]?.trim() ? Number(cols[caseSizeIdx]) : null;
 
     const { data: existing } = await supabase
       .from("products")
@@ -99,10 +101,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         .from("products")
         .update({
           description,
+          upc,
           supplier_id: supplierId,
           unit_cost: unitCost,
           unit_of_measure: unitOfMeasure,
-          pack_size: packSize,
+          case_size: caseSize,
         })
         .eq("id", existing.id);
       updated++;
@@ -111,18 +114,21 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         .from("products")
         .insert({
           sku,
+          upc,
           description,
           supplier_id: supplierId,
           unit_cost: unitCost,
           unit_of_measure: unitOfMeasure,
-          pack_size: packSize,
+          case_size: caseSize,
           created_by: user?.id ?? null,
         })
         .select("id")
         .single();
 
       if (product) {
-        await supabase.from("product_barcodes").insert({ product_id: product.id, barcode: sku });
+        const barcodes = [{ product_id: product.id, barcode: sku }];
+        if (upc) barcodes.push({ product_id: product.id, barcode: upc });
+        await supabase.from("product_barcodes").insert(barcodes);
       }
       created++;
     }

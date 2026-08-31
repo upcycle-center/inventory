@@ -59,11 +59,12 @@ export interface Supplier {
 export interface Product {
   id: string;
   sku: string;
+  upc: string | null;
   description: string;
   supplier_id: string | null;
   unit_cost: number | null;
   unit_of_measure: string;
-  pack_size: string | null;
+  case_size: number | null;
   photo_url: string | null;
   active: boolean;
   created_by: string | null;
