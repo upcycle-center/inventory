@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, StorageArea } from "@/lib/supabase/types";
-import { assignProductToLocation, removeProductFromLocation } from "./actions";
+import { assignProductToLocation, removeProductFromLocation, updateLocation } from "./actions";
 
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -24,7 +24,31 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
   return (
     <div>
-      <h1 className="mb-1 text-lg font-semibold">{location.name}</h1>
+      <h1 className="mb-6 text-lg font-semibold">{location.name}</h1>
+
+      <form
+        action={updateLocation}
+        className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
+      >
+        <p className="text-sm font-medium">Location details</p>
+        <input type="hidden" name="id" value={location.id} />
+        <input name="name" defaultValue={location.name} required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <select name="type" defaultValue={location.type} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+          <option value="stand">Stand</option>
+          <option value="kitchen">Kitchen</option>
+          <option value="warehouse">Warehouse</option>
+        </select>
+        <input
+          name="description"
+          defaultValue={location.description ?? ""}
+          placeholder="Description (optional)"
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+        <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Save
+        </button>
+      </form>
+
       <p className="mb-6 text-sm text-gray-500">
         Assign which products live in each storage area for this location — this drives the
         photo-grid count screen.

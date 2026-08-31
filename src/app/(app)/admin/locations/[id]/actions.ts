@@ -2,6 +2,27 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { LocationType } from "@/lib/supabase/types";
+
+export async function updateLocation(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const name = String(formData.get("name") || "").trim();
+  const type = String(formData.get("type") || "stand") as LocationType;
+  if (!id || !name) return;
+
+  await supabase
+    .from("locations")
+    .update({
+      name,
+      type,
+      description: String(formData.get("description") || "").trim() || null,
+    })
+    .eq("id", id);
+
+  revalidatePath(`/admin/locations/${id}`);
+  revalidatePath("/admin/locations");
+}
 
 export async function assignProductToLocation(formData: FormData) {
   const supabase = createClient();
