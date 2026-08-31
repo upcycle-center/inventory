@@ -36,11 +36,7 @@ export default async function AdminProductsPage() {
             <input name="unit_cost" type="number" step="0.01" placeholder="Unit cost" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
             <select name="unit_of_measure" defaultValue="each" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
               <option value="each">Each</option>
-              <option value="bottle">Bottle</option>
-              <option value="can">Can</option>
-              <option value="box">Box</option>
-              <option value="bag">Bag</option>
-              <option value="keg">Keg</option>
+              <option value="case">Case</option>
             </select>
           </div>
           <label className="text-sm text-gray-600">
