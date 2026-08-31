@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Product, Supplier } from "@/lib/supabase/types";
 import { createProduct, toggleProductActive } from "./actions";
 import { CsvUploadForm } from "./CsvUploadForm";
+import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 
 export default async function AdminProductsPage() {
   const supabase = createClient();
@@ -58,18 +59,24 @@ export default async function AdminProductsPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {(products as Product[] | null)?.map((p) => (
           <div key={p.id} className="rounded-md border border-gray-200 bg-white p-3">
-            <div className="mb-2 flex h-24 items-center justify-center overflow-hidden rounded bg-gray-100">
+            <div className="mb-2 aspect-square w-full overflow-hidden rounded bg-gray-100">
               {p.photo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={p.photo_url} alt={p.description} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-xs text-gray-400">No photo</span>
+                <div className="flex h-full w-full items-center justify-center">
+                  <ProductPlaceholderIcon />
+                </div>
               )}
             </div>
             <p className="text-sm font-medium">{p.description}</p>
             <p className="text-xs text-gray-500">
-              {p.sku} · {p.unit_of_measure}
-              {p.case_size ? ` · case of ${p.case_size}` : ""}
+              {p.sku} ·{" "}
+              {p.unit_of_measure === "case" && p.case_size
+                ? `Case of ${p.case_size}`
+                : p.case_size
+                  ? `${p.unit_of_measure} · ${p.case_size}/case`
+                  : p.unit_of_measure}
               {!p.active && " · inactive"}
             </p>
             {p.upc && <p className="text-xs text-gray-400">UPC {p.upc}</p>}
