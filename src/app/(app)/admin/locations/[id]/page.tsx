@@ -24,7 +24,12 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
   return (
     <div>
-      <h1 className="mb-6 text-lg font-semibold">{location.name}</h1>
+      <h1 className="mb-6 text-lg font-semibold">
+        {location.yellow_dog_code && (
+          <span className="mr-2 font-mono text-gray-400">{location.yellow_dog_code}</span>
+        )}
+        {location.name}
+      </h1>
 
       <form
         action={updateLocation}
@@ -44,6 +49,17 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           placeholder="Description (optional)"
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
+        <label className="text-sm text-gray-600">
+          YDC (Yellow Dog Code)
+          <input
+            name="yellow_dog_code"
+            defaultValue={location.yellow_dog_code ?? ""}
+            placeholder="000"
+            maxLength={3}
+            pattern="\d{3}"
+            className="mt-1 w-24 rounded-md border border-gray-300 px-3 py-2 text-center font-mono text-sm"
+          />
+        </label>
         <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
           Save
         </button>

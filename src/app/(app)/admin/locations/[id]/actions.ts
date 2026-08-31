@@ -11,12 +11,16 @@ export async function updateLocation(formData: FormData) {
   const type = String(formData.get("type") || "stand") as LocationType;
   if (!id || !name) return;
 
+  const yellowDogCode = String(formData.get("yellow_dog_code") || "").trim();
+  if (yellowDogCode && !/^\d{3}$/.test(yellowDogCode)) return;
+
   await supabase
     .from("locations")
     .update({
       name,
       type,
       description: String(formData.get("description") || "").trim() || null,
+      yellow_dog_code: yellowDogCode || null,
     })
     .eq("id", id);
 

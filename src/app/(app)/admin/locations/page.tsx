@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Location } from "@/lib/supabase/types";
 import { createLocation, toggleLocationActive } from "./actions";
-import { YellowDogCodeField } from "./YellowDogCodeField";
 
 const TYPE_LABEL: Record<Location["type"], string> = {
   warehouse: "Warehouse",
@@ -44,7 +43,6 @@ export default async function AdminLocationsPage() {
           <tr>
             <th className="pb-2">Name</th>
             <th className="pb-2">Type</th>
-            <th className="pb-2">Yellow Dog code</th>
             <th className="pb-2">Status</th>
             <th className="pb-2"></th>
           </tr>
@@ -54,14 +52,12 @@ export default async function AdminLocationsPage() {
             <tr key={l.id} className="border-t border-gray-100">
               <td className="py-2">
                 <Link href={`/admin/locations/${l.id}`} className="text-brand hover:underline">
+                  {l.yellow_dog_code && <span className="mr-1.5 font-mono text-gray-400">{l.yellow_dog_code}</span>}
                   {l.name}
                 </Link>
                 {l.description && <span className="ml-2 text-gray-400">{l.description}</span>}
               </td>
               <td className="py-2 text-gray-500">{TYPE_LABEL[l.type]}</td>
-              <td className="py-2">
-                <YellowDogCodeField location={l} />
-              </td>
               <td className="py-2 text-gray-500">{l.active ? "Active" : "Inactive"}</td>
               <td className="py-2 text-right">
                 <form action={toggleLocationActive}>
@@ -76,7 +72,7 @@ export default async function AdminLocationsPage() {
           ))}
           {!locations?.length && (
             <tr>
-              <td colSpan={5} className="py-4 text-gray-400">
+              <td colSpan={4} className="py-4 text-gray-400">
                 No locations yet.
               </td>
             </tr>
