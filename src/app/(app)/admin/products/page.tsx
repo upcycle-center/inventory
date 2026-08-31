@@ -144,10 +144,10 @@ export default async function AdminProductsPage({
             {(products as any[] | null)?.map((p) => (
               <tr key={p.id} className="border-t border-gray-100">
                 <td className="px-4 py-2">
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-gray-100">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-gray-100">
                     {p.photo_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.photo_url} alt={p.description} className="h-full w-full object-cover" />
+                      <img src={p.photo_url} alt={p.description} className="h-full w-full object-contain" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         <ProductPlaceholderIcon />
