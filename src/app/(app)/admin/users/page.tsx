@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/supabase/types";
+import { CertificationsInput } from "./CertificationsInput";
 import { InviteUserForm } from "./InviteUserForm";
 import { RoleSelect } from "./RoleSelect";
 
@@ -15,12 +16,13 @@ export default async function AdminUsersPage() {
         <InviteUserForm />
       </div>
 
-      <table className="w-full max-w-2xl text-left text-sm">
+      <table className="w-full max-w-4xl text-left text-sm">
         <thead className="text-gray-500">
           <tr>
             <th className="pb-2">Name</th>
             <th className="pb-2">Email</th>
             <th className="pb-2">Role</th>
+            <th className="pb-2">Certifications</th>
           </tr>
         </thead>
         <tbody>
@@ -30,6 +32,9 @@ export default async function AdminUsersPage() {
               <td className="py-2 text-gray-500">{u.email}</td>
               <td className="py-2">
                 <RoleSelect user={u} />
+              </td>
+              <td className="py-2">
+                <CertificationsInput user={u} />
               </td>
             </tr>
           ))}

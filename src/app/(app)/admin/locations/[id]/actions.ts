@@ -52,3 +52,60 @@ export async function removeProductFromLocation(formData: FormData) {
   await supabase.from("location_products").delete().eq("id", id);
   revalidatePath(`/admin/locations/${locationId}`);
 }
+
+export async function addStaffRole(formData: FormData) {
+  const supabase = createClient();
+  const locationId = String(formData.get("location_id"));
+  const roleName = String(formData.get("role_name") || "").trim();
+  const baseCount = Number(formData.get("base_count") || 0);
+  const requiredCertification = String(formData.get("required_certification") || "").trim();
+  if (!locationId || !roleName) return;
+
+  await supabase.from("location_staff_roles").upsert(
+    {
+      location_id: locationId,
+      role_name: roleName,
+      base_count: baseCount,
+      required_certification: requiredCertification || null,
+    },
+    { onConflict: "location_id,role_name" }
+  );
+
+  revalidatePath(`/admin/locations/${locationId}`);
+}
+
+export async function removeStaffRole(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const locationId = String(formData.get("location_id"));
+  await supabase.from("location_staff_roles").delete().eq("id", id);
+  revalidatePath(`/admin/locations/${locationId}`);
+}
+
+export async function addStaffTier(formData: FormData) {
+  const supabase = createClient();
+  const locationId = String(formData.get("location_id"));
+  const roleName = String(formData.get("role_name") || "").trim();
+  const minAttendance = Number(formData.get("min_attendance") || 0);
+  const maxAttendanceRaw = String(formData.get("max_attendance") || "").trim();
+  const count = Number(formData.get("count") || 0);
+  if (!locationId || !roleName) return;
+
+  await supabase.from("location_staff_tiers").insert({
+    location_id: locationId,
+    role_name: roleName,
+    min_attendance: minAttendance,
+    max_attendance: maxAttendanceRaw ? Number(maxAttendanceRaw) : null,
+    count,
+  });
+
+  revalidatePath(`/admin/locations/${locationId}`);
+}
+
+export async function removeStaffTier(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const locationId = String(formData.get("location_id"));
+  await supabase.from("location_staff_tiers").delete().eq("id", id);
+  revalidatePath(`/admin/locations/${locationId}`);
+}

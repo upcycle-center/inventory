@@ -18,6 +18,27 @@ export interface Profile {
   name: string;
   email: string;
   role: UserRole;
+  certifications: string[];
+  created_at: string;
+}
+
+export interface LocationStaffRole {
+  id: string;
+  location_id: string;
+  role_name: string;
+  base_count: number;
+  required_certification: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface LocationStaffTier {
+  id: string;
+  location_id: string;
+  role_name: string;
+  min_attendance: number;
+  max_attendance: number | null;
+  count: number;
   created_at: string;
 }
 

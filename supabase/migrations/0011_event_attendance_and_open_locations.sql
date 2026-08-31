@@ -9,7 +9,7 @@ create table event_locations (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null references events (id) on delete cascade,
   location_id uuid not null references locations (id) on delete cascade,
-  is_open boolean not null default false,
+  is_open boolean not null default true,
   updated_at timestamptz not null default now(),
   unique (event_id, location_id)
 );

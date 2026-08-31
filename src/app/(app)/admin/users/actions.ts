@@ -14,6 +14,18 @@ export async function updateUserRole(formData: FormData) {
   revalidatePath("/admin/users");
 }
 
+export async function updateUserCertifications(formData: FormData) {
+  await requireProfile(["admin"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const certifications = String(formData.get("certifications") || "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
+  await supabase.from("profiles").update({ certifications }).eq("id", id);
+  revalidatePath("/admin/users");
+}
+
 export async function inviteUser(formData: FormData): Promise<{ message: string }> {
   await requireProfile(["admin"]);
   const email = String(formData.get("email") || "").trim();
