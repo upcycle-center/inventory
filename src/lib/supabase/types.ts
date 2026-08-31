@@ -26,6 +26,7 @@ export interface Location {
   name: string;
   type: LocationType;
   description: string | null;
+  yellow_dog_code: string | null;
   active: boolean;
   created_at: string;
 }
