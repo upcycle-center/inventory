@@ -10,3 +10,15 @@ body {
 body {
   @apply bg-gray-50 text-gray-900;
 }
+
+/* Plain number entry everywhere — no up/down spinner arrows. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
