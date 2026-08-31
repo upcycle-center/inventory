@@ -1,15 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function createProduct(formData: FormData) {
+export async function updateProduct(formData: FormData) {
   const supabase = createClient();
-
+  const id = String(formData.get("id"));
   const sku = String(formData.get("sku") || "").trim();
   const description = String(formData.get("description") || "").trim();
-  if (!sku || !description) return;
+  if (!id || !sku || !description) return;
 
   const upc = String(formData.get("upc") || "").trim() || null;
   const supplierId = String(formData.get("supplier_id") || "") || null;
@@ -17,7 +16,7 @@ export async function createProduct(formData: FormData) {
   const unitOfMeasure = String(formData.get("unit_of_measure") || "each").trim() || "each";
   const caseSizeRaw = String(formData.get("case_size") || "").trim();
 
-  let photoUrl: string | null = null;
+  let photoUrl: string | undefined;
   const photo = formData.get("photo");
   if (photo instanceof File && photo.size > 0) {
     const ext = photo.name.split(".").pop() || "jpg";
@@ -32,13 +31,9 @@ export async function createProduct(formData: FormData) {
     }
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: product, error } = await supabase
+  await supabase
     .from("products")
-    .insert({
+    .update({
       sku,
       upc,
       description,
@@ -46,34 +41,24 @@ export async function createProduct(formData: FormData) {
       unit_cost: unitCostRaw ? Number(unitCostRaw) : null,
       unit_of_measure: unitOfMeasure,
       case_size: caseSizeRaw ? Number(caseSizeRaw) : null,
-      photo_url: photoUrl,
-      created_by: user?.id ?? null,
+      ...(photoUrl ? { photo_url: photoUrl } : {}),
     })
-    .select("id")
-    .single();
+    .eq("id", id);
 
-  if (error || !product) {
-    // Most likely a duplicate IC or UPC — stay put rather than redirecting
-    // away as if it succeeded.
-    return;
+  // Keep the auto-registered barcodes in sync: the SKU-based one always
+  // stays, the UPC-based one (if any) is reset to match the current UPC.
+  await supabase.from("product_barcodes").delete().eq("product_id", id).neq("barcode", sku);
+  await supabase.from("product_barcodes").upsert(
+    { product_id: id, barcode: sku },
+    { onConflict: "barcode" }
+  );
+  if (upc) {
+    await supabase.from("product_barcodes").upsert(
+      { product_id: id, barcode: upc },
+      { onConflict: "barcode" }
+    );
   }
 
-  // Auto-generated internal barcode: the SKU itself, Code128-printable on
-  // cheat sheets — no manufacturer UPC lookup needed. If a real UPC was
-  // supplied too, register it as an additional scannable barcode so
-  // warehouse receiving can eventually scan the actual delivered product.
-  const barcodes = [{ product_id: product.id, barcode: sku }];
-  if (upc) barcodes.push({ product_id: product.id, barcode: upc });
-  await supabase.from("product_barcodes").insert(barcodes);
-
-  revalidatePath("/admin/products");
-  redirect("/admin/products");
-}
-
-export async function toggleProductActive(formData: FormData) {
-  const supabase = createClient();
-  const id = String(formData.get("id"));
-  const active = formData.get("active") === "true";
-  await supabase.from("products").update({ active: !active }).eq("id", id);
+  revalidatePath(`/admin/products/${id}`);
   revalidatePath("/admin/products");
 }

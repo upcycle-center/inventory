@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Supplier } from "@/lib/supabase/types";
 import { createProduct, toggleProductActive } from "./actions";
@@ -69,16 +70,18 @@ export default async function AdminProductsPage() {
                 </div>
               )}
             </div>
-            <p className="text-sm font-medium">{p.description}</p>
+            <Link href={`/admin/products/${p.id}`} className="block text-sm font-medium text-brand hover:underline">
+              {p.description}
+            </Link>
+            <p className="text-xs text-gray-500">IC {p.sku}</p>
             <p className="text-xs text-gray-500">
-              {p.sku} ·{" "}
               {p.unit_of_measure === "case" && p.case_size
                 ? `Case of ${p.case_size}`
                 : p.case_size
                   ? `${p.unit_of_measure} · ${p.case_size}/case`
                   : p.unit_of_measure}
-              {!p.active && " · inactive"}
             </p>
+            {!p.active && <p className="text-xs text-red-500">Inactive</p>}
             {p.upc && <p className="text-xs text-gray-400">UPC {p.upc}</p>}
             <form action={toggleProductActive} className="mt-2">
               <input type="hidden" name="id" value={p.id} />
