@@ -21,7 +21,7 @@ export default async function AdminProductsPage() {
           className="grid gap-3 rounded-md border border-gray-200 bg-white p-4"
         >
           <p className="text-sm font-medium">Add a product</p>
-          <input name="sku" placeholder="SKU (internal code)" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <input name="sku" placeholder="IC (Internal Code)" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
           <input name="upc" placeholder="UPC (optional, if known)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
           <input name="description" placeholder="Description" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
           <select name="supplier_id" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
