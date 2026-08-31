@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireProfile } from "@/lib/auth";
 
 export async function updateEventDetails(formData: FormData) {
   const supabase = createClient();
@@ -38,27 +39,77 @@ export async function toggleLocationOpen(formData: FormData) {
   revalidatePath(`/admin/events/${eventId}`);
 }
 
-export async function assignLocationLead(formData: FormData) {
+async function isConfirmed(supabase: ReturnType<typeof createClient>, eventId: string, locationId: string) {
+  const { data } = await supabase
+    .from("event_locations")
+    .select("confirmed")
+    .eq("event_id", eventId)
+    .eq("location_id", locationId)
+    .maybeSingle();
+  return data?.confirmed ?? false;
+}
+
+export async function setLocationLead(formData: FormData) {
   const supabase = createClient();
   const eventId = String(formData.get("event_id"));
   const locationId = String(formData.get("location_id"));
-  const locationLeadUserId = String(formData.get("location_lead_user_id"));
-  if (!eventId || !locationId || !locationLeadUserId) return;
+  const locationLeadUserId = String(formData.get("location_lead_user_id") || "");
+  if (!eventId || !locationId) return;
+  if (await isConfirmed(supabase, eventId, locationId)) return;
 
-  await supabase
-    .from("event_location_assignments")
-    .upsert(
-      { event_id: eventId, location_id: locationId, location_lead_user_id: locationLeadUserId },
-      { onConflict: "event_id,location_id" }
-    );
+  if (!locationLeadUserId) {
+    await supabase
+      .from("event_location_assignments")
+      .delete()
+      .eq("event_id", eventId)
+      .eq("location_id", locationId);
+  } else {
+    await supabase
+      .from("event_location_assignments")
+      .upsert(
+        { event_id: eventId, location_id: locationId, location_lead_user_id: locationLeadUserId },
+        { onConflict: "event_id,location_id" }
+      );
+  }
 
   revalidatePath(`/admin/events/${eventId}`);
 }
 
-export async function removeAssignment(formData: FormData) {
+export async function confirmLocationStaffing(formData: FormData) {
+  const profile = await requireProfile(["admin"]);
   const supabase = createClient();
-  const id = String(formData.get("id"));
   const eventId = String(formData.get("event_id"));
-  await supabase.from("event_location_assignments").delete().eq("id", id);
+  const locationId = String(formData.get("location_id"));
+  const staffCount = Number(formData.get("staff_count") || 0);
+  if (!eventId || !locationId) return;
+
+  await supabase.from("event_locations").upsert(
+    {
+      event_id: eventId,
+      location_id: locationId,
+      confirmed: true,
+      confirmed_staff_count: staffCount,
+      confirmed_at: new Date().toISOString(),
+      confirmed_by: profile.id,
+    },
+    { onConflict: "event_id,location_id" }
+  );
+
+  revalidatePath(`/admin/events/${eventId}`);
+}
+
+export async function unlockLocationStaffing(formData: FormData) {
+  await requireProfile(["admin"]);
+  const supabase = createClient();
+  const eventId = String(formData.get("event_id"));
+  const locationId = String(formData.get("location_id"));
+  if (!eventId || !locationId) return;
+
+  await supabase
+    .from("event_locations")
+    .update({ confirmed: false })
+    .eq("event_id", eventId)
+    .eq("location_id", locationId);
+
   revalidatePath(`/admin/events/${eventId}`);
 }

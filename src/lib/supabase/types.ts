@@ -75,6 +75,10 @@ export interface EventLocation {
   event_id: string;
   location_id: string;
   is_open: boolean;
+  confirmed: boolean;
+  confirmed_staff_count: number | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
   updated_at: string;
 }
 

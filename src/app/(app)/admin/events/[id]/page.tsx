@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile } from "@/lib/supabase/types";
 import { updateEventStatus } from "../actions";
-import { assignLocationLead, removeAssignment, toggleLocationOpen, updateEventDetails } from "./actions";
+import { confirmLocationStaffing, toggleLocationOpen, unlockLocationStaffing, updateEventDetails } from "./actions";
+import { LocationLeadSelect } from "./LocationLeadSelect";
 
 function effectiveCount(
   role: LocationStaffRole,
@@ -48,7 +49,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
         .from("event_location_assignments")
         .select("id, location_id, location_lead_user_id, location:locations(id, name), location_lead:profiles(id, name, certifications)")
         .eq("event_id", params.id),
-      supabase.from("event_locations").select("*").eq("event_id", params.id),
+      supabase
+        .from("event_locations")
+        .select("*, confirmed_by_profile:profiles(id, name)")
+        .eq("event_id", params.id),
     ]);
 
   if (!event) notFound();
@@ -63,8 +67,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
       : Promise.resolve({ data: [] as LocationStaffTier[] }),
   ]);
 
+  const eventLocationByLocationId = new Map(
+    ((eventLocations as any[] | null) ?? []).map((el) => [el.location_id, el as EventLocation & { confirmed_by_profile: Profile | null }])
+  );
   const openByLocationId = new Map(
-    ((eventLocations as EventLocation[] | null) ?? []).map((el) => [el.location_id, el.is_open])
+    Array.from(eventLocationByLocationId.entries()).map(([id, el]) => [id, el.is_open])
+  );
+  const leadUserIdByLocationId = new Map(
+    ((assignments as any[] | null) ?? []).map((a) => [a.location_id, a.location_lead_user_id as string])
   );
   const leadCertsByLocationId = new Map(
     ((assignments as any[] | null) ?? []).map((a) => [a.location_id, (a.location_lead?.certifications as string[]) ?? []])
@@ -126,152 +136,131 @@ export default async function EventDetailPage({ params }: { params: { id: string
         </button>
       </form>
 
-      <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
-        <p className="mb-3 text-sm font-medium">Locations open for this show</p>
-        <ul className="max-w-xl divide-y divide-gray-100">
-          {(locations as Location[] | null)?.map((l) => {
-            const isOpen = openByLocationId.get(l.id) ?? true;
-            return (
-              <li key={l.id} className="flex items-center justify-between py-2 text-sm">
-                <span>{l.name}</span>
-                <form action={toggleLocationOpen}>
-                  <input type="hidden" name="event_id" value={event.id} />
-                  <input type="hidden" name="location_id" value={l.id} />
-                  <input type="hidden" name="is_open" value={String(isOpen)} />
-                  <button
-                    type="submit"
-                    className={
-                      isOpen
-                        ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                        : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
-                    }
-                  >
-                    {isOpen ? "Open" : "Closed"}
-                  </button>
-                </form>
-              </li>
-            );
-          })}
-          {!locations?.length && <li className="py-4 text-gray-400">No locations available.</li>}
-        </ul>
-      </div>
-
-      <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
-        <p className="mb-3 text-sm font-medium">Staffing needs</p>
-        {(() => {
-          const openLocations = ((locations as Location[] | null) ?? []).filter(
-            (l) => openByLocationId.get(l.id) ?? true
-          );
-          let grandTotal = 0;
-
-          const rows = openLocations.map((l) => {
-            const roles = rolesByLocationId.get(l.id) ?? [];
-            const leadCerts = leadCertsByLocationId.get(l.id) ?? [];
-            const computed = roles.map((r) => {
-              const { count, note } = effectiveCount(r, tiers, event.attendance, leadCerts);
-              grandTotal += count;
-              return { ...r, count, note };
-            });
-            return { location: l, computed };
-          });
-
-          if (!rows.some((r) => r.computed.length)) {
-            return (
-              <p className="text-sm text-gray-400">
-                No staffing roles set for the open locations. Set them under Admin → Locations.
-              </p>
-            );
-          }
-
-          return (
-            <>
-              <ul className="space-y-3">
-                {rows.map(
-                  ({ location, computed }) =>
-                    computed.length > 0 && (
-                      <li key={location.id}>
-                        <p className="text-sm font-medium">{location.name}</p>
-                        <ul className="mt-1 space-y-0.5 pl-3 text-sm text-gray-600">
-                          {computed.map((r) => (
-                            <li key={r.id}>
-                              ({r.count}) {r.role_name}
-                              {r.note && <span className="ml-2 text-xs text-gray-400">{r.note}</span>}
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    )
-                )}
-              </ul>
-              <p className="mt-4 text-sm text-gray-500">
-                Total needed: <span className="font-medium text-gray-900">{grandTotal}</span>
-                {event.team_size != null && ` · Team Size on file: ${event.team_size}`}
-              </p>
-            </>
-          );
-        })()}
-      </div>
-
-      <form action={assignLocationLead} className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
-        <input type="hidden" name="event_id" value={event.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Stand / Kitchen</label>
-          <select name="location_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {(locations as Location[] | null)?.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Lead</label>
-          <select name="location_lead_user_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {(users as Profile[] | null)?.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Assign
-        </button>
-      </form>
-
-      <table className="w-full max-w-xl text-left text-sm">
-        <thead className="text-gray-500">
-          <tr>
-            <th className="pb-2">Location</th>
-            <th className="pb-2">Lead</th>
-            <th className="pb-2"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {(assignments as any[] | null)?.map((a) => (
-            <tr key={a.id} className="border-t border-gray-100">
-              <td className="py-2">{a.location?.name}</td>
-              <td className="py-2">{a.location_lead?.name}</td>
-              <td className="py-2 text-right">
-                <form action={removeAssignment}>
-                  <input type="hidden" name="id" value={a.id} />
-                  <input type="hidden" name="event_id" value={event.id} />
-                  <button type="submit" className="text-red-600 hover:underline">
-                    Remove
-                  </button>
-                </form>
-              </td>
-            </tr>
-          ))}
-          {!assignments?.length && (
+      <div className="mb-8 overflow-x-auto rounded-md border border-gray-200 bg-white p-4">
+        <p className="mb-3 text-sm font-medium">Locations</p>
+        <table className="w-full text-left text-sm">
+          <thead className="text-gray-500">
             <tr>
-              <td colSpan={3} className="py-4 text-gray-400">
-                No assignments yet.
-              </td>
+              <th className="pb-2 pr-3">Location</th>
+              <th className="pb-2 pr-3">Open</th>
+              <th className="pb-2 pr-3">Stand Lead</th>
+              <th className="pb-2 pr-3">Staff</th>
+              <th className="pb-2"></th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {(() => {
+              let grandTotal = 0;
+              const rows = ((locations as Location[] | null) ?? []).map((l) => {
+                const isOpen = openByLocationId.get(l.id) ?? true;
+                const eventLocation = eventLocationByLocationId.get(l.id);
+                const confirmed = eventLocation?.confirmed ?? false;
+                const roles = rolesByLocationId.get(l.id) ?? [];
+                const leadCerts = leadCertsByLocationId.get(l.id) ?? [];
+                const recommended = roles.reduce(
+                  (sum, r) => sum + effectiveCount(r, tiers, event.attendance, leadCerts).count,
+                  0
+                );
+                const displayedStaff = confirmed ? eventLocation?.confirmed_staff_count ?? recommended : recommended;
+                if (isOpen) grandTotal += displayedStaff;
+                return { location: l, isOpen, eventLocation, confirmed, recommended, displayedStaff };
+              });
+
+              return (
+                <>
+                  {rows.map(({ location, isOpen, eventLocation, confirmed, recommended, displayedStaff }) => (
+                    <tr key={location.id} className="border-t border-gray-100">
+                      <td className="py-2 pr-3">
+                        {location.yellow_dog_code && (
+                          <span className="mr-1 font-mono text-xs text-gray-400">{location.yellow_dog_code}</span>
+                        )}
+                        {location.name}
+                      </td>
+                      <td className="py-2 pr-3">
+                        <form action={toggleLocationOpen}>
+                          <input type="hidden" name="event_id" value={event.id} />
+                          <input type="hidden" name="location_id" value={location.id} />
+                          <input type="hidden" name="is_open" value={String(isOpen)} />
+                          <button
+                            type="submit"
+                            className={
+                              isOpen
+                                ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
+                            }
+                          >
+                            {isOpen ? "Open" : "Closed"}
+                          </button>
+                        </form>
+                      </td>
+                      <td className="py-2 pr-3">
+                        <LocationLeadSelect
+                          eventId={event.id}
+                          locationId={location.id}
+                          currentLeadId={leadUserIdByLocationId.get(location.id) ?? null}
+                          users={(users as Profile[] | null) ?? []}
+                          disabled={confirmed}
+                        />
+                      </td>
+                      <td className="py-2 pr-3">
+                        {displayedStaff}
+                        {confirmed && recommended !== displayedStaff && (
+                          <span className="ml-1 text-xs text-amber-600" title="Recalculated recommendation has changed since this was confirmed">
+                            (now recommends {recommended})
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2">
+                        {confirmed ? (
+                          <form action={unlockLocationStaffing} className="flex items-center gap-2">
+                            <input type="hidden" name="event_id" value={event.id} />
+                            <input type="hidden" name="location_id" value={location.id} />
+                            <span className="text-xs text-gray-400" title={eventLocation?.confirmed_at ?? ""}>
+                              🔒 Confirmed{eventLocation?.confirmed_by_profile?.name ? ` by ${eventLocation.confirmed_by_profile.name}` : ""}
+                            </span>
+                            <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
+                              Unlock
+                            </button>
+                          </form>
+                        ) : (
+                          <form action={confirmLocationStaffing}>
+                            <input type="hidden" name="event_id" value={event.id} />
+                            <input type="hidden" name="location_id" value={location.id} />
+                            <input type="hidden" name="staff_count" value={recommended} />
+                            <button
+                              type="submit"
+                              disabled={!leadUserIdByLocationId.get(location.id)}
+                              className="rounded-md bg-brand px-3 py-1 text-xs text-white disabled:opacity-40"
+                            >
+                              Confirm
+                            </button>
+                          </form>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!rows.length && (
+                    <tr>
+                      <td colSpan={5} className="py-4 text-gray-400">
+                        No locations available.
+                      </td>
+                    </tr>
+                  )}
+                  {rows.length > 0 && (
+                    <tr className="border-t border-gray-200">
+                      <td colSpan={3} />
+                      <td className="py-2 pr-3 font-medium">{grandTotal}</td>
+                      <td className="py-2 text-xs text-gray-400">
+                        {event.team_size != null && `Team Size on file: ${event.team_size}`}
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })()}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
