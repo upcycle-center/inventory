@@ -35,7 +35,12 @@ export default async function AdminProductsPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-lg font-semibold">Products</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Products</h1>
+        <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">
+          View inactive
+        </Link>
+      </div>
 
       <div className="mb-8 grid gap-6 sm:grid-cols-2">
         <form

@@ -76,5 +76,6 @@ export async function toggleProductActive(formData: FormData) {
   const active = formData.get("active") === "true";
   await supabase.from("products").update({ active: !active }).eq("id", id);
   revalidatePath("/admin/products");
+  revalidatePath("/admin/products/inactive");
   revalidatePath(`/admin/products/${id}`);
 }
