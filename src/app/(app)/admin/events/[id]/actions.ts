@@ -8,15 +8,11 @@ export async function updateEventDetails(formData: FormData) {
   const supabase = createClient();
   const eventId = String(formData.get("event_id"));
   const attendanceRaw = String(formData.get("attendance") || "").trim();
-  const teamSizeRaw = String(formData.get("team_size") || "").trim();
   if (!eventId) return;
 
   await supabase
     .from("events")
-    .update({
-      attendance: attendanceRaw ? Number(attendanceRaw) : null,
-      team_size: teamSizeRaw ? Number(teamSizeRaw) : null,
-    })
+    .update({ attendance: attendanceRaw ? Number(attendanceRaw) : null })
     .eq("id", eventId);
 
   revalidatePath(`/admin/events/${eventId}`);

@@ -24,3 +24,15 @@ export async function toggleStorageAreaActive(formData: FormData) {
   await supabase.from("storage_areas").update({ active: !active }).eq("id", id);
   revalidatePath("/admin/storage-areas");
 }
+
+export async function updateStorageArea(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const code = String(formData.get("code") || "").trim().toUpperCase();
+  const name = String(formData.get("name") || "").trim();
+  if (!id || !code || !name) return;
+
+  await supabase.from("storage_areas").update({ code, name }).eq("id", id);
+  revalidatePath("/admin/storage-areas");
+  revalidatePath(`/admin/storage-areas/${id}`);
+}

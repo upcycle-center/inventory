@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile } from "@/lib/supabase/types";
+import { STAFF_ROLES } from "@/lib/staffRoles";
 import { updateEventStatus } from "../actions";
 import { confirmLocationStaffing, toggleLocationOpen, unlockLocationStaffing, updateEventDetails } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
@@ -119,18 +120,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
             className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Team Size</label>
-          <input
-            name="team_size"
-            type="number"
-            min={0}
-            step={1}
-            defaultValue={event.team_size ?? ""}
-            placeholder="e.g. 45"
-            className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
         <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
           Save
         </button>
@@ -144,31 +133,42 @@ export default async function EventDetailPage({ params }: { params: { id: string
               <th className="pb-2 pr-3">Location</th>
               <th className="pb-2 pr-3">Open</th>
               <th className="pb-2 pr-3">Stand Lead</th>
-              <th className="pb-2 pr-3">Staff</th>
+              {STAFF_ROLES.map((r) => (
+                <th key={r} className="pb-2 pr-3 whitespace-nowrap">
+                  {r}
+                </th>
+              ))}
+              <th className="pb-2 pr-3">Total</th>
               <th className="pb-2"></th>
             </tr>
           </thead>
           <tbody>
             {(() => {
               let grandTotal = 0;
+
               const rows = ((locations as Location[] | null) ?? []).map((l) => {
                 const isOpen = openByLocationId.get(l.id) ?? true;
                 const eventLocation = eventLocationByLocationId.get(l.id);
                 const confirmed = eventLocation?.confirmed ?? false;
                 const roles = rolesByLocationId.get(l.id) ?? [];
                 const leadCerts = leadCertsByLocationId.get(l.id) ?? [];
-                const recommended = roles.reduce(
-                  (sum, r) => sum + effectiveCount(r, tiers, event.attendance, leadCerts).count,
-                  0
-                );
+
+                const roleCounts = STAFF_ROLES.map((roleName) => {
+                  const role = roles.find((r) => r.role_name === roleName);
+                  if (!role) return { roleName, count: null as number | null, note: null as string | null };
+                  const { count, note } = effectiveCount(role, tiers, event.attendance, leadCerts);
+                  return { roleName, count, note };
+                });
+                const recommended = roleCounts.reduce((sum, r) => sum + (r.count ?? 0), 0);
                 const displayedStaff = confirmed ? eventLocation?.confirmed_staff_count ?? recommended : recommended;
                 if (isOpen) grandTotal += displayedStaff;
-                return { location: l, isOpen, eventLocation, confirmed, recommended, displayedStaff };
+
+                return { location: l, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff };
               });
 
               return (
                 <>
-                  {rows.map(({ location, isOpen, eventLocation, confirmed, recommended, displayedStaff }) => (
+                  {rows.map(({ location, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff }) => (
                     <tr key={location.id} className="border-t border-gray-100">
                       <td className="py-2 pr-3">
                         {location.yellow_dog_code && (
@@ -202,11 +202,16 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           disabled={confirmed}
                         />
                       </td>
-                      <td className="py-2 pr-3">
+                      {roleCounts.map(({ roleName, count, note }) => (
+                        <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
+                          {count == null ? <span className="text-gray-300">—</span> : count}
+                        </td>
+                      ))}
+                      <td className="py-2 pr-3 font-medium">
                         {displayedStaff}
                         {confirmed && recommended !== displayedStaff && (
                           <span className="ml-1 text-xs text-amber-600" title="Recalculated recommendation has changed since this was confirmed">
-                            (now recommends {recommended})
+                            (now {recommended})
                           </span>
                         )}
                       </td>
@@ -241,18 +246,16 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   ))}
                   {!rows.length && (
                     <tr>
-                      <td colSpan={5} className="py-4 text-gray-400">
+                      <td colSpan={STAFF_ROLES.length + 5} className="py-4 text-gray-400">
                         No locations available.
                       </td>
                     </tr>
                   )}
                   {rows.length > 0 && (
                     <tr className="border-t border-gray-200">
-                      <td colSpan={3} />
+                      <td colSpan={3 + STAFF_ROLES.length} />
                       <td className="py-2 pr-3 font-medium">{grandTotal}</td>
-                      <td className="py-2 text-xs text-gray-400">
-                        {event.team_size != null && `Team Size on file: ${event.team_size}`}
-                      </td>
+                      <td />
                     </tr>
                   )}
                 </>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
+import { STAFF_ROLES } from "@/lib/staffRoles";
 import { addStaffRole, addStaffTier, removeStaffRole, removeStaffTier, updateLocation } from "./actions";
 
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
@@ -74,7 +75,13 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         <input type="hidden" name="location_id" value={location.id} />
         <div>
           <label className="mb-1 block text-xs text-gray-500">Role</label>
-          <input name="role_name" required placeholder="e.g. In Seat Server" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+            {STAFF_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-500">Base count</label>
@@ -123,7 +130,13 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         <input type="hidden" name="location_id" value={location.id} />
         <div>
           <label className="mb-1 block text-xs text-gray-500">Role</label>
-          <input name="role_name" required placeholder="Must match a role above" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+            {STAFF_ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-500">Min attendance</label>

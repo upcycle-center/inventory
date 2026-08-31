@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { StorageArea } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
@@ -36,8 +37,16 @@ export default async function AdminStorageAreasPage() {
         <tbody>
           {areas.map((a) => (
             <tr key={a.id} className="border-t border-gray-100">
-              <td className="py-2 font-mono">{a.code}</td>
-              <td className="py-2">{a.name}</td>
+              <td className="py-2 font-mono">
+                <Link href={`/admin/storage-areas/${a.id}`} className="text-brand hover:underline">
+                  {a.code}
+                </Link>
+              </td>
+              <td className="py-2">
+                <Link href={`/admin/storage-areas/${a.id}`} className="hover:underline">
+                  {a.name}
+                </Link>
+              </td>
               <td className="py-2 text-gray-500">{a.active ? "Active" : "Inactive"}</td>
               <td className="py-2 text-right">
                 <form action={toggleStorageAreaActive}>
