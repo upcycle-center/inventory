@@ -5,7 +5,7 @@ import type { UserRole } from "./types";
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 const ADMIN_ONLY_PREFIXES = ["/admin"];
-const WAREHOUSE_PREFIXES = ["/receive", "/replenish"];
+const WAREHOUSE_PREFIXES = ["/receive", "/transfer"];
 
 function roleAllows(role: UserRole, pathname: string): boolean {
   if (role === "admin") return true;

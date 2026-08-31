@@ -7,9 +7,9 @@ import type { Profile } from "@/lib/supabase/types";
 
 const LINKS: { href: string; label: string; roles?: Profile["role"][] }[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/count", label: "Stand Count", roles: ["admin", "stand_lead"] },
-  { href: "/receive", label: "Receiving", roles: ["admin", "warehouse"] },
-  { href: "/replenish", label: "Replenishment", roles: ["admin", "warehouse"] },
+  { href: "/count", label: "Count", roles: ["admin", "stand_lead"] },
+  { href: "/receive", label: "Receive", roles: ["admin", "warehouse"] },
+  { href: "/transfer", label: "Transfer", roles: ["admin", "warehouse"] },
   { href: "/admin", label: "Admin", roles: ["admin"] },
 ];
 

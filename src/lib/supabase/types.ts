@@ -1,7 +1,10 @@
 export type UserRole = "admin" | "warehouse" | "stand_lead";
 export type EventStatus = "upcoming" | "open" | "closed";
 export type CountType = "opening" | "closing";
-export type MovementType = "receiving" | "replenishment";
+export type LocationType = "warehouse" | "stand" | "kitchen";
+export type MovementType = "receiving" | "return" | "transfer" | "adjustment";
+export type PoStatus = "placed" | "received" | "canceled";
+export type RequestStatus = "pending" | "fulfilled" | "canceled";
 export type WasteReason =
   | "spoiled"
   | "broken"
@@ -18,9 +21,10 @@ export interface Profile {
   created_at: string;
 }
 
-export interface Stand {
+export interface Location {
   id: string;
   name: string;
+  type: LocationType;
   description: string | null;
   active: boolean;
   created_at: string;
@@ -34,11 +38,11 @@ export interface Event {
   created_at: string;
 }
 
-export interface EventStandAssignment {
+export interface EventLocationAssignment {
   id: string;
   event_id: string;
-  stand_id: string;
-  stand_lead_user_id: string;
+  location_id: string;
+  location_lead_user_id: string;
   created_at: string;
 }
 
@@ -75,25 +79,25 @@ export interface ProductBarcode {
 export interface InventoryThreshold {
   id: string;
   product_id: string;
-  stand_id: string;
+  location_id: string;
   reorder_threshold: number;
   reorder_qty: number;
   updated_at: string;
 }
 
-export interface StandCount {
+export interface LocationCount {
   id: string;
-  event_id: string;
-  stand_id: string;
+  event_id: string | null;
+  location_id: string;
   user_id: string;
   type: CountType;
   submitted_at: string;
   csv_export_url: string | null;
 }
 
-export interface StandCountLine {
+export interface LocationCountLine {
   id: string;
-  stand_count_id: string;
+  location_count_id: string;
   product_id: string;
   qty_each: number | null;
   qty_cases: number | null;
@@ -109,9 +113,9 @@ export interface StorageArea {
   created_at: string;
 }
 
-export interface StandProduct {
+export interface LocationProduct {
   id: string;
-  stand_id: string;
+  location_id: string;
   product_id: string;
   storage_area_id: string;
   sort_order: number;
@@ -121,8 +125,8 @@ export interface StandProduct {
 
 export interface WasteRecord {
   id: string;
-  event_id: string;
-  stand_id: string;
+  event_id: string | null;
+  location_id: string;
   product_id: string;
   quantity: number;
   reason_code: WasteReason;
@@ -135,12 +139,37 @@ export interface WasteRecord {
 export interface InventoryMovement {
   id: string;
   product_id: string;
-  from_location: "external" | "warehouse";
-  to_stand_id: string | null;
-  event_id: string | null;
+  from_location_id: string | null;
+  to_location_id: string | null;
+  supplier_id: string | null;
   type: MovementType;
   quantity: number;
+  event_id: string | null;
+  note: string | null;
   user_id: string;
+  created_at: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplier_id: string;
+  location_id: string;
+  status: PoStatus;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface StockRequest {
+  id: string;
+  from_location_id: string;
+  to_location_id: string | null;
+  product_id: string;
+  quantity: number;
+  status: RequestStatus;
+  fulfilled_by_movement_id: string | null;
+  note: string | null;
+  created_by: string | null;
   created_at: string;
 }
 
