@@ -36,6 +36,8 @@ export interface Event {
   name: string;
   event_date: string;
   status: EventStatus;
+  attendance: number | null;
+  team_size: number | null;
   created_at: string;
 }
 
@@ -45,6 +47,14 @@ export interface EventLocationAssignment {
   location_id: string;
   location_lead_user_id: string;
   created_at: string;
+}
+
+export interface EventLocation {
+  id: string;
+  event_id: string;
+  location_id: string;
+  is_open: boolean;
+  updated_at: string;
 }
 
 export interface Supplier {
