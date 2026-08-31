@@ -17,12 +17,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Edit product</h1>
-        <Link href={`/admin/products/new?from=${product.id}`} className="text-sm text-brand hover:underline">
-          Duplicate
-        </Link>
-      </div>
+      <h1 className="mb-6 text-lg font-semibold">Edit product</h1>
 
       <form
         action={updateProduct}
@@ -86,9 +81,17 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           Replace photo
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
-        <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Save
-        </button>
+        <div className="flex items-center gap-3">
+          <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+            Save
+          </button>
+          <Link
+            href={`/admin/products/new?from=${product.id}`}
+            className="w-fit rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+          >
+            Duplicate
+          </Link>
+        </div>
       </form>
     </div>
   );

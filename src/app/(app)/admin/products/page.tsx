@@ -172,13 +172,18 @@ export default async function AdminProductsPage({
                 </td>
                 <td className="px-4 py-2 text-gray-500">{p.active ? "Active" : "Inactive"}</td>
                 <td className="px-4 py-2 text-right">
-                  <form action={toggleProductActive}>
-                    <input type="hidden" name="id" value={p.id} />
-                    <input type="hidden" name="active" value={String(p.active)} />
-                    <button type="submit" className="text-xs text-brand hover:underline">
-                      {p.active ? "Deactivate" : "Reactivate"}
-                    </button>
-                  </form>
+                  <div className="flex items-center justify-end gap-3">
+                    <Link href={`/admin/products/new?from=${p.id}`} className="text-xs font-medium text-amber-600 hover:underline">
+                      Duplicate
+                    </Link>
+                    <form action={toggleProductActive}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <input type="hidden" name="active" value={String(p.active)} />
+                      <button type="submit" className="text-xs text-brand hover:underline">
+                        {p.active ? "Deactivate" : "Reactivate"}
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
