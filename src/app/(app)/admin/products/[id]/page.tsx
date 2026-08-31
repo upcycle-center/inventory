@@ -28,10 +28,10 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       >
         <input type="hidden" name="id" value={product.id} />
 
-        <div className="mb-1 aspect-square w-24 overflow-hidden rounded bg-gray-100">
+        <div className="mb-1 flex aspect-square w-24 items-center justify-center overflow-hidden rounded bg-gray-100">
           {product.photo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.photo_url} alt={product.description} className="h-full w-full object-cover" />
+            <img src={product.photo_url} alt={product.description} className="h-full w-full object-contain" />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <ProductPlaceholderIcon />

@@ -106,13 +106,13 @@ export function CountForm({
                 <div className="grid grid-cols-2 gap-3 border-t border-gray-100 p-4 sm:grid-cols-3">
                   {group.products.map((product) => (
                     <div key={product.id} className="rounded-md border border-gray-100 p-2">
-                      <div className="mb-2 aspect-square w-full overflow-hidden rounded bg-gray-50">
+                      <div className="mb-2 flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-gray-50">
                         {product.photo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={product.photo_url}
                             alt={product.description}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-contain"
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center">
