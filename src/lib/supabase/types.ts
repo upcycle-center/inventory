@@ -95,8 +95,28 @@ export interface StandCountLine {
   id: string;
   stand_count_id: string;
   product_id: string;
-  quantity: number;
+  qty_each: number | null;
+  qty_cases: number | null;
   counted_at: string;
+}
+
+export interface StorageArea {
+  id: string;
+  code: string;
+  name: string;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
+}
+
+export interface StandProduct {
+  id: string;
+  stand_id: string;
+  product_id: string;
+  storage_area_id: string;
+  sort_order: number;
+  active: boolean;
+  created_at: string;
 }
 
 export interface WasteRecord {
