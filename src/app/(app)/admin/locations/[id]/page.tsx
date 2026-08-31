@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, StorageArea } from "@/lib/supabase/types";
+import { sortStorageAreas } from "@/lib/storageAreas";
 import { assignProductToLocation, removeProductFromLocation, updateLocation } from "./actions";
 
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
@@ -9,7 +10,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
   const [{ data: location }, { data: storageAreas }, { data: products }, { data: locationProducts }] =
     await Promise.all([
       supabase.from("locations").select("*").eq("id", params.id).single(),
-      supabase.from("storage_areas").select("*").eq("active", true).order("sort_order"),
+      supabase.from("storage_areas").select("*").eq("active", true),
       supabase.from("products").select("*").eq("active", true).order("description"),
       supabase
         .from("location_products")
@@ -19,7 +20,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
   if (!location) notFound();
 
-  const areas = (storageAreas as StorageArea[] | null) ?? [];
+  const areas = sortStorageAreas((storageAreas as StorageArea[]) ?? []);
   const assignments = (locationProducts as any[] | null) ?? [];
 
   return (

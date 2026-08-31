@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { sortStorageAreas } from "@/lib/storageAreas";
 import { CountForm } from "./CountForm";
 import type { CountType } from "@/lib/supabase/types";
 
@@ -66,26 +67,23 @@ export default async function CountPage({
   const { data: locationProducts } = await supabase
     .from("location_products")
     .select(
-      "product:products(id, sku, description, photo_url, active), storage_area:storage_areas(id, code, name, sort_order), sort_order"
+      "product:products(id, sku, description, photo_url, active), storage_area:storage_areas(id, code, name)"
     )
     .eq("location_id", locationId)
     .eq("active", true);
 
-  const areaMap = new Map<
-    string,
-    { id: string; code: string; name: string; sort_order: number; products: any[] }
-  >();
+  const areaMap = new Map<string, { id: string; code: string; name: string; products: any[] }>();
 
   for (const row of (locationProducts as any[]) ?? []) {
     if (!row.product?.active || !row.storage_area) continue;
     const area = row.storage_area;
     if (!areaMap.has(area.id)) {
-      areaMap.set(area.id, { id: area.id, code: area.code, name: area.name, sort_order: area.sort_order, products: [] });
+      areaMap.set(area.id, { id: area.id, code: area.code, name: area.name, products: [] });
     }
     areaMap.get(area.id)!.products.push(row.product);
   }
 
-  const groups = Array.from(areaMap.values()).sort((a, b) => a.sort_order - b.sort_order);
+  const groups = sortStorageAreas(Array.from(areaMap.values()));
 
   if (!groups.length) {
     return (

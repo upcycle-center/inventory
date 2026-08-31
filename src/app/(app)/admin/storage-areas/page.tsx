@@ -1,13 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import type { StorageArea } from "@/lib/supabase/types";
+import { sortStorageAreas } from "@/lib/storageAreas";
 import { createStorageArea, toggleStorageAreaActive } from "./actions";
 
 export default async function AdminStorageAreasPage() {
   const supabase = createClient();
-  const { data: areas } = await supabase
-    .from("storage_areas")
-    .select("*")
-    .order("sort_order");
+  const { data: rawAreas } = await supabase.from("storage_areas").select("*");
+  const areas = sortStorageAreas((rawAreas as StorageArea[]) ?? []);
 
   return (
     <div>
@@ -35,7 +34,7 @@ export default async function AdminStorageAreasPage() {
           </tr>
         </thead>
         <tbody>
-          {(areas as StorageArea[] | null)?.map((a) => (
+          {areas.map((a) => (
             <tr key={a.id} className="border-t border-gray-100">
               <td className="py-2 font-mono">{a.code}</td>
               <td className="py-2">{a.name}</td>
