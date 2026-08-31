@@ -131,10 +131,11 @@ export default async function AdminProductsPage({
           <thead className="text-gray-500">
             <tr>
               <th className="px-4 py-2"></th>
-              <th className="px-4 py-2">Product</th>
               <th className="px-4 py-2">IC</th>
-              <th className="px-4 py-2">UPC</th>
+              <th className="px-4 py-2">Product</th>
               <th className="px-4 py-2">Unit</th>
+              <th className="px-4 py-2">UPC</th>
+              <th className="px-4 py-2"></th>
               <th className="px-4 py-2">Supplier</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2"></th>
@@ -155,13 +156,12 @@ export default async function AdminProductsPage({
                     )}
                   </div>
                 </td>
+                <td className="px-4 py-2 text-gray-500">{p.sku}</td>
                 <td className="px-4 py-2">
                   <Link href={`/admin/products/${p.id}`} className="font-medium text-brand hover:underline">
                     {p.description}
                   </Link>
                 </td>
-                <td className="px-4 py-2 text-gray-500">{p.sku}</td>
-                <td className="px-4 py-2 text-gray-500">{p.upc ?? "—"}</td>
                 <td className="px-4 py-2 text-gray-500">
                   {p.unit_of_measure === "case" && p.case_size
                     ? `Case of ${p.case_size}`
@@ -169,27 +169,28 @@ export default async function AdminProductsPage({
                       ? `${p.unit_of_measure} · ${p.case_size}/case`
                       : p.unit_of_measure}
                 </td>
+                <td className="px-4 py-2 text-gray-500">{p.upc ?? "—"}</td>
+                <td className="px-4 py-2">
+                  <Link href={`/admin/products/new?from=${p.id}`} className="text-xs font-medium text-amber-600 hover:underline">
+                    Duplicate
+                  </Link>
+                </td>
                 <td className="px-4 py-2 text-gray-500">{p.supplier?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-gray-500">{p.active ? "Active" : "Inactive"}</td>
                 <td className="px-4 py-2 text-right">
-                  <div className="flex items-center justify-end gap-3">
-                    <Link href={`/admin/products/new?from=${p.id}`} className="text-xs font-medium text-amber-600 hover:underline">
-                      Duplicate
-                    </Link>
-                    <form action={toggleProductActive}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <input type="hidden" name="active" value={String(p.active)} />
-                      <button type="submit" className="text-xs text-brand hover:underline">
-                        {p.active ? "Deactivate" : "Reactivate"}
-                      </button>
-                    </form>
-                  </div>
+                  <form action={toggleProductActive}>
+                    <input type="hidden" name="id" value={p.id} />
+                    <input type="hidden" name="active" value={String(p.active)} />
+                    <button type="submit" className="text-xs text-brand hover:underline">
+                      {p.active ? "Deactivate" : "Reactivate"}
+                    </button>
+                  </form>
                 </td>
               </tr>
             ))}
             {!products?.length && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={9} className="px-4 py-6 text-center text-gray-400">
                   No products match these filters.
                 </td>
               </tr>
