@@ -1,16 +1,38 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Supplier } from "@/lib/supabase/types";
+import type { Supplier } from "@/lib/supabase/types";
 import { createProduct, toggleProductActive } from "./actions";
 import { CsvUploadForm } from "./CsvUploadForm";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: { q?: string; supplier?: string; status?: string; unit?: string };
+}) {
   const supabase = createClient();
+  const { q, supplier, status, unit } = searchParams;
+
+  let query = supabase
+    .from("products")
+    .select("*, supplier:suppliers(id, name)")
+    .order("description");
+
+  if (q) {
+    const term = q.trim();
+    query = query.or(`description.ilike.%${term}%,sku.ilike.%${term}%,upc.ilike.%${term}%`);
+  }
+  if (supplier) query = query.eq("supplier_id", supplier);
+  if (status === "active") query = query.eq("active", true);
+  if (status === "inactive") query = query.eq("active", false);
+  if (unit) query = query.eq("unit_of_measure", unit);
+
   const [{ data: products }, { data: suppliers }] = await Promise.all([
-    supabase.from("products").select("*").order("description"),
+    query,
     supabase.from("suppliers").select("*").order("name"),
   ]);
+
+  const supplierList = (suppliers as Supplier[] | null) ?? [];
 
   return (
     <div>
@@ -28,7 +50,7 @@ export default async function AdminProductsPage() {
           <input name="description" placeholder="Description" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
           <select name="supplier_id" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
             <option value="">No supplier</option>
-            {(suppliers as Supplier[] | null)?.map((s) => (
+            {supplierList.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
@@ -54,45 +76,121 @@ export default async function AdminProductsPage() {
           </button>
         </form>
 
-        <CsvUploadForm suppliers={(suppliers as Supplier[] | null) ?? []} />
+        <CsvUploadForm suppliers={supplierList} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {(products as Product[] | null)?.map((p) => (
-          <div key={p.id} className="rounded-md border border-gray-200 bg-white p-3">
-            <div className="mb-2 aspect-square w-full overflow-hidden rounded bg-gray-100">
-              {p.photo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.photo_url} alt={p.description} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <ProductPlaceholderIcon />
-                </div>
-              )}
-            </div>
-            <Link href={`/admin/products/${p.id}`} className="block text-sm font-medium text-brand hover:underline">
-              {p.description}
-            </Link>
-            <p className="text-xs text-gray-500">IC {p.sku}</p>
-            <p className="text-xs text-gray-500">
-              {p.unit_of_measure === "case" && p.case_size
-                ? `Case of ${p.case_size}`
-                : p.case_size
-                  ? `${p.unit_of_measure} · ${p.case_size}/case`
-                  : p.unit_of_measure}
-            </p>
-            {!p.active && <p className="text-xs text-red-500">Inactive</p>}
-            {p.upc && <p className="text-xs text-gray-400">UPC {p.upc}</p>}
-            <form action={toggleProductActive} className="mt-2">
-              <input type="hidden" name="id" value={p.id} />
-              <input type="hidden" name="active" value={String(p.active)} />
-              <button type="submit" className="text-xs text-brand hover:underline">
-                {p.active ? "Deactivate" : "Reactivate"}
-              </button>
-            </form>
-          </div>
-        ))}
-        {!products?.length && <p className="col-span-full text-sm text-gray-400">No products yet.</p>}
+      <form className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
+        <label className="text-xs text-gray-500">
+          Search
+          <input
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Description, IC, or UPC"
+            className="mt-1 w-56 rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-xs text-gray-500">
+          Supplier
+          <select name="supplier" defaultValue={supplier ?? ""} className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="">All</option>
+            {supplierList.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-xs text-gray-500">
+          Unit
+          <select name="unit" defaultValue={unit ?? ""} className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="">All</option>
+            <option value="each">Each</option>
+            <option value="case">Case</option>
+          </select>
+        </label>
+        <label className="text-xs text-gray-500">
+          Status
+          <select name="status" defaultValue={status ?? ""} className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="">All</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </label>
+        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Filter
+        </button>
+        {(q || supplier || status || unit) && (
+          <Link href="/admin/products" className="text-sm text-gray-500 hover:underline">
+            Clear
+          </Link>
+        )}
+      </form>
+
+      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+        <table className="w-full text-left text-sm">
+          <thead className="text-gray-500">
+            <tr>
+              <th className="px-4 py-2"></th>
+              <th className="px-4 py-2">Product</th>
+              <th className="px-4 py-2">IC</th>
+              <th className="px-4 py-2">UPC</th>
+              <th className="px-4 py-2">Supplier</th>
+              <th className="px-4 py-2">Unit</th>
+              <th className="px-4 py-2">Status</th>
+              <th className="px-4 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {(products as any[] | null)?.map((p) => (
+              <tr key={p.id} className="border-t border-gray-100">
+                <td className="px-4 py-2">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-gray-100">
+                    {p.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.photo_url} alt={p.description} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <ProductPlaceholderIcon />
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-2">
+                  <Link href={`/admin/products/${p.id}`} className="font-medium text-brand hover:underline">
+                    {p.description}
+                  </Link>
+                </td>
+                <td className="px-4 py-2 text-gray-500">{p.sku}</td>
+                <td className="px-4 py-2 text-gray-500">{p.upc ?? "—"}</td>
+                <td className="px-4 py-2 text-gray-500">{p.supplier?.name ?? "—"}</td>
+                <td className="px-4 py-2 text-gray-500">
+                  {p.unit_of_measure === "case" && p.case_size
+                    ? `Case of ${p.case_size}`
+                    : p.case_size
+                      ? `${p.unit_of_measure} · ${p.case_size}/case`
+                      : p.unit_of_measure}
+                </td>
+                <td className="px-4 py-2 text-gray-500">{p.active ? "Active" : "Inactive"}</td>
+                <td className="px-4 py-2 text-right">
+                  <form action={toggleProductActive}>
+                    <input type="hidden" name="id" value={p.id} />
+                    <input type="hidden" name="active" value={String(p.active)} />
+                    <button type="submit" className="text-xs text-brand hover:underline">
+                      {p.active ? "Deactivate" : "Reactivate"}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+            {!products?.length && (
+              <tr>
+                <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+                  No products match these filters.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
