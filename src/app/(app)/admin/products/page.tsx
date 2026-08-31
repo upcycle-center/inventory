@@ -1,21 +1,22 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
-import { createProduct, toggleProductActive } from "./actions";
+import { createProduct } from "./actions";
 import { CsvUploadForm } from "./CsvUploadForm";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: { q?: string; supplier?: string; status?: string; unit?: string };
+  searchParams: { q?: string; supplier?: string; unit?: string };
 }) {
   const supabase = createClient();
-  const { q, supplier, status, unit } = searchParams;
+  const { q, supplier, unit } = searchParams;
 
   let query = supabase
     .from("products")
     .select("*, supplier:suppliers(id, name)")
+    .eq("active", true)
     .order("description");
 
   if (q) {
@@ -23,8 +24,6 @@ export default async function AdminProductsPage({
     query = query.or(`description.ilike.%${term}%,sku.ilike.%${term}%,upc.ilike.%${term}%`);
   }
   if (supplier) query = query.eq("supplier_id", supplier);
-  if (status === "active") query = query.eq("active", true);
-  if (status === "inactive") query = query.eq("active", false);
   if (unit) query = query.eq("unit_of_measure", unit);
 
   const [{ data: products }, { data: suppliers }] = await Promise.all([
@@ -108,18 +107,10 @@ export default async function AdminProductsPage({
             <option value="case">Case</option>
           </select>
         </label>
-        <label className="text-xs text-gray-500">
-          Status
-          <select name="status" defaultValue={status ?? ""} className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">All</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </label>
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Filter
         </button>
-        {(q || supplier || status || unit) && (
+        {(q || supplier || unit) && (
           <Link href="/admin/products" className="text-sm text-gray-500 hover:underline">
             Clear
           </Link>
@@ -127,18 +118,15 @@ export default async function AdminProductsPage({
       </form>
 
       <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <table className="w-full text-left text-sm">
+        <table className="w-full whitespace-nowrap text-left text-sm">
           <thead className="text-gray-500">
             <tr>
               <th className="px-4 py-2"></th>
               <th className="px-4 py-2">IC</th>
               <th className="px-4 py-2">Product</th>
               <th className="px-4 py-2">Unit</th>
-              <th className="px-4 py-2">UPC</th>
               <th className="px-4 py-2"></th>
               <th className="px-4 py-2">Supplier</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -169,28 +157,17 @@ export default async function AdminProductsPage({
                       ? `${p.unit_of_measure} · ${p.case_size}/case`
                       : p.unit_of_measure}
                 </td>
-                <td className="px-4 py-2 text-gray-500">{p.upc ?? "—"}</td>
                 <td className="px-4 py-2">
                   <Link href={`/admin/products/new?from=${p.id}`} className="text-xs font-medium text-amber-600 hover:underline">
                     Duplicate
                   </Link>
                 </td>
                 <td className="px-4 py-2 text-gray-500">{p.supplier?.name ?? "—"}</td>
-                <td className="px-4 py-2 text-gray-500">{p.active ? "Active" : "Inactive"}</td>
-                <td className="px-4 py-2 text-right">
-                  <form action={toggleProductActive}>
-                    <input type="hidden" name="id" value={p.id} />
-                    <input type="hidden" name="active" value={String(p.active)} />
-                    <button type="submit" className="text-xs text-brand hover:underline">
-                      {p.active ? "Deactivate" : "Reactivate"}
-                    </button>
-                  </form>
-                </td>
               </tr>
             ))}
             {!products?.length && (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                   No products match these filters.
                 </td>
               </tr>

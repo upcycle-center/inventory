@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { updateProduct } from "./actions";
+import { toggleProductActive } from "../actions";
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -20,6 +21,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       <h1 className="mb-6 text-lg font-semibold">Edit product</h1>
 
       <form
+        id="edit-product-form"
         action={updateProduct}
         encType="multipart/form-data"
         className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
@@ -81,18 +83,26 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           Replace photo
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
-        <div className="flex items-center gap-3">
-          <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
-            Save
-          </button>
-          <Link
-            href={`/admin/products/new?from=${product.id}`}
-            className="w-fit rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
-          >
-            Duplicate
-          </Link>
-        </div>
       </form>
+
+      <div className="mt-3 flex items-center gap-3">
+        <button type="submit" form="edit-product-form" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Save
+        </button>
+        <Link
+          href={`/admin/products/new?from=${product.id}`}
+          className="w-fit rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+        >
+          Duplicate
+        </Link>
+        <form action={toggleProductActive} className="contents">
+          <input type="hidden" name="id" value={product.id} />
+          <input type="hidden" name="active" value={String(product.active)} />
+          <button type="submit" className="w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+            {product.active ? "Deactivate" : "Reactivate"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
