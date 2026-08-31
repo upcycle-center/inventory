@@ -91,7 +91,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <select name="storage_area_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
             {areas.map((a) => (
               <option key={a.id} value={a.id}>
-                {a.code} — {a.name}
+                {a.name}
               </option>
             ))}
           </select>
