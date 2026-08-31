@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { createProduct } from "../actions";
@@ -77,9 +78,14 @@ export default async function NewProductPage({
           Photo (for the count screen&apos;s photo grid)
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
-        <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
-          {from ? "Save as new product" : "Add product"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button type="submit" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            Save
+          </button>
+          <Link href="/admin/products" className="w-fit rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">
+            Cancel
+          </Link>
+        </div>
       </form>
     </div>
   );

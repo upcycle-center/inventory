@@ -75,8 +75,8 @@ export default async function AdminProductsPage({
             Photo (for the count screen&apos;s photo grid)
             <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
           </label>
-          <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
-            Add product
+          <button type="submit" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            Save
           </button>
         </form>
 
