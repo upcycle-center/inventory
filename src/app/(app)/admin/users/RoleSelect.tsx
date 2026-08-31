@@ -15,6 +15,7 @@ export function RoleSelect({ user }: { user: Profile }) {
       >
         <option value="stand_lead">Stand Lead</option>
         <option value="warehouse">Warehouse</option>
+        <option value="ops">Operations</option>
         <option value="admin">Admin</option>
       </select>
     </form>

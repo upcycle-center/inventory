@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "warehouse" | "stand_lead";
+export type UserRole = "admin" | "warehouse" | "stand_lead" | "ops";
 export type EventStatus = "upcoming" | "open" | "closed";
 export type CountType = "opening" | "closing";
 export type LocationType = "warehouse" | "stand" | "kitchen";

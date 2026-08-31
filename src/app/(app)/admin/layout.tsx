@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireProfile } from "@/lib/auth";
 
 const SECTIONS = [
   { href: "/admin/locations", label: "Locations" },
@@ -11,7 +12,9 @@ const SECTIONS = [
   { href: "/admin/yellow-dog-mapping", label: "Yellow Dog CSV Mapping" },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  await requireProfile(["admin"]);
+
   return (
     <div className="flex gap-8">
       <nav className="w-48 shrink-0 space-y-1 text-sm">

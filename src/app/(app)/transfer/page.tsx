@@ -1,6 +1,8 @@
+import { requireProfile } from "@/lib/auth";
 import { ComingSoon } from "@/components/ComingSoon";
 
-export default function TransferPage() {
+export default async function TransferPage() {
+  await requireProfile(["admin", "warehouse"]);
   return (
     <ComingSoon
       title="Transfer"

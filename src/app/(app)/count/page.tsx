@@ -10,12 +10,17 @@ export default async function CountPage({
 }: {
   searchParams: { event?: string; location?: string };
 }) {
-  const profile = await requireProfile();
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead"]);
   const supabase = createClient();
   const { event: eventId, location: locationId } = searchParams;
 
   if (!eventId || !locationId) {
-    return <CountPicker userId={profile.id} isWarehouseOrAdmin={profile.role !== "stand_lead"} />;
+    return (
+      <CountPicker
+        userId={profile.id}
+        isWarehouseOrAdmin={profile.role === "admin" || profile.role === "warehouse"}
+      />
+    );
   }
 
   const [{ data: event }, { data: location }, { data: existingCounts }] = await Promise.all([

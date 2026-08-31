@@ -1,6 +1,8 @@
+import { requireProfile } from "@/lib/auth";
 import { ComingSoon } from "@/components/ComingSoon";
 
-export default function ReceivePage() {
+export default async function ReceivePage() {
+  await requireProfile(["admin", "warehouse"]);
   return (
     <ComingSoon
       title="Receive"
