@@ -64,6 +64,31 @@ export async function updateProduct(formData: FormData) {
   revalidatePath("/admin/products");
 }
 
+export async function assignProductToLocation(formData: FormData) {
+  const supabase = createClient();
+  const productId = String(formData.get("product_id"));
+  const locationId = String(formData.get("location_id"));
+  const storageAreaId = String(formData.get("storage_area_id"));
+  if (!productId || !locationId || !storageAreaId) return;
+
+  await supabase
+    .from("location_products")
+    .upsert(
+      { location_id: locationId, product_id: productId, storage_area_id: storageAreaId },
+      { onConflict: "location_id,product_id" }
+    );
+
+  revalidatePath(`/admin/products/${productId}`);
+}
+
+export async function removeProductFromLocation(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const productId = String(formData.get("product_id"));
+  await supabase.from("location_products").delete().eq("id", id);
+  revalidatePath(`/admin/products/${productId}`);
+}
+
 export async function deleteProduct(id: string): Promise<{ error: string } | void> {
   const supabase = createClient();
   const { error } = await supabase.from("products").delete().eq("id", id);

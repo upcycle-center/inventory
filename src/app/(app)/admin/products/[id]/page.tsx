@@ -1,21 +1,32 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Supplier } from "@/lib/supabase/types";
+import type { Location, StorageArea, Supplier } from "@/lib/supabase/types";
+import { sortStorageAreas } from "@/lib/storageAreas";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
-import { updateProduct } from "./actions";
+import { assignProductToLocation, removeProductFromLocation, updateProduct } from "./actions";
 import { toggleProductActive } from "../actions";
 import { DeleteProductButton } from "./DeleteProductButton";
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: product }, { data: suppliers }] = await Promise.all([
-    supabase.from("products").select("*").eq("id", params.id).single(),
-    supabase.from("suppliers").select("*").order("name"),
-  ]);
+  const [{ data: product }, { data: suppliers }, { data: locations }, { data: storageAreas }, { data: locationProducts }] =
+    await Promise.all([
+      supabase.from("products").select("*").eq("id", params.id).single(),
+      supabase.from("suppliers").select("*").order("name"),
+      supabase.from("locations").select("*").eq("active", true).order("name"),
+      supabase.from("storage_areas").select("*").eq("active", true),
+      supabase
+        .from("location_products")
+        .select("id, location_id, storage_area_id, location:locations(id, name), storage_area:storage_areas(id, code, name)")
+        .eq("product_id", params.id),
+    ]);
 
   if (!product) notFound();
+
+  const areas = sortStorageAreas((storageAreas as StorageArea[]) ?? []);
+  const assignments = (locationProducts as any[] | null) ?? [];
 
   return (
     <div>
@@ -105,6 +116,63 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         </form>
         <DeleteProductButton productId={product.id} />
       </div>
+
+      <p className="mb-3 mt-8 text-sm font-medium">Locations</p>
+      <p className="mb-6 text-sm text-gray-500">
+        Assign which locations carry this product and the storage area it lives in there — this
+        drives the photo-grid count screen.
+      </p>
+
+      <form
+        action={assignProductToLocation}
+        className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+      >
+        <input type="hidden" name="product_id" value={product.id} />
+        <div>
+          <label className="mb-1 block text-xs text-gray-500">Location</label>
+          <select name="location_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+            {(locations as Location[] | null)?.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-gray-500">Storage area</label>
+          <select name="storage_area_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+            {areas.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Assign
+        </button>
+      </form>
+
+      <ul className="space-y-1">
+        {assignments.map((a) => (
+          <li
+            key={a.id}
+            className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm"
+          >
+            <span>
+              {a.location?.name} <span className="text-gray-400">({a.storage_area?.name})</span>
+            </span>
+            <form action={removeProductFromLocation}>
+              <input type="hidden" name="id" value={a.id} />
+              <input type="hidden" name="product_id" value={product.id} />
+              <button type="submit" className="text-red-600 hover:underline">
+                Remove
+              </button>
+            </form>
+          </li>
+        ))}
+        {!assignments.length && <p className="text-sm text-gray-400">Not assigned to any location yet.</p>}
+      </ul>
     </div>
   );
 }
