@@ -115,17 +115,33 @@ export default async function EventDetailPage({ params }: { params: { id: string
         </button>
       </ActionForm>
 
-      <ActionForm action={updateEventDetails} savedLabel="Attendance saved" className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
+      <ActionForm action={updateEventDetails} savedLabel="Tickets saved" className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
         <input type="hidden" name="event_id" value={event.id} />
         <div>
-          <label className="mb-1 block text-xs text-gray-500">Attendance</label>
+          <label className="mb-1 block text-xs text-gray-500" title="Estimate from latest ticket sales — drives staffing projections below">
+            EST Tickets
+          </label>
           <input
-            name="attendance"
+            name="est_tickets"
             type="number"
             min={0}
             step={1}
-            defaultValue={event.attendance ?? ""}
+            defaultValue={event.est_tickets ?? ""}
             placeholder="e.g. 2500"
+            className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs text-gray-500" title="Actual final count reported to the Stands day-of">
+            TOT Tickets
+          </label>
+          <input
+            name="tot_tickets"
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={event.tot_tickets ?? ""}
+            placeholder="e.g. 2650"
             className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </div>
@@ -165,7 +181,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 const roleCounts = STAFF_ROLES.map((roleName) => {
                   const role = roles.find((r) => r.role_name === roleName);
                   if (!role) return { roleName, count: null as number | null, note: null as string | null };
-                  const { count, note } = effectiveCount(role, tiers, event.attendance, leadCerts);
+                  const { count, note } = effectiveCount(role, tiers, event.est_tickets, leadCerts);
                   return { roleName, count, note };
                 });
                 const recommended = roleCounts.reduce((sum, r) => sum + (r.count ?? 0), 0);

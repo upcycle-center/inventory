@@ -7,12 +7,16 @@ import { requireProfile } from "@/lib/auth";
 export async function updateEventDetails(formData: FormData) {
   const supabase = createClient();
   const eventId = String(formData.get("event_id"));
-  const attendanceRaw = String(formData.get("attendance") || "").trim();
+  const estRaw = String(formData.get("est_tickets") || "").trim();
+  const totRaw = String(formData.get("tot_tickets") || "").trim();
   if (!eventId) return;
 
   await supabase
     .from("events")
-    .update({ attendance: attendanceRaw ? Number(attendanceRaw) : null })
+    .update({
+      est_tickets: estRaw ? Number(estRaw) : null,
+      tot_tickets: totRaw ? Number(totRaw) : null,
+    })
     .eq("id", eventId);
 
   revalidatePath(`/admin/events/${eventId}`);

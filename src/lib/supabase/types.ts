@@ -57,7 +57,8 @@ export interface Event {
   name: string;
   event_date: string;
   status: EventStatus;
-  attendance: number | null;
+  est_tickets: number | null;
+  tot_tickets: number | null;
   team_size: number | null;
   created_at: string;
 }
