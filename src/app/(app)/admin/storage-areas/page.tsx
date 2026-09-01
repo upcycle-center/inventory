@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { StorageArea } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { createStorageArea } from "./actions";
+import { ActionForm } from "@/components/ActionForm";
 
 export default async function AdminStorageAreasPage() {
   const supabase = createClient();
@@ -17,13 +18,13 @@ export default async function AdminStorageAreasPage() {
         Cage, etc.). Add more anytime — existing codes stay stable once products reference them.
       </p>
 
-      <form action={createStorageArea} className="mb-8 flex max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4">
+      <ActionForm action={createStorageArea} savedLabel="Storage area added" className="mb-8 flex max-w-md items-center gap-3 rounded-md border border-gray-200 bg-white p-4">
         <input name="code" placeholder="Code (e.g. WIC)" required maxLength={8} className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm uppercase" />
         <input name="name" placeholder="Name (e.g. Walk-in Cooler)" required className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm" />
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add
         </button>
-      </form>
+      </ActionForm>
 
       <table className="w-full max-w-xl text-left text-sm">
         <thead className="text-gray-500">

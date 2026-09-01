@@ -4,6 +4,7 @@ import type { Supplier } from "@/lib/supabase/types";
 import { createProduct } from "./actions";
 import { CsvUploadForm } from "./CsvUploadForm";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { ActionForm } from "@/components/ActionForm";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -43,9 +44,10 @@ export default async function AdminProductsPage({
       </div>
 
       <div className="mb-8 grid gap-6 sm:grid-cols-2">
-        <form
+        <ActionForm
           action={createProduct}
           encType="multipart/form-data"
+          savedLabel="Product added"
           className="grid gap-3 rounded-md border border-gray-200 bg-white p-4"
         >
           <p className="text-sm font-medium">Add a product</p>
@@ -78,7 +80,7 @@ export default async function AdminProductsPage({
           <button type="submit" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
             Save
           </button>
-        </form>
+        </ActionForm>
 
         <CsvUploadForm suppliers={supplierList} />
       </div>

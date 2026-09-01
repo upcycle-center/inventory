@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
+import { ActionForm } from "@/components/ActionForm";
 import { updateEventStatus } from "../actions";
 import { confirmLocationStaffing, toggleLocationOpen, unlockLocationStaffing, updateEventDetails } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
@@ -93,7 +94,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <h1 className="mb-1 text-lg font-semibold">{event.name}</h1>
       <p className="mb-6 text-sm text-gray-500">{event.event_date}</p>
 
-      <form action={updateEventStatus} className="mb-8 flex items-center gap-2">
+      <ActionForm action={updateEventStatus} savedLabel="Status updated" className="mb-8 flex items-center gap-2">
         <input type="hidden" name="id" value={event.id} />
         <label className="text-sm text-gray-500">Status</label>
         <select name="status" defaultValue={event.status} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
@@ -104,9 +105,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
           Update
         </button>
-      </form>
+      </ActionForm>
 
-      <form action={updateEventDetails} className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
+      <ActionForm action={updateEventDetails} savedLabel="Attendance saved" className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
         <input type="hidden" name="event_id" value={event.id} />
         <div>
           <label className="mb-1 block text-xs text-gray-500">Attendance</label>
@@ -123,7 +124,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
           Save
         </button>
-      </form>
+      </ActionForm>
 
       <div className="mb-8 overflow-x-auto rounded-md border border-gray-200 bg-white p-4">
         <p className="mb-3 text-sm font-medium">Locations</p>

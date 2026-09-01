@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
+import { ActionForm } from "@/components/ActionForm";
 import { toggleLocationActive } from "../actions";
 import { addStaffRole, addStaffTier, removeStaffRole, removeStaffTier, updateLocation } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
@@ -30,7 +31,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         {location.name}
       </h1>
 
-      <form
+      <ActionForm
         id="edit-location-form"
         action={updateLocation}
         className="mb-3 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
@@ -61,7 +62,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
             className="mt-1 w-24 rounded-md border border-gray-300 px-3 py-2 text-center font-mono text-sm"
           />
         </label>
-      </form>
+      </ActionForm>
 
       <div className="mb-8 flex items-center gap-3">
         <button type="submit" form="edit-location-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
@@ -73,13 +74,13 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         >
           Duplicate
         </Link>
-        <form action={toggleLocationActive} className="contents">
+        <ActionForm action={toggleLocationActive} className="contents" savedLabel={location.active ? "Deactivated" : "Reactivated"}>
           <input type="hidden" name="id" value={location.id} />
           <input type="hidden" name="active" value={String(location.active)} />
           <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
             {location.active ? "Deactivate" : "Reactivate"}
           </button>
-        </form>
+        </ActionForm>
         <DeleteLocationButton locationId={location.id} />
       </div>
 
@@ -90,8 +91,9 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         Bartender slot) — it&apos;s subtracted automatically on the event page.
       </p>
 
-      <form
+      <ActionForm
         action={addStaffRole}
+        savedLabel="Role added"
         className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="location_id" value={location.id} />
@@ -116,7 +118,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add role
         </button>
-      </form>
+      </ActionForm>
 
       <ul className="mb-8 space-y-1">
         {roles.map((r) => (
@@ -145,8 +147,9 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         a smaller show). Leave max blank for &ldquo;and up&rdquo;.
       </p>
 
-      <form
+      <ActionForm
         action={addStaffTier}
+        savedLabel="Tier added"
         className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="location_id" value={location.id} />
@@ -175,7 +178,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add tier
         </button>
-      </form>
+      </ActionForm>
 
       <ul className="mb-8 space-y-1">
         {tiers.map((t) => (

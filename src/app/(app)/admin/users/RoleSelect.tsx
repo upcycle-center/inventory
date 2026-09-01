@@ -1,11 +1,12 @@
 "use client";
 
 import type { Profile } from "@/lib/supabase/types";
+import { ActionForm } from "@/components/ActionForm";
 import { updateUserRole } from "./actions";
 
 export function RoleSelect({ user }: { user: Profile }) {
   return (
-    <form action={updateUserRole} className="flex items-center gap-2">
+    <ActionForm action={updateUserRole} savedLabel="Role updated" className="flex items-center gap-2">
       <input type="hidden" name="id" value={user.id} />
       <select
         name="role"
@@ -20,6 +21,6 @@ export function RoleSelect({ user }: { user: Profile }) {
         <option value="ops">Operations</option>
         <option value="admin">Admin</option>
       </select>
-    </form>
+    </ActionForm>
   );
 }

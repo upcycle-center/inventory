@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Location } from "@/lib/supabase/types";
 import { upsertThreshold, deleteThreshold } from "./actions";
+import { ActionForm } from "@/components/ActionForm";
 
 export default async function AdminThresholdsPage() {
   const supabase = createClient();
@@ -20,8 +21,9 @@ export default async function AdminThresholdsPage() {
         When a location&apos;s closing count falls at or below the threshold, it&apos;s flagged for restock.
       </p>
 
-      <form
+      <ActionForm
         action={upsertThreshold}
+        savedLabel="Threshold saved"
         className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <div>
@@ -55,7 +57,7 @@ export default async function AdminThresholdsPage() {
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Save
         </button>
-      </form>
+      </ActionForm>
 
       <table className="w-full max-w-2xl text-left text-sm">
         <thead className="text-gray-500">

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { createSupplier, deleteSupplier } from "./actions";
+import { ActionForm } from "@/components/ActionForm";
 
 export default async function AdminSuppliersPage() {
   const supabase = createClient();
@@ -13,7 +14,7 @@ export default async function AdminSuppliersPage() {
     <div>
       <h1 className="mb-6 text-lg font-semibold">Suppliers</h1>
 
-      <form action={createSupplier} className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
+      <ActionForm action={createSupplier} savedLabel="Supplier added" className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
         <p className="text-sm font-medium">Add a supplier</p>
         <input name="name" placeholder="Name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
         <div className="grid grid-cols-2 gap-3">
@@ -24,7 +25,7 @@ export default async function AdminSuppliersPage() {
         <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add supplier
         </button>
-      </form>
+      </ActionForm>
 
       <table className="w-full text-left text-sm">
         <thead className="text-gray-500">

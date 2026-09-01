@@ -1,11 +1,12 @@
 "use client";
 
 import type { Profile } from "@/lib/supabase/types";
+import { ActionForm } from "@/components/ActionForm";
 import { updateUserCertifications } from "./actions";
 
 export function CertificationsInput({ user }: { user: Profile }) {
   return (
-    <form action={updateUserCertifications} className="flex items-center gap-2">
+    <ActionForm action={updateUserCertifications} savedLabel="Certifications updated" className="flex items-center gap-2">
       <input type="hidden" name="id" value={user.id} />
       <input
         name="certifications"
@@ -16,6 +17,6 @@ export function CertificationsInput({ user }: { user: Profile }) {
       <button type="submit" className="text-xs font-medium text-brand hover:underline">
         Save
       </button>
-    </form>
+    </ActionForm>
   );
 }

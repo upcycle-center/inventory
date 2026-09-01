@@ -1,6 +1,7 @@
 "use client";
 
 import type { Profile } from "@/lib/supabase/types";
+import { ActionForm } from "@/components/ActionForm";
 import { setLocationLead } from "./actions";
 
 export function LocationLeadSelect({
@@ -17,7 +18,7 @@ export function LocationLeadSelect({
   disabled: boolean;
 }) {
   return (
-    <form action={setLocationLead} className="contents">
+    <ActionForm action={setLocationLead} savedLabel="Lead set" className="contents">
       <input type="hidden" name="event_id" value={eventId} />
       <input type="hidden" name="location_id" value={locationId} />
       <select
@@ -34,6 +35,6 @@ export function LocationLeadSelect({
           </option>
         ))}
       </select>
-    </form>
+    </ActionForm>
   );
 }

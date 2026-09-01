@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createStorageArea } from "../actions";
+import { ActionForm } from "@/components/ActionForm";
 
 export default async function NewStorageAreaPage({
   searchParams,
@@ -22,8 +23,9 @@ export default async function NewStorageAreaPage({
         </p>
       )}
 
-      <form
+      <ActionForm
         action={createStorageArea}
+        savedLabel="Storage area saved"
         className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <label className="text-sm text-gray-600">
@@ -48,7 +50,7 @@ export default async function NewStorageAreaPage({
             Cancel
           </Link>
         </div>
-      </form>
+      </ActionForm>
     </div>
   );
 }

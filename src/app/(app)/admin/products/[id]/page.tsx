@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Location, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { ActionForm } from "@/components/ActionForm";
 import { assignProductToLocation, removeProductFromLocation, updateProduct } from "./actions";
 import { toggleProductActive } from "../actions";
 import { DeleteProductButton } from "./DeleteProductButton";
@@ -32,7 +33,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     <div>
       <h1 className="mb-6 text-lg font-semibold">Edit product</h1>
 
-      <form
+      <ActionForm
         id="edit-product-form"
         action={updateProduct}
         encType="multipart/form-data"
@@ -95,7 +96,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           Replace photo
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
-      </form>
+      </ActionForm>
 
       <div className="mt-3 flex items-center gap-3">
         <button type="submit" form="edit-product-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
@@ -107,13 +108,13 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         >
           Duplicate
         </Link>
-        <form action={toggleProductActive} className="contents">
+        <ActionForm action={toggleProductActive} className="contents" savedLabel={product.active ? "Deactivated" : "Reactivated"}>
           <input type="hidden" name="id" value={product.id} />
           <input type="hidden" name="active" value={String(product.active)} />
           <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
             {product.active ? "Deactivate" : "Reactivate"}
           </button>
-        </form>
+        </ActionForm>
         <DeleteProductButton productId={product.id} />
       </div>
 
@@ -123,8 +124,9 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         drives the photo-grid count screen.
       </p>
 
-      <form
+      <ActionForm
         action={assignProductToLocation}
+        savedLabel="Assigned"
         className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="product_id" value={product.id} />
@@ -151,7 +153,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Assign
         </button>
-      </form>
+      </ActionForm>
 
       <ul className="space-y-1">
         {assignments.map((a) => (

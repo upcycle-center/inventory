@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createLocation } from "../actions";
+import { ActionForm } from "@/components/ActionForm";
 
 export default async function NewLocationPage({
   searchParams,
@@ -23,8 +24,9 @@ export default async function NewLocationPage({
         </p>
       )}
 
-      <form
+      <ActionForm
         action={createLocation}
+        savedLabel="Location saved"
         className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <label className="text-sm text-gray-600">
@@ -62,7 +64,7 @@ export default async function NewLocationPage({
             Cancel
           </Link>
         </div>
-      </form>
+      </ActionForm>
     </div>
   );
 }
