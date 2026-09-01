@@ -186,12 +186,20 @@ function PickerList({ title, assignments }: { title: string; assignments: any[] 
                   {a.event?.name} · {a.event?.event_date}
                 </p>
               </div>
-              <Link
-                href={`/count?event=${a.event?.id}&location=${a.location?.id}`}
-                className="rounded-md bg-brand px-3 py-1.5 text-sm text-white"
-              >
-                Open count
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/api/count-sheet/pdf?event=${a.event?.id}&location=${a.location?.id}`}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                >
+                  Download PDF
+                </Link>
+                <Link
+                  href={`/count?event=${a.event?.id}&location=${a.location?.id}`}
+                  className="rounded-md bg-brand px-3 py-1.5 text-sm text-white"
+                >
+                  Open count
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

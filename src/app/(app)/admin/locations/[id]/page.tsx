@@ -359,7 +359,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                   <th className="whitespace-nowrap pb-2 pr-3">moSTART</th>
                   <th className="whitespace-nowrap pb-2 pr-3">On-Hand</th>
                   <th className="whitespace-nowrap pb-2 pr-3">Waste</th>
-                  <th className="whitespace-nowrap pb-2 pr-3">Threshold</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">Threshold (EACH)</th>
                   <th className="whitespace-nowrap pb-2 pr-3">Request</th>
                   <th className="whitespace-nowrap pb-2 pr-3">moEND</th>
                 </tr>
