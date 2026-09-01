@@ -5,6 +5,7 @@ import type { InventoryThreshold, LocationStaffRole, LocationStaffTier, Profile,
 import { STAFF_ROLES } from "@/lib/staffRoles";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { eachEquivalent, getLocationCountLines, latestByProductId } from "@/lib/onHand";
+import { getRestockUnitByProductId } from "@/lib/restockUnit";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
@@ -59,6 +60,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
   // between them) per product at this location, from any event's count.
   const countLines = await getLocationCountLines(supabase, params.id);
   const onHandByProductId = latestByProductId(countLines);
+  const restockUnitByProductId = await getRestockUnitByProductId(supabase);
 
   // Waste: month-to-date tally per product at this location.
   const monthStart = new Date();
@@ -420,11 +422,16 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                         </ActionForm>
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">
-                        <RequestRestockCheckbox
-                          locationId={location.id}
-                          productId={p.id}
-                          requested={!!threshold?.requested_at}
-                        />
+                        <div className="flex items-center gap-1">
+                          <RequestRestockCheckbox
+                            locationId={location.id}
+                            productId={p.id}
+                            requested={!!threshold?.requested_at}
+                          />
+                          <span className="text-xs capitalize text-gray-400">
+                            {restockUnitByProductId.get(p.id) ?? "case"}
+                          </span>
+                        </div>
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">
                         <p className="mb-1 text-xs text-gray-400">

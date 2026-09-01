@@ -1,6 +1,7 @@
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { toCsv } from "@/lib/csv";
+import { getRestockUnitByProductId } from "@/lib/restockUnit";
 
 export async function GET() {
   const profile = await getCurrentProfile();
@@ -9,22 +10,26 @@ export async function GET() {
   }
 
   const supabase = createClient();
-  const { data: requests } = await supabase
-    .from("inventory_thresholds")
-    .select(
-      "reorder_threshold, requested_at, product:products(sku, description), location:locations(name), requested_by_profile:profiles(name)"
-    )
-    .not("requested_at", "is", null)
-    .order("requested_at", { ascending: true });
+  const [{ data: requests }, unitByProductId] = await Promise.all([
+    supabase
+      .from("inventory_thresholds")
+      .select(
+        "product_id, reorder_threshold, requested_at, product:products(sku, description), location:locations(name), requested_by_profile:profiles(name)"
+      )
+      .not("requested_at", "is", null)
+      .order("requested_at", { ascending: true }),
+    getRestockUnitByProductId(supabase),
+  ]);
 
   const rows = (requests as any[]) ?? [];
 
   const csv = toCsv([
-    ["Location", "IC", "Product", "Threshold", "Requested By", "Requested At"],
+    ["Location", "IC", "Product", "Unit", "Threshold", "Requested By", "Requested At"],
     ...rows.map((r) => [
       r.location?.name ?? "",
       r.product?.sku ?? "",
       r.product?.description ?? "",
+      unitByProductId.get(r.product_id) ?? "case",
       r.reorder_threshold ?? "",
       r.requested_by_profile?.name ?? "",
       r.requested_at ?? "",

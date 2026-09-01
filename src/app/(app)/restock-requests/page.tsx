@@ -2,19 +2,23 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { getRestockUnitByProductId } from "@/lib/restockUnit";
 import { fulfillRestockRequest } from "./actions";
 
 export default async function RestockRequestsPage() {
   await requireProfile(["admin", "warehouse"]);
   const supabase = createClient();
 
-  const { data: requests } = await supabase
-    .from("inventory_thresholds")
-    .select(
-      "id, reorder_threshold, requested_at, product:products(id, sku, description), location:locations(id, name), requested_by_profile:profiles(id, name)"
-    )
-    .not("requested_at", "is", null)
-    .order("requested_at", { ascending: true });
+  const [{ data: requests }, unitByProductId] = await Promise.all([
+    supabase
+      .from("inventory_thresholds")
+      .select(
+        "id, product_id, reorder_threshold, requested_at, product:products(id, sku, description), location:locations(id, name), requested_by_profile:profiles(id, name)"
+      )
+      .not("requested_at", "is", null)
+      .order("requested_at", { ascending: true }),
+    getRestockUnitByProductId(supabase),
+  ]);
 
   const rows = (requests as any[]) ?? [];
 
@@ -43,6 +47,7 @@ export default async function RestockRequestsPage() {
             <tr>
               <th className="px-4 py-2">Location</th>
               <th className="px-4 py-2">Product</th>
+              <th className="px-4 py-2">Unit</th>
               <th className="px-4 py-2">Threshold</th>
               <th className="px-4 py-2">Requested by</th>
               <th className="px-4 py-2">Requested</th>
@@ -58,6 +63,7 @@ export default async function RestockRequestsPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-2">{r.product?.description}</td>
+                <td className="px-4 py-2 text-gray-500 capitalize">{unitByProductId.get(r.product_id) ?? "case"}</td>
                 <td className="px-4 py-2 text-gray-500">{r.reorder_threshold}</td>
                 <td className="px-4 py-2 text-gray-500">{r.requested_by_profile?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-gray-500">{new Date(r.requested_at).toLocaleDateString()}</td>
@@ -73,7 +79,7 @@ export default async function RestockRequestsPage() {
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                   No open restock requests.
                 </td>
               </tr>

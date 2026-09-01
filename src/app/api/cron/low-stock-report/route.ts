@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 import { eachEquivalent, getOnHandByProductId } from "@/lib/onHand";
+import { getRestockUnitByProductId } from "@/lib/restockUnit";
 import { toCsv } from "@/lib/csv";
 import type { Profile } from "@/lib/supabase/types";
 
@@ -33,6 +34,7 @@ export async function GET(request: Request) {
   for (const locationId of locationIds) {
     onHandByLocation.set(locationId, await getOnHandByProductId(supabase, locationId));
   }
+  const restockUnitByProductId = await getRestockUnitByProductId(supabase);
 
   const lowItems = rows
     .map((t) => {
@@ -42,6 +44,7 @@ export async function GET(request: Request) {
         location: locationNameById.get(t.location_id) ?? t.location_id,
         sku: t.product?.sku ?? "",
         description: t.product?.description ?? "",
+        unit: restockUnitByProductId.get(t.product_id) ?? "case",
         onHand: onHandTotal,
         threshold: t.reorder_threshold as number,
       };
@@ -65,8 +68,8 @@ export async function GET(request: Request) {
 
   const today = new Date().toISOString().slice(0, 10);
   const csv = toCsv([
-    ["Location", "IC", "Product", "On-Hand", "Threshold"],
-    ...lowItems.map((i) => [i.location, i.sku, i.description, i.onHand, i.threshold]),
+    ["Location", "IC", "Product", "Unit", "On-Hand", "Threshold"],
+    ...lowItems.map((i) => [i.location, i.sku, i.description, i.unit, i.onHand, i.threshold]),
   ]);
 
   const resend = new Resend(process.env.RESEND_API_KEY);
