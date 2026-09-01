@@ -20,6 +20,7 @@ function effectiveCount(
   if (attendance != null) {
     const tier = tiers.find(
       (t) =>
+        t.location_id === role.location_id &&
         t.role_name === role.role_name &&
         attendance >= t.min_attendance &&
         (t.max_attendance == null || attendance < t.max_attendance)
