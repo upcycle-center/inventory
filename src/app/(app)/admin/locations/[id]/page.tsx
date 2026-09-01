@@ -352,14 +352,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
             <table className="w-full text-left text-sm">
               <thead className="text-gray-500">
                 <tr>
-                  <th className="pb-2 pr-3"></th>
-                  <th className="pb-2 pr-3">Product</th>
-                  <th className="pb-2 pr-3">Request</th>
-                  <th className="pb-2 pr-3">moSTART</th>
-                  <th className="pb-2 pr-3">On-Hand</th>
-                  <th className="pb-2 pr-3">Threshold</th>
-                  <th className="pb-2 pr-3">Waste</th>
-                  <th className="pb-2 pr-3">moEND</th>
+                  <th className="whitespace-nowrap pb-2 pr-3"></th>
+                  <th className="whitespace-nowrap pb-2 pr-3">Product</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">moSTART</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">On-Hand</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">Waste</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">Threshold</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">Request</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">moEND</th>
                 </tr>
               </thead>
               <tbody>
@@ -388,26 +388,20 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
                   return (
                     <tr key={p.id} className="border-t border-gray-100 bg-white align-top">
-                      <td className="py-2 pr-3">
+                      <td className="whitespace-nowrap py-2 pr-3">
                         <ProductThumbnail photoUrl={p.photo_url} alt={p.description} />
                       </td>
-                      <td className="py-2 pr-3">
+                      <td className="whitespace-nowrap py-2 pr-3">
                         <Link href={`/admin/products/${p.id}`} className="text-brand hover:underline">
                           {p.description}
                         </Link>
                       </td>
-                      <td className="py-2 pr-3">
-                        <RequestRestockCheckbox
-                          locationId={location.id}
-                          productId={p.id}
-                          requested={!!threshold?.requested_at}
-                        />
-                      </td>
-                      <td className="py-2 pr-3">{moStart ?? <span className="text-gray-400">—</span>}</td>
-                      <td className={`py-2 pr-3 ${isLow ? "font-medium text-red-600" : ""}`}>
+                      <td className="whitespace-nowrap py-2 pr-3">{moStart ?? <span className="text-gray-400">—</span>}</td>
+                      <td className={`whitespace-nowrap py-2 pr-3 ${isLow ? "font-medium text-red-600" : ""}`}>
                         {onHand ? fmtQty(onHand.qty_each, onHand.qty_cases) : <span className="text-gray-400">—</span>}
                       </td>
-                      <td className="py-2 pr-3">
+                      <td className="whitespace-nowrap py-2 pr-3">{waste ? waste : <span className="text-gray-400">—</span>}</td>
+                      <td className="whitespace-nowrap py-2 pr-3">
                         <ActionForm action={upsertThreshold} savedLabel="Saved" className="flex items-center gap-1">
                           <input type="hidden" name="location_id" value={location.id} />
                           <input type="hidden" name="product_id" value={p.id} />
@@ -425,8 +419,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                           </button>
                         </ActionForm>
                       </td>
-                      <td className="py-2 pr-3">{waste ? waste : <span className="text-gray-400">—</span>}</td>
-                      <td className="py-2 pr-3">
+                      <td className="whitespace-nowrap py-2 pr-3">
+                        <RequestRestockCheckbox
+                          locationId={location.id}
+                          productId={p.id}
+                          requested={!!threshold?.requested_at}
+                        />
+                      </td>
+                      <td className="whitespace-nowrap py-2 pr-3">
                         <p className="mb-1 text-xs text-gray-400">
                           Calc: {calcCurrent ? fmtQty(calcCurrent.qty_each, calcCurrent.qty_cases) : "—"}
                         </p>
