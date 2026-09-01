@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { toggleStorageAreaActive, updateStorageArea } from "../actions";
+import { DeleteStorageAreaButton } from "./DeleteStorageAreaButton";
 
 export default async function StorageAreaDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -38,6 +40,12 @@ export default async function StorageAreaDetailPage({ params }: { params: { id: 
         <button type="submit" form="edit-storage-area-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
           Save
         </button>
+        <Link
+          href={`/admin/storage-areas/new?from=${area.id}`}
+          className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Duplicate
+        </Link>
         <form action={toggleStorageAreaActive} className="contents">
           <input type="hidden" name="id" value={area.id} />
           <input type="hidden" name="active" value={String(area.active)} />
@@ -45,6 +53,7 @@ export default async function StorageAreaDetailPage({ params }: { params: { id: 
             {area.active ? "Deactivate" : "Reactivate"}
           </button>
         </form>
+        <DeleteStorageAreaButton storageAreaId={area.id} />
       </div>
     </div>
   );

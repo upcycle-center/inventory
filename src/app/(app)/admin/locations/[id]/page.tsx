@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
+import { toggleLocationActive } from "../actions";
 import { addStaffRole, addStaffTier, removeStaffRole, removeStaffTier, updateLocation } from "./actions";
+import { DeleteLocationButton } from "./DeleteLocationButton";
 
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -28,8 +31,9 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       </h1>
 
       <form
+        id="edit-location-form"
         action={updateLocation}
-        className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
+        className="mb-3 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <p className="text-sm font-medium">Location details</p>
         <input type="hidden" name="id" value={location.id} />
@@ -56,10 +60,27 @@ export default async function LocationDetailPage({ params }: { params: { id: str
             className="mt-1 w-24 rounded-md border border-gray-300 px-3 py-2 text-center font-mono text-sm"
           />
         </label>
-        <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+      </form>
+
+      <div className="mb-8 flex items-center gap-3">
+        <button type="submit" form="edit-location-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
           Save
         </button>
-      </form>
+        <Link
+          href={`/admin/locations/new?from=${location.id}`}
+          className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Duplicate
+        </Link>
+        <form action={toggleLocationActive} className="contents">
+          <input type="hidden" name="id" value={location.id} />
+          <input type="hidden" name="active" value={String(location.active)} />
+          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+            {location.active ? "Deactivate" : "Reactivate"}
+          </button>
+        </form>
+        <DeleteLocationButton locationId={location.id} />
+      </div>
 
       <p className="mb-3 text-sm font-medium">Base staffing needs</p>
       <p className="mb-3 text-sm text-gray-500">

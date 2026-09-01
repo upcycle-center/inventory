@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export async function createStorageArea(formData: FormData) {
@@ -35,4 +36,19 @@ export async function updateStorageArea(formData: FormData) {
   await supabase.from("storage_areas").update({ code, name }).eq("id", id);
   revalidatePath("/admin/storage-areas");
   revalidatePath(`/admin/storage-areas/${id}`);
+}
+
+export async function deleteStorageArea(id: string): Promise<{ error: string } | void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("storage_areas").delete().eq("id", id);
+
+  if (error) {
+    const message = error.message.toLowerCase().includes("foreign key")
+      ? "Can't delete — products are assigned to this storage area. Deactivate it instead."
+      : error.message;
+    return { error: message };
+  }
+
+  revalidatePath("/admin/storage-areas");
+  redirect("/admin/storage-areas");
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { LocationType } from "@/lib/supabase/types";
 
@@ -26,6 +27,21 @@ export async function updateLocation(formData: FormData) {
 
   revalidatePath(`/admin/locations/${id}`);
   revalidatePath("/admin/locations");
+}
+
+export async function deleteLocation(id: string): Promise<{ error: string } | void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("locations").delete().eq("id", id);
+
+  if (error) {
+    const message = error.message.toLowerCase().includes("foreign key")
+      ? "Can't delete — this location has counts, movements, or assignments on record. Deactivate it instead."
+      : error.message;
+    return { error: message };
+  }
+
+  revalidatePath("/admin/locations");
+  redirect("/admin/locations");
 }
 
 export async function addStaffRole(formData: FormData) {

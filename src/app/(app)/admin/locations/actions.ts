@@ -27,4 +27,5 @@ export async function toggleLocationActive(formData: FormData) {
   const active = formData.get("active") === "true";
   await supabase.from("locations").update({ active: !active }).eq("id", id);
   revalidatePath("/admin/locations");
+  revalidatePath(`/admin/locations/${id}`);
 }

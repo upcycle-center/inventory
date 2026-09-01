@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { StorageArea } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
-import { createStorageArea, toggleStorageAreaActive } from "./actions";
+import { createStorageArea } from "./actions";
 
 export default async function AdminStorageAreasPage() {
   const supabase = createClient();
@@ -31,7 +31,6 @@ export default async function AdminStorageAreasPage() {
             <th className="pb-2">Code</th>
             <th className="pb-2">Name</th>
             <th className="pb-2">Status</th>
-            <th className="pb-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -48,15 +47,6 @@ export default async function AdminStorageAreasPage() {
                 </Link>
               </td>
               <td className="py-2 text-gray-500">{a.active ? "Active" : "Inactive"}</td>
-              <td className="py-2 text-right">
-                <form action={toggleStorageAreaActive}>
-                  <input type="hidden" name="id" value={a.id} />
-                  <input type="hidden" name="active" value={String(a.active)} />
-                  <button type="submit" className="text-brand hover:underline">
-                    {a.active ? "Deactivate" : "Reactivate"}
-                  </button>
-                </form>
-              </td>
             </tr>
           ))}
         </tbody>

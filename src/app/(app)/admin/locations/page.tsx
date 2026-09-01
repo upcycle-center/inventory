@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Location } from "@/lib/supabase/types";
-import { createLocation, toggleLocationActive } from "./actions";
+import { createLocation } from "./actions";
 
 const TYPE_LABEL: Record<Location["type"], string> = {
   warehouse: "Warehouse",
@@ -44,7 +44,6 @@ export default async function AdminLocationsPage() {
             <th className="pb-2">Name</th>
             <th className="pb-2">Type</th>
             <th className="pb-2">Status</th>
-            <th className="pb-2"></th>
           </tr>
         </thead>
         <tbody>
@@ -59,20 +58,11 @@ export default async function AdminLocationsPage() {
               </td>
               <td className="py-2 text-gray-500">{TYPE_LABEL[l.type]}</td>
               <td className="py-2 text-gray-500">{l.active ? "Active" : "Inactive"}</td>
-              <td className="py-2 text-right">
-                <form action={toggleLocationActive}>
-                  <input type="hidden" name="id" value={l.id} />
-                  <input type="hidden" name="active" value={String(l.active)} />
-                  <button type="submit" className="text-brand hover:underline">
-                    {l.active ? "Deactivate" : "Reactivate"}
-                  </button>
-                </form>
-              </td>
             </tr>
           ))}
           {!locations?.length && (
             <tr>
-              <td colSpan={4} className="py-4 text-gray-400">
+              <td colSpan={3} className="py-4 text-gray-400">
                 No locations yet.
               </td>
             </tr>
