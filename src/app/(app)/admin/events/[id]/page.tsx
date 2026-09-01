@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile } from "@/lib/supabase/types";
-import { STAFF_ROLES } from "@/lib/staffRoles";
+import { STAFF_ROLES, STAFF_ROLE_SHORT_LABEL } from "@/lib/staffRoles";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
@@ -155,12 +155,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <table className="w-full text-left text-sm">
           <thead className="text-gray-500">
             <tr>
-              <th className="pb-2 pr-3">Location</th>
-              <th className="pb-2 pr-3">Open</th>
-              <th className="pb-2 pr-3">Stand Lead</th>
+              <th className="pb-2 pr-3 whitespace-nowrap">Location</th>
+              <th className="pb-2 pr-3">Lead</th>
               {STAFF_ROLES.map((r) => (
-                <th key={r} className="pb-2 pr-3 whitespace-nowrap">
-                  {r}
+                <th key={r} className="pb-2 pr-3 whitespace-nowrap" title={r}>
+                  {STAFF_ROLE_SHORT_LABEL[r]}
                 </th>
               ))}
               <th className="pb-2 pr-3">Total</th>
@@ -195,28 +194,30 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 <>
                   {rows.map(({ location, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff }) => (
                     <tr key={location.id} className="border-t border-gray-100">
-                      <td className="py-2 pr-3">
-                        {location.yellow_dog_code && (
-                          <span className="mr-1 font-mono text-xs text-gray-400">{location.yellow_dog_code}</span>
-                        )}
-                        {location.name}
-                      </td>
-                      <td className="py-2 pr-3">
-                        <form action={toggleLocationOpen}>
-                          <input type="hidden" name="event_id" value={event.id} />
-                          <input type="hidden" name="location_id" value={location.id} />
-                          <input type="hidden" name="is_open" value={String(isOpen)} />
-                          <button
-                            type="submit"
-                            className={
-                              isOpen
-                                ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                                : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
-                            }
-                          >
-                            {isOpen ? "Open" : "Closed"}
-                          </button>
-                        </form>
+                      <td className="whitespace-nowrap py-2 pr-3">
+                        <div className="flex items-center gap-2">
+                          <form action={toggleLocationOpen} className="shrink-0">
+                            <input type="hidden" name="event_id" value={event.id} />
+                            <input type="hidden" name="location_id" value={location.id} />
+                            <input type="hidden" name="is_open" value={String(isOpen)} />
+                            <button
+                              type="submit"
+                              className={
+                                isOpen
+                                  ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                  : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
+                              }
+                            >
+                              {isOpen ? "Open" : "Closed"}
+                            </button>
+                          </form>
+                          <span>
+                            {location.yellow_dog_code && (
+                              <span className="mr-1 font-mono text-xs text-gray-400">{location.yellow_dog_code}</span>
+                            )}
+                            {location.name}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-2 pr-3">
                         <LocationLeadSelect
@@ -271,14 +272,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   ))}
                   {!rows.length && (
                     <tr>
-                      <td colSpan={STAFF_ROLES.length + 5} className="py-4 text-gray-400">
+                      <td colSpan={STAFF_ROLES.length + 4} className="py-4 text-gray-400">
                         No locations available.
                       </td>
                     </tr>
                   )}
                   {rows.length > 0 && (
                     <tr className="border-t border-gray-200">
-                      <td colSpan={3 + STAFF_ROLES.length} />
+                      <td colSpan={2 + STAFF_ROLES.length} />
                       <td className="py-2 pr-3 font-medium">{grandTotal}</td>
                       <td />
                     </tr>
