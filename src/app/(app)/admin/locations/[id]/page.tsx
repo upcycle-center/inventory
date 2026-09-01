@@ -8,8 +8,23 @@ import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
 import { toggleLocationActive } from "../actions";
-import { addStaffRole, addStaffTier, removeStaffRole, removeStaffTier, updateLocation } from "./actions";
+import {
+  addStaffRole,
+  addStaffTier,
+  postMonthEndPhysicalCount,
+  removeStaffRole,
+  removeStaffTier,
+  updateLocation,
+} from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
+
+function fmtQty(each: number | null | undefined, cases: number | null | undefined) {
+  if (each == null && cases == null) return null;
+  const parts = [];
+  if (each != null) parts.push(`${each} EA`);
+  if (cases != null) parts.push(`${cases} CS`);
+  return parts.join(", ");
+}
 
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -66,6 +81,40 @@ export default async function LocationDetailPage({ params }: { params: { id: str
   const wasteByProductId = new Map<string, number>();
   for (const row of (wasteRows as { product_id: string; quantity: number }[] | null) ?? []) {
     wasteByProductId.set(row.product_id, (wasteByProductId.get(row.product_id) ?? 0) + Number(row.quantity));
+  }
+
+  // moSTART / moEND: the calculated side is derived live from the same
+  // count-line data as On-Hand, just scoped to a specific month. The
+  // physical side is whatever's been posted to location_product_month_end
+  // — once posted, it's authoritative for that month and what next
+  // month's moSTART carries forward from.
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
+  const prevYear = prevMonthDate.getFullYear();
+  const prevMonth = prevMonthDate.getMonth() + 1;
+
+  function calculatedForMonth(productId: string, year: number, month: number) {
+    const start = new Date(year, month - 1, 1).toISOString();
+    const end = new Date(year, month, 1).toISOString();
+    let latest: any = null;
+    for (const line of (countLines as any[]) ?? []) {
+      if (line.product_id !== productId) continue;
+      if (line.counted_at < start || line.counted_at >= end) continue;
+      if (!latest || line.counted_at > latest.counted_at) latest = line;
+    }
+    return latest as { qty_each: number | null; qty_cases: number | null } | null;
+  }
+
+  const { data: monthEndRows } = await supabase
+    .from("location_product_month_end")
+    .select("*")
+    .eq("location_id", params.id);
+
+  const monthEndByProductMonth = new Map<string, { physical_qty_each: number | null; physical_qty_cases: number | null }>();
+  for (const row of (monthEndRows as any[]) ?? []) {
+    monthEndByProductMonth.set(`${row.product_id}:${row.year}-${row.month}`, row);
   }
 
   const areaMap = new Map<string, { area: StorageArea; products: any[] }>();
@@ -266,10 +315,12 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       <p className="mb-3 text-sm font-medium">Assigned Items</p>
       <p className="mb-3 text-sm text-gray-500">
         Only products checked for this location show up on its Count Sheet. Edit which locations
-        carry a product from that product&apos;s own page. moSTART/moEND aren&apos;t wired up yet —
-        see note below.
+        carry a product from that product&apos;s own page. moEND shows the calculated value from
+        the latest count sheet this month — post a physical count to lock in the real number and
+        flag any discrepancy; moSTART carries forward from last month&apos;s posted (or
+        calculated) moEND.
       </p>
-      <div className="max-w-4xl overflow-x-auto">
+      <div className="max-w-5xl overflow-x-auto">
         {productsByArea.map(({ area, products }) => (
           <div key={area.id} className="mb-6">
             <p className="mb-2 text-xs font-medium text-gray-500">{area.name}</p>
@@ -288,8 +339,23 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                 {products.map((p) => {
                   const onHand = onHandByProductId.get(p.id);
                   const waste = wasteByProductId.get(p.id);
+
+                  const physicalPrev = monthEndByProductMonth.get(`${p.id}:${prevYear}-${prevMonth}`);
+                  const calcPrev = calculatedForMonth(p.id, prevYear, prevMonth);
+                  const moStart = physicalPrev
+                    ? fmtQty(physicalPrev.physical_qty_each, physicalPrev.physical_qty_cases)
+                    : fmtQty(calcPrev?.qty_each, calcPrev?.qty_cases);
+
+                  const physicalCurrent = monthEndByProductMonth.get(`${p.id}:${currentYear}-${currentMonth}`);
+                  const calcCurrent = calculatedForMonth(p.id, currentYear, currentMonth);
+                  const discrepancy =
+                    physicalCurrent &&
+                    calcCurrent &&
+                    ((physicalCurrent.physical_qty_each ?? 0) !== (calcCurrent.qty_each ?? 0) ||
+                      (physicalCurrent.physical_qty_cases ?? 0) !== (calcCurrent.qty_cases ?? 0));
+
                   return (
-                    <tr key={p.id} className="border-t border-gray-100 bg-white">
+                    <tr key={p.id} className="border-t border-gray-100 bg-white align-top">
                       <td className="py-2 pr-3">
                         <ProductThumbnail photoUrl={p.photo_url} alt={p.description} />
                       </td>
@@ -298,20 +364,42 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                           {p.description}
                         </Link>
                       </td>
-                      <td className="py-2 pr-3 text-gray-400">—</td>
+                      <td className="py-2 pr-3">{moStart ?? <span className="text-gray-400">—</span>}</td>
                       <td className="py-2 pr-3">
-                        {onHand ? (
-                          <>
-                            {onHand.qty_each != null && `${onHand.qty_each} EA`}
-                            {onHand.qty_each != null && onHand.qty_cases != null && ", "}
-                            {onHand.qty_cases != null && `${onHand.qty_cases} CS`}
-                          </>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
+                        {onHand ? fmtQty(onHand.qty_each, onHand.qty_cases) : <span className="text-gray-400">—</span>}
                       </td>
                       <td className="py-2 pr-3">{waste ? waste : <span className="text-gray-400">—</span>}</td>
-                      <td className="py-2 pr-3 text-gray-400">—</td>
+                      <td className="py-2 pr-3">
+                        <p className="mb-1 text-xs text-gray-400">
+                          Calc: {calcCurrent ? fmtQty(calcCurrent.qty_each, calcCurrent.qty_cases) : "—"}
+                        </p>
+                        <ActionForm action={postMonthEndPhysicalCount} savedLabel="Posted" className="flex items-center gap-1">
+                          <input type="hidden" name="location_id" value={location.id} />
+                          <input type="hidden" name="product_id" value={p.id} />
+                          <input type="hidden" name="year" value={currentYear} />
+                          <input type="hidden" name="month" value={currentMonth} />
+                          <input
+                            name="physical_qty_each"
+                            type="number"
+                            step="0.01"
+                            placeholder="EA"
+                            defaultValue={physicalCurrent?.physical_qty_each ?? ""}
+                            className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
+                          />
+                          <input
+                            name="physical_qty_cases"
+                            type="number"
+                            step="0.01"
+                            placeholder="CS"
+                            defaultValue={physicalCurrent?.physical_qty_cases ?? ""}
+                            className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
+                          />
+                          <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
+                            Post
+                          </button>
+                        </ActionForm>
+                        {discrepancy && <p className="mt-1 text-xs font-medium text-orange-600">Discrepancy vs. calc</p>}
+                      </td>
                     </tr>
                   );
                 })}

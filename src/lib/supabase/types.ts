@@ -39,6 +39,18 @@ export interface UserCertification {
   created_at: string;
 }
 
+export interface LocationProductMonthEnd {
+  id: string;
+  location_id: string;
+  product_id: string;
+  year: number;
+  month: number;
+  physical_qty_each: number | null;
+  physical_qty_cases: number | null;
+  counted_by: string | null;
+  counted_at: string;
+}
+
 export interface LocationStaffRole {
   id: string;
   location_id: string;

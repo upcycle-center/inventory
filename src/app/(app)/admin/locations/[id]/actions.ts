@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireProfile } from "@/lib/auth";
 import type { LocationType } from "@/lib/supabase/types";
 
 export async function updateLocation(formData: FormData) {
@@ -98,5 +99,37 @@ export async function removeStaffTier(formData: FormData) {
   const id = String(formData.get("id"));
   const locationId = String(formData.get("location_id"));
   await supabase.from("location_staff_tiers").delete().eq("id", id);
+  revalidatePath(`/admin/locations/${locationId}`);
+}
+
+// Posting a physical count is the deliberate "close the month" action —
+// once posted, it's the authoritative moEND for that product/location/month
+// and what next month's moSTART carries forward from.
+export async function postMonthEndPhysicalCount(formData: FormData) {
+  const profile = await requireProfile(["admin"]);
+  const supabase = createClient();
+  const locationId = String(formData.get("location_id"));
+  const productId = String(formData.get("product_id"));
+  const year = Number(formData.get("year"));
+  const month = Number(formData.get("month"));
+  const eachRaw = String(formData.get("physical_qty_each") || "").trim();
+  const casesRaw = String(formData.get("physical_qty_cases") || "").trim();
+  if (!locationId || !productId || !year || !month) return;
+  if (!eachRaw && !casesRaw) return;
+
+  await supabase.from("location_product_month_end").upsert(
+    {
+      location_id: locationId,
+      product_id: productId,
+      year,
+      month,
+      physical_qty_each: eachRaw ? Number(eachRaw) : null,
+      physical_qty_cases: casesRaw ? Number(casesRaw) : null,
+      counted_by: profile.id,
+      counted_at: new Date().toISOString(),
+    },
+    { onConflict: "location_id,product_id,year,month" }
+  );
+
   revalidatePath(`/admin/locations/${locationId}`);
 }
