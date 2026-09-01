@@ -6,6 +6,7 @@ import { STAFF_ROLES } from "@/lib/staffRoles";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 import { toggleLocationActive } from "../actions";
 import { addStaffRole, addStaffTier, removeStaffRole, removeStaffTier, updateLocation } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
@@ -20,7 +21,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       supabase.from("location_staff_tiers").select("*").eq("location_id", params.id).order("min_attendance"),
       supabase
         .from("location_products")
-        .select("product_id, product:products(id, sku, description, active), storage_area:storage_areas(id, code, name)")
+        .select("product_id, product:products(id, sku, description, photo_url, active), storage_area:storage_areas(id, code, name)")
         .eq("location_id", params.id),
     ]);
 
@@ -28,6 +29,44 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
   const roles = (staffRoles as LocationStaffRole[] | null) ?? [];
   const tiers = (staffTiers as LocationStaffTier[] | null) ?? [];
+
+  // On-Hand: the most recently counted qty (each/cases, no conversion
+  // between them) per product at this location, from any event's count.
+  const { data: countsHere } = await supabase
+    .from("location_counts")
+    .select("id")
+    .eq("location_id", params.id);
+  const countIds = ((countsHere as { id: string }[] | null) ?? []).map((c) => c.id);
+
+  const { data: countLines } = countIds.length
+    ? await supabase
+        .from("location_count_lines")
+        .select("product_id, qty_each, qty_cases, counted_at")
+        .in("location_count_id", countIds)
+    : { data: [] as any[] };
+
+  const onHandByProductId = new Map<string, { qty_each: number | null; qty_cases: number | null; counted_at: string }>();
+  for (const line of (countLines as any[]) ?? []) {
+    const existing = onHandByProductId.get(line.product_id);
+    if (!existing || line.counted_at > existing.counted_at) {
+      onHandByProductId.set(line.product_id, line);
+    }
+  }
+
+  // Waste: month-to-date tally per product at this location.
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const { data: wasteRows } = await supabase
+    .from("waste_records")
+    .select("product_id, quantity")
+    .eq("location_id", params.id)
+    .gte("created_at", monthStart.toISOString());
+
+  const wasteByProductId = new Map<string, number>();
+  for (const row of (wasteRows as { product_id: string; quantity: number }[] | null) ?? []) {
+    wasteByProductId.set(row.product_id, (wasteByProductId.get(row.product_id) ?? 0) + Number(row.quantity));
+  }
 
   const areaMap = new Map<string, { area: StorageArea; products: any[] }>();
   for (const row of (locationProducts as any[]) ?? []) {
@@ -224,28 +263,63 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         {!tiers.length && <li className="text-sm text-gray-400">No attendance tiers set yet.</li>}
       </ul>
 
-      <p className="mb-3 text-sm font-medium">Products stocked here</p>
+      <p className="mb-3 text-sm font-medium">Assigned Items</p>
       <p className="mb-3 text-sm text-gray-500">
         Only products checked for this location show up on its Count Sheet. Edit which locations
-        carry a product from that product&apos;s own page.
+        carry a product from that product&apos;s own page. moSTART/moEND aren&apos;t wired up yet —
+        see note below.
       </p>
-      <div className="max-w-2xl">
+      <div className="max-w-4xl overflow-x-auto">
         {productsByArea.map(({ area, products }) => (
-          <div key={area.id} className="mb-4">
+          <div key={area.id} className="mb-6">
             <p className="mb-2 text-xs font-medium text-gray-500">{area.name}</p>
-            <ul className="space-y-1">
-              {products.map((p) => (
-                <li key={p.id} className="rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
-                  <Link href={`/admin/products/${p.id}`} className="text-brand hover:underline">
-                    {p.description}
-                  </Link>
-                  <span className="ml-2 text-gray-400">({p.sku})</span>
-                </li>
-              ))}
-            </ul>
+            <table className="w-full text-left text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="pb-2 pr-3"></th>
+                  <th className="pb-2 pr-3">Product</th>
+                  <th className="pb-2 pr-3">moSTART</th>
+                  <th className="pb-2 pr-3">On-Hand</th>
+                  <th className="pb-2 pr-3">Waste</th>
+                  <th className="pb-2 pr-3">moEND</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => {
+                  const onHand = onHandByProductId.get(p.id);
+                  const waste = wasteByProductId.get(p.id);
+                  return (
+                    <tr key={p.id} className="border-t border-gray-100 bg-white">
+                      <td className="py-2 pr-3">
+                        <ProductThumbnail photoUrl={p.photo_url} alt={p.description} />
+                      </td>
+                      <td className="py-2 pr-3">
+                        <Link href={`/admin/products/${p.id}`} className="text-brand hover:underline">
+                          {p.description}
+                        </Link>
+                      </td>
+                      <td className="py-2 pr-3 text-gray-400">—</td>
+                      <td className="py-2 pr-3">
+                        {onHand ? (
+                          <>
+                            {onHand.qty_each != null && `${onHand.qty_each} EA`}
+                            {onHand.qty_each != null && onHand.qty_cases != null && ", "}
+                            {onHand.qty_cases != null && `${onHand.qty_cases} CS`}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3">{waste ? waste : <span className="text-gray-400">—</span>}</td>
+                      <td className="py-2 pr-3 text-gray-400">—</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ))}
-        {!productsByArea.length && <p className="text-sm text-gray-400">No products stocked here yet.</p>}
+        {!productsByArea.length && <p className="text-sm text-gray-400">No products assigned yet.</p>}
       </div>
     </div>
   );
