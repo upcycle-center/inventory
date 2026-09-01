@@ -4,18 +4,37 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 
-export async function updateEventDetails(formData: FormData) {
+export async function updateEstTickets(formData: FormData) {
   const supabase = createClient();
   const eventId = String(formData.get("event_id"));
   const estRaw = String(formData.get("est_tickets") || "").trim();
-  const totRaw = String(formData.get("tot_tickets") || "").trim();
   if (!eventId) return;
 
   await supabase
     .from("events")
+    .update({ est_tickets: estRaw ? Number(estRaw) : null })
+    .eq("id", eventId);
+
+  revalidatePath(`/admin/events/${eventId}`);
+}
+
+// Posting TOT Tickets is the deliberate "this is the actual final count"
+// action — distinct from saving the EST estimate — so the Locations table
+// can compare it against the EST-driven staffing recommendation and flag
+// over/under staffing once the real attendance is known.
+export async function postTotTickets(formData: FormData) {
+  const profile = await requireProfile(["admin"]);
+  const supabase = createClient();
+  const eventId = String(formData.get("event_id"));
+  const totRaw = String(formData.get("tot_tickets") || "").trim();
+  if (!eventId || !totRaw) return;
+
+  await supabase
+    .from("events")
     .update({
-      est_tickets: estRaw ? Number(estRaw) : null,
-      tot_tickets: totRaw ? Number(totRaw) : null,
+      tot_tickets: Number(totRaw),
+      tot_tickets_posted_at: new Date().toISOString(),
+      tot_tickets_posted_by: profile.id,
     })
     .eq("id", eventId);
 

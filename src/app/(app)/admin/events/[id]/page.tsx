@@ -5,7 +5,7 @@ import { STAFF_ROLES, STAFF_ROLE_SHORT_LABEL } from "@/lib/staffRoles";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
-import { confirmLocationStaffing, toggleLocationOpen, unlockLocationStaffing, updateEventDetails } from "./actions";
+import { confirmLocationStaffing, postTotTickets, toggleLocationOpen, unlockLocationStaffing, updateEstTickets } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
 
 function effectiveCount(
@@ -37,7 +37,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   const [{ data: event }, { data: locations }, { data: users }, { data: assignments }, { data: eventLocations }] =
     await Promise.all([
-      supabase.from("events").select("*").eq("id", params.id).single(),
+      supabase
+        .from("events")
+        .select("*, tot_tickets_posted_by_profile:profiles(id, name)")
+        .eq("id", params.id)
+        .single(),
       supabase.from("locations").select("*").eq("active", true).eq("type", "stand").order("name"),
       supabase.from("profiles").select("*").order("name"),
       supabase
@@ -79,6 +83,25 @@ export default async function EventDetailPage({ params }: { params: { id: string
   }
   const tiers = (staffTiers as LocationStaffTier[] | null) ?? [];
 
+  // Total recommended staff (fixed Lead + tier-driven roles) for all open
+  // locations, at a given attendance figure — used to compare the
+  // EST-driven plan against the posted TOT (actual) attendance.
+  function totalRecommendedStaff(attendance: number | null) {
+    return ((locations as Location[] | null) ?? []).reduce((total, l) => {
+      const isOpen = openByLocationId.get(l.id) ?? true;
+      if (!isOpen) return total;
+      const roles = rolesByLocationId.get(l.id) ?? [];
+      const roleTotal = STAFF_ROLES.reduce((sum, roleName) => {
+        const role = roles.find((r) => r.role_name === roleName);
+        return role ? sum + effectiveCount(role, tiers, attendance).count : sum;
+      }, 0);
+      return total + 1 + roleTotal;
+    }, 0);
+  }
+
+  const estRecommended = totalRecommendedStaff(event.est_tickets);
+  const totRecommended = event.tot_tickets_posted_at ? totalRecommendedStaff(event.tot_tickets) : null;
+
   return (
     <div>
       <Breadcrumbs
@@ -104,40 +127,76 @@ export default async function EventDetailPage({ params }: { params: { id: string
         </button>
       </ActionForm>
 
-      <ActionForm action={updateEventDetails} savedLabel="Tickets saved" className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
-        <input type="hidden" name="event_id" value={event.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500" title="Estimate from latest ticket sales — drives staffing projections below">
-            EST Tickets
-          </label>
-          <input
-            name="est_tickets"
-            type="number"
-            min={0}
-            step={1}
-            defaultValue={event.est_tickets ?? ""}
-            placeholder="e.g. 2500"
-            className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
+      <div className="mb-8 flex flex-wrap gap-4">
+        <ActionForm
+          action={updateEstTickets}
+          savedLabel="EST updated"
+          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+        >
+          <input type="hidden" name="event_id" value={event.id} />
+          <div>
+            <label className="mb-1 block text-xs text-gray-500" title="Estimate from latest ticket sales — drives staffing projections below">
+              EST Tickets
+            </label>
+            <input
+              name="est_tickets"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={event.est_tickets ?? ""}
+              placeholder="e.g. 2500"
+              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+            Update
+          </button>
+        </ActionForm>
+
+        <ActionForm
+          action={postTotTickets}
+          savedLabel="TOT posted"
+          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+        >
+          <input type="hidden" name="event_id" value={event.id} />
+          <div>
+            <label className="mb-1 block text-xs text-gray-500" title="Actual final count reported to the Stands day-of">
+              TOT Tickets
+            </label>
+            <input
+              name="tot_tickets"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={event.tot_tickets ?? ""}
+              placeholder="e.g. 2650"
+              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+            Post
+          </button>
+          {event.tot_tickets_posted_at && (
+            <span className="text-xs text-gray-400" title={event.tot_tickets_posted_at}>
+              Posted{(event as any).tot_tickets_posted_by_profile?.name ? ` by ${(event as any).tot_tickets_posted_by_profile.name}` : ""}
+            </span>
+          )}
+        </ActionForm>
+      </div>
+
+      {totRecommended != null && totRecommended !== estRecommended && (
+        <div
+          className={`mb-8 rounded-md border p-3 text-sm ${
+            totRecommended > estRecommended
+              ? "border-amber-300 bg-amber-50 text-amber-800"
+              : "border-blue-300 bg-blue-50 text-blue-800"
+          }`}
+        >
+          Posted TOT Tickets ({event.tot_tickets}) recommend <strong>{totRecommended}</strong> total staff vs{" "}
+          <strong>{estRecommended}</strong> planned from EST ({event.est_tickets ?? "—"}) —{" "}
+          {totRecommended > estRecommended ? "UNDER" : "OVER"}-staffed by {Math.abs(totRecommended - estRecommended)}.
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500" title="Actual final count reported to the Stands day-of">
-            TOT Tickets
-          </label>
-          <input
-            name="tot_tickets"
-            type="number"
-            min={0}
-            step={1}
-            defaultValue={event.tot_tickets ?? ""}
-            placeholder="e.g. 2650"
-            className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
-        <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
-          Save
-        </button>
-      </ActionForm>
+      )}
 
       <div className="mb-8 overflow-x-auto rounded-md border border-gray-200 bg-white p-4">
         <p className="mb-3 text-sm font-medium">Locations</p>

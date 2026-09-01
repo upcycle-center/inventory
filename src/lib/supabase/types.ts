@@ -90,6 +90,8 @@ export interface Event {
   status: EventStatus;
   est_tickets: number | null;
   tot_tickets: number | null;
+  tot_tickets_posted_at: string | null;
+  tot_tickets_posted_by: string | null;
   team_size: number | null;
   created_at: string;
 }
