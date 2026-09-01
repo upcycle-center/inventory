@@ -56,8 +56,21 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           <input name="name" defaultValue={user.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
         </label>
         <label className="text-sm text-gray-600">
+          Username (used to sign in)
+          <input
+            name="username"
+            defaultValue={user.username}
+            required
+            autoCapitalize="none"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm text-gray-600">
           Email
           <input value={user.email} disabled className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500" />
+          <span className="mt-1 block text-xs text-gray-400">
+            Used for notifications only — not for signing in.
+          </span>
         </label>
         <label className="text-sm text-gray-600">
           Contact number

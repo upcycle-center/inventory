@@ -93,6 +93,7 @@ export default async function AdminUsersPage() {
           <thead className="text-gray-500">
             <tr>
               <th className="whitespace-nowrap pb-2 pr-6">Name</th>
+              <th className="whitespace-nowrap pb-2 pr-6">Username</th>
               <th className="whitespace-nowrap pb-2 pr-6">Email</th>
               <th className="whitespace-nowrap pb-2 pr-6">Phone</th>
               <th className="whitespace-nowrap pb-2">Role</th>
@@ -106,6 +107,7 @@ export default async function AdminUsersPage() {
                     {u.name}
                   </Link>
                 </td>
+                <td className="whitespace-nowrap py-2 pr-6 font-mono text-gray-500">{u.username}</td>
                 <td className="whitespace-nowrap py-2 pr-6 text-gray-500">{u.email}</td>
                 <td className="whitespace-nowrap py-2 pr-6 text-gray-500">{u.phone ?? "—"}</td>
                 <td className="whitespace-nowrap py-2">

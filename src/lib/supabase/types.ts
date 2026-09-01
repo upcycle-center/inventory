@@ -17,6 +17,7 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
+  username: string;
   role: UserRole;
   phone: string | null;
   active: boolean;

@@ -69,15 +69,22 @@ export async function toggleUserActive(formData: FormData) {
 export async function inviteUser(formData: FormData): Promise<{ message: string }> {
   await requireProfile(["admin"]);
   const email = String(formData.get("email") || "").trim();
+  const username = String(formData.get("username") || "").trim().toLowerCase();
   const name = String(formData.get("name") || "").trim();
   const role = String(formData.get("role") || "stand_lead") as UserRole;
   const password = String(formData.get("password") || "").trim();
 
-  if (!email || !password) {
-    return { message: "Email and a temporary password are required." };
+  if (!email || !username || !password) {
+    return { message: "Username, email, and a temporary password are required." };
   }
 
   const admin = createServiceRoleClient();
+
+  const { data: existing } = await admin.from("profiles").select("id").eq("username", username).maybeSingle();
+  if (existing) {
+    return { message: `Username "${username}" is already taken.` };
+  }
+
   const { data: created, error } = await admin.auth.admin.createUser({
     email,
     password,
@@ -89,8 +96,8 @@ export async function inviteUser(formData: FormData): Promise<{ message: string 
     return { message: `Could not create user: ${error?.message ?? "unknown error"}` };
   }
 
-  await admin.from("profiles").update({ role, name: name || email }).eq("id", created.user.id);
+  await admin.from("profiles").update({ role, name: name || email, username }).eq("id", created.user.id);
 
   revalidatePath("/admin/users");
-  return { message: `Created ${email} as ${role}.` };
+  return { message: `Created ${username} (${email}) as ${role}.` };
 }

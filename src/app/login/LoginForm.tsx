@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -17,12 +17,27 @@ export function LoginForm() {
     setLoading(true);
     setError(null);
 
+    const genericError = "Invalid username or password.";
+
+    const resolveRes = await fetch("/api/auth/resolve-username", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    }).catch(() => null);
+    const { email } = (await resolveRes?.json().catch(() => ({ email: null }))) ?? { email: null };
+
+    if (!email) {
+      setLoading(false);
+      setError(genericError);
+      return;
+    }
+
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(genericError);
       return;
     }
 
@@ -38,13 +53,14 @@ export function LoginForm() {
       <h1 className="mb-1 text-xl font-semibold">Venue Inventory</h1>
       <p className="mb-6 text-sm text-gray-500">Sign in to continue.</p>
 
-      <label className="mb-1 block text-sm font-medium">Email</label>
+      <label className="mb-1 block text-sm font-medium">Username</label>
       <input
-        type="email"
+        type="text"
         required
         autoComplete="username"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        autoCapitalize="none"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
         className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
 

@@ -15,6 +15,7 @@ export const ActionForm = forwardRef<
 >(function ActionForm({ action, children, className, savedLabel = "Saved", id, encType }, ref) {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -31,10 +32,24 @@ export const ActionForm = forwardRef<
       className={className}
       action={(formData) => {
         setStatus("idle");
+        setErrorMessage(null);
         startTransition(async () => {
           try {
-            await action(formData);
-            setStatus("saved");
+            const result = await action(formData);
+            // A Server Action can opt into an inline error message by
+            // returning { error: string } instead of throwing — Next.js
+            // redacts thrown Server Action error messages in production,
+            // so a returned value is the only reliable way to surface one.
+            const returnedError =
+              result && typeof result === "object" && "error" in result
+                ? (result as { error?: unknown }).error
+                : null;
+            if (typeof returnedError === "string" && returnedError) {
+              setErrorMessage(returnedError);
+              setStatus("error");
+            } else {
+              setStatus("saved");
+            }
           } catch (err) {
             // Server Actions signal redirect()/notFound() via a thrown error
             // carrying a NEXT_REDIRECT/NEXT_NOT_FOUND digest — let Next.js
@@ -46,7 +61,7 @@ export const ActionForm = forwardRef<
             setStatus("error");
           }
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          timeoutRef.current = setTimeout(() => setStatus("idle"), 2500);
+          timeoutRef.current = setTimeout(() => setStatus("idle"), 4000);
         });
       }}
     >
@@ -56,7 +71,7 @@ export const ActionForm = forwardRef<
         <span className="ml-2 align-middle text-xs font-medium text-green-600">✓ {savedLabel}</span>
       )}
       {!isPending && status === "error" && (
-        <span className="ml-2 align-middle text-xs font-medium text-red-600">Something went wrong</span>
+        <span className="ml-2 align-middle text-xs font-medium text-red-600">{errorMessage ?? "Something went wrong"}</span>
       )}
     </form>
   );

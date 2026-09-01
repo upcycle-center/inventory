@@ -6,27 +6,37 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import type { UserRole } from "@/lib/supabase/types";
 
-export async function updateUserProfile(formData: FormData) {
+export async function updateUserProfile(formData: FormData): Promise<{ error: string } | void> {
   await requireProfile(["admin"]);
   const supabase = createClient();
   const id = String(formData.get("id"));
   const name = String(formData.get("name") || "").trim();
+  const username = String(formData.get("username") || "").trim().toLowerCase();
   const phone = String(formData.get("phone") || "").trim();
   const role = String(formData.get("role")) as UserRole;
   const receivesLowStockReport = formData.get("receives_low_stock_report") === "on";
   const lowStockReportEmail = String(formData.get("low_stock_report_email") || "").trim();
   if (!id || !name) return;
+  if (!username) return { error: "Username can't be empty." };
 
-  await supabase
+  const { error } = await supabase
     .from("profiles")
     .update({
       name,
+      username,
       phone: phone || null,
       role,
       receives_low_stock_report: receivesLowStockReport,
       low_stock_report_email: lowStockReportEmail || null,
     })
     .eq("id", id);
+
+  if (error) {
+    const message = /duplicate key|already exists/i.test(error.message)
+      ? `Username "${username}" is already taken.`
+      : error.message;
+    return { error: message };
+  }
 
   revalidatePath(`/admin/users/${id}`);
   revalidatePath("/admin/users");

@@ -19,7 +19,20 @@ export function InviteUserForm() {
     >
       <p className="text-sm font-medium">Add a user</p>
       <input name="name" placeholder="Name" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-      <input name="email" type="email" placeholder="Email" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+      <input
+        name="username"
+        placeholder="Username (used to sign in)"
+        required
+        autoCapitalize="none"
+        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+      />
+      <input
+        name="email"
+        type="email"
+        placeholder="Email (for notifications, not login)"
+        required
+        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+      />
       <input name="password" placeholder="Temporary password" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
       <select name="role" defaultValue="stand_lead" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
         <option value="stand_lead">Stand Lead</option>
