@@ -26,6 +26,13 @@ export function createClient() {
           }
         },
       },
+      // Without this, Next.js's fetch Data Cache can cache these REST
+      // responses across requests even on dynamically-rendered pages,
+      // serving stale rows after a mutation made elsewhere (e.g. a direct
+      // DB edit). This is an internal admin tool — always read current data.
+      global: {
+        fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: "no-store" }),
+      },
     }
   );
 }
@@ -36,6 +43,11 @@ export function createServiceRoleClient() {
   return createSupabaseJsClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: {
+        fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: "no-store" }),
+      },
+    }
   );
 }
