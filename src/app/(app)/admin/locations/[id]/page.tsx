@@ -202,9 +202,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
       <p className="mb-3 text-sm font-medium">Base staffing needs</p>
       <p className="mb-3 text-sm text-gray-500">
-        Positions needed to run this location. Set a required certification if the assigned
-        Location Lead can cover that slot themselves (e.g. a Certified Bartender Lead covers the
-        Bartender slot) — it&apos;s subtracted automatically on the event page.
+        Positions needed to run this location.
         {location.type === "stand" && (
           <> Stand Lead is a default role for Stand locations and always shows first below.</>
         )}
@@ -256,10 +254,6 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <label className="mb-1 block text-xs text-gray-500">Base count</label>
           <input name="base_count" type="number" min={0} step={1} defaultValue={1} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Covered by Lead if certified</label>
-          <input name="required_certification" placeholder="e.g. Certified Bartender" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </div>
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add role
         </button>
@@ -278,9 +272,6 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <li key={r.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
             <span>
               ({r.base_count}) {r.role_name}
-              {r.required_certification && (
-                <span className="ml-2 text-xs text-gray-400">covered by Lead w/ {r.required_certification}</span>
-              )}
             </span>
             <form action={removeStaffRole}>
               <input type="hidden" name="id" value={r.id} />

@@ -11,8 +11,7 @@ import { LocationLeadSelect } from "./LocationLeadSelect";
 function effectiveCount(
   role: LocationStaffRole,
   tiers: LocationStaffTier[],
-  attendance: number | null,
-  leadCertifications: string[]
+  attendance: number | null
 ): { count: number; note: string | null } {
   let count = role.base_count;
   let note: string | null = null;
@@ -30,13 +29,6 @@ function effectiveCount(
     }
   }
 
-  if (role.required_certification && leadCertifications.includes(role.required_certification) && count > 0) {
-    count -= 1;
-    note = note
-      ? `${note}, covered by Lead (${role.required_certification})`
-      : `covered by Lead (${role.required_certification})`;
-  }
-
   return { count, note };
 }
 
@@ -46,7 +38,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const [{ data: event }, { data: locations }, { data: users }, { data: assignments }, { data: eventLocations }] =
     await Promise.all([
       supabase.from("events").select("*").eq("id", params.id).single(),
-      supabase.from("locations").select("*").eq("active", true).neq("type", "warehouse").order("name"),
+      supabase.from("locations").select("*").eq("active", true).eq("type", "stand").order("name"),
       supabase.from("profiles").select("*").order("name"),
       supabase
         .from("event_location_assignments")
@@ -78,32 +70,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
   );
   const leadUserIdByLocationId = new Map(
     ((assignments as any[] | null) ?? []).map((a) => [a.location_id, a.location_lead_user_id as string])
-  );
-
-  const leadIds = [...new Set(((assignments as any[] | null) ?? []).map((a) => a.location_lead_user_id).filter(Boolean))];
-  const { data: leadCertRows } = leadIds.length
-    ? await supabase
-        .from("user_certifications")
-        .select("user_id, expires_at, certification_type:certification_types(name)")
-        .in("user_id", leadIds)
-    : { data: [] as any[] };
-
-  const today = new Date().toISOString().slice(0, 10);
-  const validCertNamesByUserId = new Map<string, string[]>();
-  for (const row of (leadCertRows as any[]) ?? []) {
-    if (row.expires_at && row.expires_at < today) continue;
-    const name = row.certification_type?.name;
-    if (!name) continue;
-    const list = validCertNamesByUserId.get(row.user_id) ?? [];
-    list.push(name);
-    validCertNamesByUserId.set(row.user_id, list);
-  }
-
-  const leadCertsByLocationId = new Map(
-    ((assignments as any[] | null) ?? []).map((a) => [
-      a.location_id,
-      validCertNamesByUserId.get(a.location_lead_user_id) ?? [],
-    ])
   );
   const rolesByLocationId = new Map<string, LocationStaffRole[]>();
   for (const role of (staffRoles as LocationStaffRole[] | null) ?? []) {
@@ -179,12 +145,15 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <thead className="text-gray-500">
             <tr>
               <th className="pb-2 pr-3 whitespace-nowrap">Location</th>
-              <th className="pb-2 pr-3">Lead</th>
               {STAFF_ROLES.map((r) => (
                 <th key={r} className="pb-2 pr-3 whitespace-nowrap" title={r}>
                   {STAFF_ROLE_SHORT_LABEL[r]}
                 </th>
               ))}
+              <th className="pb-2 pr-3 whitespace-nowrap" title="Fixed baseline — always 1 when open">
+                Lead
+              </th>
+              <th className="pb-2 pr-3"></th>
               <th className="pb-2 pr-3">Total</th>
               <th className="pb-2"></th>
             </tr>
@@ -198,7 +167,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 const eventLocation = eventLocationByLocationId.get(l.id);
                 const confirmed = eventLocation?.confirmed ?? false;
                 const roles = rolesByLocationId.get(l.id) ?? [];
-                const leadCerts = leadCertsByLocationId.get(l.id) ?? [];
 
                 // A closed location needs nobody: every role reads 0, not
                 // just the total. An open location always needs at least
@@ -208,7 +176,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   if (!isOpen) return { roleName, count: 0, note: "Closed" };
                   const role = roles.find((r) => r.role_name === roleName);
                   if (!role) return { roleName, count: null as number | null, note: null as string | null };
-                  const { count, note } = effectiveCount(role, tiers, event.est_tickets, leadCerts);
+                  const { count, note } = effectiveCount(role, tiers, event.est_tickets);
                   return { roleName, count, note };
                 });
                 const leadCount = isOpen ? 1 : 0;
@@ -253,6 +221,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           </span>
                         </div>
                       </td>
+                      {roleCounts.map(({ roleName, count, note }) => (
+                        <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
+                          {count == null ? <span className="text-gray-300">—</span> : count}
+                        </td>
+                      ))}
+                      <td className="py-2 pr-3 text-center">
+                        {isOpen ? 1 : <span className="text-gray-300">—</span>}
+                      </td>
                       <td className="py-2 pr-3">
                         <LocationLeadSelect
                           eventId={event.id}
@@ -263,11 +239,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           disabled={confirmed}
                         />
                       </td>
-                      {roleCounts.map(({ roleName, count, note }) => (
-                        <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
-                          {count == null ? <span className="text-gray-300">—</span> : count}
-                        </td>
-                      ))}
                       <td className="py-2 pr-3 font-medium">
                         {displayedStaff}
                         {confirmed && recommended !== displayedStaff && (
@@ -307,14 +278,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   ))}
                   {!rows.length && (
                     <tr>
-                      <td colSpan={STAFF_ROLES.length + 4} className="py-4 text-gray-400">
+                      <td colSpan={STAFF_ROLES.length + 5} className="py-4 text-gray-400">
                         No locations available.
                       </td>
                     </tr>
                   )}
                   {rows.length > 0 && (
                     <tr className="border-t border-gray-200">
-                      <td colSpan={2 + STAFF_ROLES.length} />
+                      <td colSpan={3 + STAFF_ROLES.length} />
                       <td className="py-2 pr-3 font-medium">{grandTotal}</td>
                       <td />
                     </tr>

@@ -27,6 +27,7 @@ export interface CertificationType {
   name: string;
   active: boolean;
   sort_order: number;
+  applicable_roles: UserRole[] | null;
   created_at: string;
 }
 

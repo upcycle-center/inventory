@@ -17,7 +17,9 @@ export default async function UserDetailPage({ params }: { params: { id: string 
 
   if (!user) notFound();
 
-  const types = (certTypes as CertificationType[] | null) ?? [];
+  const types = ((certTypes as CertificationType[] | null) ?? []).filter(
+    (t) => !t.applicable_roles?.length || t.applicable_roles.includes(user.role)
+  );
   const certByTypeId = new Map(
     ((userCerts as UserCertification[] | null) ?? []).map((c) => [c.certification_type_id, c])
   );
@@ -70,8 +72,9 @@ export default async function UserDetailPage({ params }: { params: { id: string 
 
       <p className="mb-3 text-sm font-medium">Certifications</p>
       <p className="mb-3 text-sm text-gray-500">
-        Check a certification, set when it was earned and when it expires. The badge on the Users
-        list turns orange if a certification isn&apos;t on record or has expired.
+        Only certifications relevant to this user&apos;s role are shown. Check a certification,
+        set when it was earned and when it expires — the dot turns orange if it isn&apos;t on
+        record or has expired.
       </p>
 
       <div className="max-w-2xl space-y-3">
@@ -115,7 +118,9 @@ export default async function UserDetailPage({ params }: { params: { id: string 
         })}
         {!types.length && (
           <p className="text-sm text-gray-400">
-            No certification types set up yet. Add one under Admin → Users.
+            {certTypes?.length
+              ? "No certification types apply to this role."
+              : "No certification types set up yet. Add one under Admin → Users."}
           </p>
         )}
       </div>

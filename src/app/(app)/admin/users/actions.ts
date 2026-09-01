@@ -20,11 +20,18 @@ export async function addCertificationType(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   if (!name) return;
 
+  // No roles checked = applies to everyone.
+  const applicableRoles = formData.getAll("applicable_roles").map(String);
+
   const { count } = await supabase
     .from("certification_types")
     .select("*", { count: "exact", head: true });
 
-  await supabase.from("certification_types").insert({ name, sort_order: count ?? 0 });
+  await supabase.from("certification_types").insert({
+    name,
+    sort_order: count ?? 0,
+    applicable_roles: applicableRoles.length ? applicableRoles : null,
+  });
   revalidatePath("/admin/users");
 }
 

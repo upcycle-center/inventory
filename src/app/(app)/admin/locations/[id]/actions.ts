@@ -64,16 +64,10 @@ export async function addStaffRole(formData: FormData) {
   const locationId = String(formData.get("location_id"));
   const roleName = String(formData.get("role_name") || "").trim();
   const baseCount = Number(formData.get("base_count") || 0);
-  const requiredCertification = String(formData.get("required_certification") || "").trim();
   if (!locationId || !roleName) return;
 
   await supabase.from("location_staff_roles").upsert(
-    {
-      location_id: locationId,
-      role_name: roleName,
-      base_count: baseCount,
-      required_certification: requiredCertification || null,
-    },
+    { location_id: locationId, role_name: roleName, base_count: baseCount, required_certification: null },
     { onConflict: "location_id,role_name" }
   );
 
