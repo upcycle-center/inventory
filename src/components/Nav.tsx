@@ -8,8 +8,8 @@ import type { Profile } from "@/lib/supabase/types";
 const LINKS: { href: string; label: string; roles?: Profile["role"][] }[] = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/count", label: "Count", roles: ["admin", "stand_lead"] },
-  { href: "/receive", label: "Receive", roles: ["admin", "warehouse"] },
-  { href: "/transfer", label: "Transfer", roles: ["admin", "warehouse"] },
+  { href: "/receive", label: "Receive", roles: ["admin", "warehouse", "kitchen", "catering"] },
+  { href: "/transfer", label: "Transfer", roles: ["admin", "warehouse", "kitchen", "catering"] },
   { href: "/admin", label: "Admin", roles: ["admin"] },
 ];
 

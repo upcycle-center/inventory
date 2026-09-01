@@ -2,7 +2,7 @@ import { requireProfile } from "@/lib/auth";
 import { ComingSoon } from "@/components/ComingSoon";
 
 export default async function ReceivePage() {
-  await requireProfile(["admin", "warehouse"]);
+  await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
   return (
     <ComingSoon
       title="Receive"

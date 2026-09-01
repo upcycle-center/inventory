@@ -10,7 +10,7 @@ const WAREHOUSE_PREFIXES = ["/receive", "/transfer"];
 function roleAllows(role: UserRole, pathname: string): boolean {
   if (role === "admin") return true;
   if (WAREHOUSE_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return role === "warehouse";
+    return role === "warehouse" || role === "kitchen" || role === "catering";
   }
   if (ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p))) {
     return false;

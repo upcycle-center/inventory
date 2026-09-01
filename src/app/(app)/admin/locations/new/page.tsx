@@ -36,6 +36,7 @@ export default async function NewLocationPage({
           <select name="type" defaultValue={from?.type ?? "stand"} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
             <option value="stand">Stand</option>
             <option value="kitchen">Kitchen</option>
+            <option value="catering">Catering</option>
             <option value="warehouse">Warehouse</option>
           </select>
         </label>

@@ -7,6 +7,7 @@ const TYPE_LABEL: Record<Location["type"], string> = {
   warehouse: "Warehouse",
   stand: "Stand",
   kitchen: "Kitchen",
+  catering: "Catering",
 };
 
 export default async function AdminLocationsPage() {
@@ -23,6 +24,7 @@ export default async function AdminLocationsPage() {
         <select name="type" defaultValue="stand" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
           <option value="stand">Stand</option>
           <option value="kitchen">Kitchen</option>
+          <option value="catering">Catering</option>
           <option value="warehouse">Warehouse</option>
         </select>
         <input name="description" placeholder="Description (optional)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />

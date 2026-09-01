@@ -1,7 +1,7 @@
-export type UserRole = "admin" | "warehouse" | "stand_lead" | "ops";
+export type UserRole = "admin" | "warehouse" | "stand_lead" | "ops" | "kitchen" | "catering";
 export type EventStatus = "upcoming" | "open" | "closed";
 export type CountType = "opening" | "closing";
-export type LocationType = "warehouse" | "stand" | "kitchen";
+export type LocationType = "warehouse" | "stand" | "kitchen" | "catering";
 export type MovementType = "receiving" | "return" | "transfer" | "adjustment";
 export type PoStatus = "placed" | "received" | "canceled";
 export type RequestStatus = "pending" | "fulfilled" | "canceled";
