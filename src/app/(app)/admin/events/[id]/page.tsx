@@ -200,15 +200,26 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 const roles = rolesByLocationId.get(l.id) ?? [];
                 const leadCerts = leadCertsByLocationId.get(l.id) ?? [];
 
+                // A closed location needs nobody: every role reads 0, not
+                // just the total. An open location always needs at least
+                // the (1) Stand Lead — that's a fixed baseline, not a
+                // configurable role/tier.
                 const roleCounts = STAFF_ROLES.map((roleName) => {
+                  if (!isOpen) return { roleName, count: 0, note: "Closed" };
                   const role = roles.find((r) => r.role_name === roleName);
                   if (!role) return { roleName, count: null as number | null, note: null as string | null };
                   const { count, note } = effectiveCount(role, tiers, event.est_tickets, leadCerts);
                   return { roleName, count, note };
                 });
-                const recommended = roleCounts.reduce((sum, r) => sum + (r.count ?? 0), 0);
-                const displayedStaff = confirmed ? eventLocation?.confirmed_staff_count ?? recommended : recommended;
-                if (isOpen) grandTotal += displayedStaff;
+                const leadCount = isOpen ? 1 : 0;
+                const roleTotal = roleCounts.reduce((sum, r) => sum + (r.count ?? 0), 0);
+                const recommended = leadCount + roleTotal;
+                const displayedStaff = !isOpen
+                  ? 0
+                  : confirmed
+                    ? eventLocation?.confirmed_staff_count ?? recommended
+                    : recommended;
+                grandTotal += displayedStaff;
 
                 return { location: l, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff };
               });
