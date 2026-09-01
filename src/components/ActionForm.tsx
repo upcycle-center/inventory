@@ -1,22 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { forwardRef, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 
-export function ActionForm({
-  action,
-  children,
-  className,
-  savedLabel = "Saved",
-  id,
-  encType,
-}: {
-  action: (formData: FormData) => Promise<unknown> | void;
-  children: ReactNode;
-  className?: string;
-  savedLabel?: string;
-  id?: string;
-  encType?: string;
-}) {
+export const ActionForm = forwardRef<
+  HTMLFormElement,
+  {
+    action: (formData: FormData) => Promise<unknown> | void;
+    children: ReactNode;
+    className?: string;
+    savedLabel?: string;
+    id?: string;
+    encType?: string;
+  }
+>(function ActionForm({ action, children, className, savedLabel = "Saved", id, encType }, ref) {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -29,6 +25,7 @@ export function ActionForm({
 
   return (
     <form
+      ref={ref}
       id={id}
       encType={encType}
       className={className}
@@ -63,4 +60,4 @@ export function ActionForm({
       )}
     </form>
   );
-}
+});

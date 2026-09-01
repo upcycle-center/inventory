@@ -258,6 +258,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           eventId={event.id}
                           locationId={location.id}
                           currentLeadId={leadUserIdByLocationId.get(location.id) ?? null}
+                          defaultLeadId={location.default_lead_user_id}
                           users={(users as Profile[] | null) ?? []}
                           disabled={confirmed}
                         />

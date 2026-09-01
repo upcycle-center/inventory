@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { LocationStaffRole, LocationStaffTier, StorageArea } from "@/lib/supabase/types";
+import type { LocationStaffRole, LocationStaffTier, Profile, StorageArea } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { ActionForm } from "@/components/ActionForm";
@@ -14,6 +14,7 @@ import {
   postMonthEndPhysicalCount,
   removeStaffRole,
   removeStaffTier,
+  updateDefaultLead,
   updateLocation,
 } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
@@ -29,7 +30,7 @@ function fmtQty(each: number | null | undefined, cases: number | null | undefine
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: location }, { data: staffRoles }, { data: staffTiers }, { data: locationProducts }] =
+  const [{ data: location }, { data: staffRoles }, { data: staffTiers }, { data: locationProducts }, { data: users }] =
     await Promise.all([
       supabase.from("locations").select("*").eq("id", params.id).single(),
       supabase.from("location_staff_roles").select("*").eq("location_id", params.id).order("sort_order"),
@@ -38,12 +39,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         .from("location_products")
         .select("product_id, product:products(id, sku, description, photo_url, active), storage_area:storage_areas(id, code, name)")
         .eq("location_id", params.id),
+      supabase.from("profiles").select("*").order("name"),
     ]);
 
   if (!location) notFound();
 
   const roles = (staffRoles as LocationStaffRole[] | null) ?? [];
   const tiers = (staffTiers as LocationStaffTier[] | null) ?? [];
+  const profileList = (users as Profile[] | null) ?? [];
 
   // On-Hand: the most recently counted qty (each/cases, no conversion
   // between them) per product at this location, from any event's count.
@@ -202,7 +205,36 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         Positions needed to run this location. Set a required certification if the assigned
         Location Lead can cover that slot themselves (e.g. a Certified Bartender Lead covers the
         Bartender slot) — it&apos;s subtracted automatically on the event page.
+        {location.type === "stand" && (
+          <> Stand Lead is a default role for Stand locations and always shows first below.</>
+        )}
       </p>
+
+      <ActionForm
+        action={updateDefaultLead}
+        savedLabel="Default Lead saved"
+        className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+      >
+        <input type="hidden" name="id" value={location.id} />
+        <div>
+          <label className="mb-1 block text-xs text-gray-500">Default Lead</label>
+          <select name="default_lead_user_id" defaultValue={location.default_lead_user_id ?? ""} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="">— Unassigned —</option>
+            {profileList.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Save
+        </button>
+        <p className="w-full text-xs text-gray-400">
+          Pre-fills the Lead dropdown on Event Details for this location when an event doesn&apos;t
+          have its own assignment yet.
+        </p>
+      </ActionForm>
 
       <ActionForm
         action={addStaffRole}
@@ -234,6 +266,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       </ActionForm>
 
       <ul className="mb-8 space-y-1">
+        {location.type === "stand" && (
+          <li className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
+            <span>
+              (1) Stand Lead
+              <span className="ml-2 text-xs text-gray-400">default for Stand locations</span>
+            </span>
+          </li>
+        )}
         {roles.map((r) => (
           <li key={r.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
             <span>

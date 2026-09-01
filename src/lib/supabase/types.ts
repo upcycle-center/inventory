@@ -77,6 +77,7 @@ export interface Location {
   type: LocationType;
   description: string | null;
   yellow_dog_code: string | null;
+  default_lead_user_id: string | null;
   active: boolean;
   created_at: string;
 }

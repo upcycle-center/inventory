@@ -30,6 +30,20 @@ export async function updateLocation(formData: FormData) {
   revalidatePath("/admin/locations");
 }
 
+export async function updateDefaultLead(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const defaultLeadUserId = String(formData.get("default_lead_user_id") || "");
+  if (!id) return;
+
+  await supabase
+    .from("locations")
+    .update({ default_lead_user_id: defaultLeadUserId || null })
+    .eq("id", id);
+
+  revalidatePath(`/admin/locations/${id}`);
+}
+
 export async function deleteLocation(id: string): Promise<{ error: string } | void> {
   const supabase = createClient();
   const { error } = await supabase.from("locations").delete().eq("id", id);
