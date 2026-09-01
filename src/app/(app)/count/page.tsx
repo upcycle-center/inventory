@@ -19,14 +19,23 @@ export default async function CountPage({
     return <CountPicker userId={profile.id} isWarehouseOrAdmin={isWarehouseOrAdmin} />;
   }
 
-  const [{ data: event }, { data: location }, { data: existingCounts }] = await Promise.all([
+  const [{ data: event }, { data: location }, { data: existingCounts }, { data: eventLocation }] = await Promise.all([
     supabase.from("events").select("*").eq("id", eventId).single(),
     supabase.from("locations").select("*").eq("id", locationId).single(),
     supabase.from("location_counts").select("type, submitted_at").eq("event_id", eventId).eq("location_id", locationId),
+    supabase.from("event_locations").select("is_open, confirmed").eq("event_id", eventId).eq("location_id", locationId).maybeSingle(),
   ]);
 
   if (!event || !location) {
     return <p className="text-sm text-gray-500">Event or location not found.</p>;
+  }
+
+  if (!eventLocation?.is_open || !eventLocation?.confirmed) {
+    return (
+      <p className="text-sm text-gray-500">
+        {location.name} isn&apos;t confirmed as open for {event.name} yet. Check with your event admin.
+      </p>
+    );
   }
 
   if (profile.role === "stand_lead") {
@@ -110,22 +119,31 @@ export default async function CountPage({
 async function CountPicker({ userId, isWarehouseOrAdmin }: { userId: string; isWarehouseOrAdmin: boolean }) {
   const supabase = createClient();
 
-  if (isWarehouseOrAdmin) {
-    const { data: assignments } = await supabase
-      .from("event_location_assignments")
-      .select("id, event:events(id, name, event_date), location:locations(id, name)")
-      .order("created_at", { ascending: false });
+  // A count sheet only exists for a location once it's been confirmed as
+  // open for the event — that's the admin's signal that staffing/lead is
+  // locked in and the location is actually running.
+  const { data: openLocations } = await supabase
+    .from("event_locations")
+    .select("id, event_id, location_id, event:events(id, name, event_date), location:locations(id, name)")
+    .eq("is_open", true)
+    .eq("confirmed", true)
+    .order("updated_at", { ascending: false });
 
-    return <PickerList title="Pick an event & location to count" assignments={(assignments as any[]) ?? []} />;
+  const rows = (openLocations as any[]) ?? [];
+
+  if (isWarehouseOrAdmin) {
+    return <PickerList title="Pick an event & location to count" assignments={rows} />;
   }
 
   const { data: assignments } = await supabase
     .from("event_location_assignments")
-    .select("id, event:events(id, name, event_date), location:locations(id, name)")
-    .eq("location_lead_user_id", userId)
-    .order("created_at", { ascending: false });
+    .select("event_id, location_id")
+    .eq("location_lead_user_id", userId);
 
-  return <PickerList title="Your assignments" assignments={(assignments as any[]) ?? []} />;
+  const assignedPairs = new Set(((assignments as any[]) ?? []).map((a) => `${a.event_id}:${a.location_id}`));
+  const myRows = rows.filter((r) => assignedPairs.has(`${r.event_id}:${r.location_id}`));
+
+  return <PickerList title="Your assignments" assignments={myRows} />;
 }
 
 function PickerList({ title, assignments }: { title: string; assignments: any[] }) {

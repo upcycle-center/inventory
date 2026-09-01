@@ -9,39 +9,58 @@ export default async function DashboardPage() {
   if (profile.role === "stand_lead") {
     const { data: assignments } = await supabase
       .from("event_location_assignments")
-      .select("id, event:events(id, name, event_date, status), location:locations(id, name)")
+      .select("id, event_id, location_id, event:events(id, name, event_date, status), location:locations(id, name)")
       .eq("location_lead_user_id", profile.id)
       .order("created_at", { ascending: false });
+
+    const rows = (assignments as any[]) ?? [];
+    const eventIds = [...new Set(rows.map((a) => a.event_id))];
+    const { data: eventLocations } = eventIds.length
+      ? await supabase.from("event_locations").select("event_id, location_id, is_open, confirmed").in("event_id", eventIds)
+      : { data: [] as any[] };
+
+    const confirmedOpen = new Set(
+      ((eventLocations as any[]) ?? [])
+        .filter((el) => el.is_open && el.confirmed)
+        .map((el) => `${el.event_id}:${el.location_id}`)
+    );
 
     return (
       <div>
         <h1 className="mb-6 text-lg font-semibold">Your Assignments</h1>
-        {!assignments || assignments.length === 0 ? (
+        {!rows.length ? (
           <p className="text-sm text-gray-500">
             You have no location assignments yet. Check with your event admin.
           </p>
         ) : (
           <ul className="space-y-3">
-            {assignments.map((a: any) => (
-              <li
-                key={a.id}
-                className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-4"
-              >
-                <div>
-                  <p className="font-medium">{a.location?.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {a.event?.name} · {a.event?.event_date} ·{" "}
-                    <span className="uppercase">{a.event?.status}</span>
-                  </p>
-                </div>
-                <Link
-                  href={`/count?event=${a.event?.id}&location=${a.location?.id}`}
-                  className="rounded-md bg-brand px-3 py-1.5 text-sm text-white"
+            {rows.map((a: any) => {
+              const isOpen = confirmedOpen.has(`${a.event_id}:${a.location_id}`);
+              return (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-4"
                 >
-                  Open count
-                </Link>
-              </li>
-            ))}
+                  <div>
+                    <p className="font-medium">{a.location?.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {a.event?.name} · {a.event?.event_date} ·{" "}
+                      <span className="uppercase">{a.event?.status}</span>
+                    </p>
+                  </div>
+                  {isOpen ? (
+                    <Link
+                      href={`/count?event=${a.event?.id}&location=${a.location?.id}`}
+                      className="rounded-md bg-brand px-3 py-1.5 text-sm text-white"
+                    >
+                      Open count
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-gray-400">Not confirmed open yet</span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
