@@ -7,6 +7,7 @@ export default async function ReceivePage() {
     <ComingSoon
       title="Receive"
       phase="Warehouse receiving flow (Main or Alcohol) ships in Phase 3."
+      breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Receive" }]}
     />
   );
 }

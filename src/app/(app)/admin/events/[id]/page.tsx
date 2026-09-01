@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
 import { confirmLocationStaffing, toggleLocationOpen, unlockLocationStaffing, updateEventDetails } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
@@ -91,6 +92,13 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Events", href: "/admin/events" },
+          { label: event.name },
+        ]}
+      />
       <h1 className="mb-1 text-lg font-semibold">{event.name}</h1>
       <p className="mb-6 text-sm text-gray-500">{event.event_date}</p>
 

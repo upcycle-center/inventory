@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createStorageArea } from "../actions";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function NewStorageAreaPage({
   searchParams,
@@ -16,6 +17,13 @@ export default async function NewStorageAreaPage({
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Storage Areas", href: "/admin/storage-areas" },
+          { label: from ? "Duplicate" : "Add" },
+        ]}
+      />
       <h1 className="mb-1 text-lg font-semibold">{from ? "Duplicate storage area" : "Add storage area"}</h1>
       {from && (
         <p className="mb-6 text-sm text-gray-500">

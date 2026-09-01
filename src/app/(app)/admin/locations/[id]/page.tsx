@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { toggleLocationActive } from "../actions";
 import { addStaffRole, addStaffTier, removeStaffRole, removeStaffTier, updateLocation } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
@@ -24,6 +25,13 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Locations", href: "/admin/locations" },
+          { label: location.name },
+        ]}
+      />
       <h1 className="mb-6 text-lg font-semibold">
         {location.yellow_dog_code && (
           <span className="mr-2 font-mono text-gray-400">{location.yellow_dog_code}</span>

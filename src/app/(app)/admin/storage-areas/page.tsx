@@ -4,6 +4,7 @@ import type { StorageArea } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { createStorageArea } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminStorageAreasPage() {
   const supabase = createClient();
@@ -12,6 +13,7 @@ export default async function AdminStorageAreasPage() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Storage Areas" }]} />
       <h1 className="mb-2 text-lg font-semibold">Storage Areas</h1>
       <p className="mb-6 text-sm text-gray-500">
         These are the accordion sections Stand Leads browse when counting (Wine Fridge, Beer

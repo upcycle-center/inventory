@@ -3,6 +3,7 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { CountForm } from "./CountForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { CountType } from "@/lib/supabase/types";
 
 export default async function CountPage({
@@ -30,11 +31,24 @@ export default async function CountPage({
     return <p className="text-sm text-gray-500">Event or location not found.</p>;
   }
 
+  const breadcrumb = (
+    <Breadcrumbs
+      items={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Count", href: "/count" },
+        { label: location.name },
+      ]}
+    />
+  );
+
   if (!eventLocation?.is_open || !eventLocation?.confirmed) {
     return (
-      <p className="text-sm text-gray-500">
-        {location.name} isn&apos;t confirmed as open for {event.name} yet. Check with your event admin.
-      </p>
+      <div>
+        {breadcrumb}
+        <p className="text-sm text-gray-500">
+          {location.name} isn&apos;t confirmed as open for {event.name} yet. Check with your event admin.
+        </p>
+      </div>
     );
   }
 
@@ -49,9 +63,12 @@ export default async function CountPage({
 
     if (!assignment) {
       return (
-        <p className="text-sm text-gray-500">
-          You&apos;re not assigned to {location.name} for {event.name}. Check with your event admin.
-        </p>
+        <div>
+          {breadcrumb}
+          <p className="text-sm text-gray-500">
+            You&apos;re not assigned to {location.name} for {event.name}. Check with your event admin.
+          </p>
+        </div>
       );
     }
   }
@@ -61,6 +78,7 @@ export default async function CountPage({
   if (doneTypes.has("opening") && doneTypes.has("closing")) {
     return (
       <div>
+        {breadcrumb}
         <h1 className="mb-2 text-lg font-semibold">{location.name}</h1>
         <p className="text-sm text-gray-500">
           Both the opening and closing counts for {event.name} are already submitted.
@@ -98,6 +116,7 @@ export default async function CountPage({
   if (!groups.length) {
     return (
       <div>
+        {breadcrumb}
         <h1 className="mb-2 text-lg font-semibold">{location.name}</h1>
         <p className="text-sm text-gray-500">
           No products are assigned to this location yet. An admin can add them under Admin → Locations.
@@ -108,6 +127,7 @@ export default async function CountPage({
 
   return (
     <div>
+      {breadcrumb}
       <p className="mb-1 text-sm text-gray-500">
         {location.name} · {event.name}
       </p>
@@ -149,6 +169,7 @@ async function CountPicker({ userId, isWarehouseOrAdmin }: { userId: string; isW
 function PickerList({ title, assignments }: { title: string; assignments: any[] }) {
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Count" }]} />
       <h1 className="mb-6 text-lg font-semibold">{title}</h1>
       {!assignments.length ? (
         <p className="text-sm text-gray-500">No assignments found.</p>

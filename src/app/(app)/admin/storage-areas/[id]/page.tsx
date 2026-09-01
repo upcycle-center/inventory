@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { toggleStorageAreaActive, updateStorageArea } from "../actions";
 import { DeleteStorageAreaButton } from "./DeleteStorageAreaButton";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function StorageAreaDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -13,6 +14,13 @@ export default async function StorageAreaDetailPage({ params }: { params: { id: 
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Storage Areas", href: "/admin/storage-areas" },
+          { label: area.name },
+        ]}
+      />
       <h1 className="mb-6 text-lg font-semibold">Edit storage area</h1>
 
       <ActionForm

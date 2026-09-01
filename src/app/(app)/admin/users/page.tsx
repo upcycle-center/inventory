@@ -3,6 +3,7 @@ import type { Profile } from "@/lib/supabase/types";
 import { CertificationsInput } from "./CertificationsInput";
 import { InviteUserForm } from "./InviteUserForm";
 import { RoleSelect } from "./RoleSelect";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminUsersPage() {
   const supabase = createClient();
@@ -10,6 +11,7 @@ export default async function AdminUsersPage() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Users" }]} />
       <h1 className="mb-6 text-lg font-semibold">Users</h1>
 
       <div className="mb-8">

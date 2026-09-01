@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { createProduct } from "../actions";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function NewProductPage({
   searchParams,
@@ -21,6 +22,13 @@ export default async function NewProductPage({
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Products", href: "/admin/products" },
+          { label: from ? "Duplicate" : "Add" },
+        ]}
+      />
       <h1 className="mb-1 text-lg font-semibold">{from ? "Duplicate product" : "Add product"}</h1>
       {from && (
         <p className="mb-6 text-sm text-gray-500">

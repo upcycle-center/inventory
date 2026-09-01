@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Event } from "@/lib/supabase/types";
 import { createEvent } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminEventsPage() {
   const supabase = createClient();
@@ -13,6 +14,7 @@ export default async function AdminEventsPage() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Events" }]} />
       <h1 className="mb-6 text-lg font-semibold">Events</h1>
 
       <ActionForm action={createEvent} savedLabel="Event created" className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">

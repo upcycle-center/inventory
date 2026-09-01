@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { createSupplier, deleteSupplier } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminSuppliersPage() {
   const supabase = createClient();
@@ -12,6 +13,7 @@ export default async function AdminSuppliersPage() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Suppliers" }]} />
       <h1 className="mb-6 text-lg font-semibold">Suppliers</h1>
 
       <ActionForm action={createSupplier} savedLabel="Supplier added" className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">

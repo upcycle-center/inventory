@@ -5,6 +5,7 @@ import { createProduct } from "./actions";
 import { CsvUploadForm } from "./CsvUploadForm";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -36,6 +37,7 @@ export default async function AdminProductsPage({
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Products" }]} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Products</h1>
         <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">

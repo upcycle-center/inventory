@@ -7,6 +7,7 @@ export default async function TransferPage() {
     <ComingSoon
       title="Transfer"
       phase="Move stock between any two locations (Warehouse, Stand, Kitchen) ships in Phase 6."
+      breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Transfer" }]}
     />
   );
 }

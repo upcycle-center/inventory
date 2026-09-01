@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { toggleProductActive } from "../actions";
 
 export default async function InactiveProductsPage() {
@@ -13,6 +14,13 @@ export default async function InactiveProductsPage() {
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Products", href: "/admin/products" },
+          { label: "Inactive" },
+        ]}
+      />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Inactive products</h1>
         <Link href="/admin/products" className="text-sm text-brand hover:underline">

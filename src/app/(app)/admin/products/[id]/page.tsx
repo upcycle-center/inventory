@@ -5,6 +5,7 @@ import type { Location, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { assignProductToLocation, removeProductFromLocation, updateProduct } from "./actions";
 import { toggleProductActive } from "../actions";
 import { DeleteProductButton } from "./DeleteProductButton";
@@ -31,6 +32,13 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   return (
     <div>
+      <Breadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Products", href: "/admin/products" },
+          { label: product.description },
+        ]}
+      />
       <h1 className="mb-6 text-lg font-semibold">Edit product</h1>
 
       <ActionForm

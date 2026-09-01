@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Product, Location } from "@/lib/supabase/types";
 import { upsertThreshold, deleteThreshold } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminThresholdsPage() {
   const supabase = createClient();
@@ -16,6 +17,7 @@ export default async function AdminThresholdsPage() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Thresholds" }]} />
       <h1 className="mb-2 text-lg font-semibold">Restock Thresholds</h1>
       <p className="mb-6 text-sm text-gray-500">
         When a location&apos;s closing count falls at or below the threshold, it&apos;s flagged for restock.

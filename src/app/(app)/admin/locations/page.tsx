@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Location } from "@/lib/supabase/types";
 import { createLocation } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 const TYPE_LABEL: Record<Location["type"], string> = {
   warehouse: "Warehouse",
@@ -17,6 +18,7 @@ export default async function AdminLocationsPage() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Locations" }]} />
       <h1 className="mb-6 text-lg font-semibold">Locations</h1>
 
       <ActionForm action={createLocation} savedLabel="Location added" className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">

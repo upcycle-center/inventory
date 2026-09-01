@@ -5,6 +5,7 @@ export default function AdminYellowDogMappingPage() {
     <ComingSoon
       title="Yellow Dog CSV Mapping"
       phase="Editable internal-field → CSV-column mapping ships in Phase 5, alongside the CSV export itself."
+      breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Yellow Dog CSV Mapping" }]}
     />
   );
 }
