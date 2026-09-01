@@ -67,13 +67,14 @@ export default async function DashboardPage() {
     );
   }
 
-  const [{ count: locationCount }, { count: openEvents }, { count: thresholdBreaches }] =
+  const [{ count: locationCount }, { count: openEvents }, { count: openRequests }] =
     await Promise.all([
       supabase.from("locations").select("*", { count: "exact", head: true }).eq("active", true),
       supabase.from("events").select("*", { count: "exact", head: true }).eq("status", "open"),
       supabase
         .from("inventory_thresholds")
-        .select("*", { count: "exact", head: true }),
+        .select("*", { count: "exact", head: true })
+        .not("requested_at", "is", null),
     ]);
 
   return (
@@ -83,9 +84,9 @@ export default async function DashboardPage() {
         <SummaryCard label="Active locations" value={locationCount ?? 0} href="/admin/locations" />
         <SummaryCard label="Open events" value={openEvents ?? 0} href="/admin/events" />
         <SummaryCard
-          label="Thresholds configured"
-          value={thresholdBreaches ?? 0}
-          href="/admin/thresholds"
+          label="Open restock requests"
+          value={openRequests ?? 0}
+          href="/restock-requests"
         />
       </div>
       <div className="mt-8 flex gap-3">

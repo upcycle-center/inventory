@@ -74,6 +74,15 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             <option value="admin">Admin</option>
           </select>
         </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            name="receives_low_stock_report"
+            defaultChecked={user.receives_low_stock_report}
+            className="h-4 w-4"
+          />
+          Receives daily low-stock report email
+        </label>
       </ActionForm>
 
       <div className="mb-8 mt-3 flex items-center gap-3">

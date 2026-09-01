@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { LocationStaffRole, LocationStaffTier, Profile, StorageArea } from "@/lib/supabase/types";
+import type { InventoryThreshold, LocationStaffRole, LocationStaffTier, Profile, StorageArea } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
 import { sortStorageAreas } from "@/lib/storageAreas";
+import { eachEquivalent, getLocationCountLines, latestByProductId } from "@/lib/onHand";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
@@ -16,8 +17,10 @@ import {
   removeStaffTier,
   updateDefaultLead,
   updateLocation,
+  upsertThreshold,
 } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
+import { RequestRestockCheckbox } from "./RequestRestockCheckbox";
 
 function fmtQty(each: number | null | undefined, cases: number | null | undefined) {
   if (each == null && cases == null) return null;
@@ -30,16 +33,17 @@ function fmtQty(each: number | null | undefined, cases: number | null | undefine
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: location }, { data: staffRoles }, { data: staffTiers }, { data: locationProducts }, { data: users }] =
+  const [{ data: location }, { data: staffRoles }, { data: staffTiers }, { data: locationProducts }, { data: users }, { data: thresholds }] =
     await Promise.all([
       supabase.from("locations").select("*").eq("id", params.id).single(),
       supabase.from("location_staff_roles").select("*").eq("location_id", params.id).order("sort_order"),
       supabase.from("location_staff_tiers").select("*").eq("location_id", params.id).order("min_attendance"),
       supabase
         .from("location_products")
-        .select("product_id, product:products(id, sku, description, photo_url, active), storage_area:storage_areas(id, code, name)")
+        .select("product_id, product:products(id, sku, description, photo_url, active, case_size), storage_area:storage_areas(id, code, name)")
         .eq("location_id", params.id),
       supabase.from("profiles").select("*").order("name"),
+      supabase.from("inventory_thresholds").select("*").eq("location_id", params.id),
     ]);
 
   if (!location) notFound();
@@ -47,29 +51,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
   const roles = (staffRoles as LocationStaffRole[] | null) ?? [];
   const tiers = (staffTiers as LocationStaffTier[] | null) ?? [];
   const profileList = (users as Profile[] | null) ?? [];
+  const thresholdByProductId = new Map(
+    ((thresholds as InventoryThreshold[] | null) ?? []).map((t) => [t.product_id, t])
+  );
 
   // On-Hand: the most recently counted qty (each/cases, no conversion
   // between them) per product at this location, from any event's count.
-  const { data: countsHere } = await supabase
-    .from("location_counts")
-    .select("id")
-    .eq("location_id", params.id);
-  const countIds = ((countsHere as { id: string }[] | null) ?? []).map((c) => c.id);
-
-  const { data: countLines } = countIds.length
-    ? await supabase
-        .from("location_count_lines")
-        .select("product_id, qty_each, qty_cases, counted_at")
-        .in("location_count_id", countIds)
-    : { data: [] as any[] };
-
-  const onHandByProductId = new Map<string, { qty_each: number | null; qty_cases: number | null; counted_at: string }>();
-  for (const line of (countLines as any[]) ?? []) {
-    const existing = onHandByProductId.get(line.product_id);
-    if (!existing || line.counted_at > existing.counted_at) {
-      onHandByProductId.set(line.product_id, line);
-    }
-  }
+  const countLines = await getLocationCountLines(supabase, params.id);
+  const onHandByProductId = latestByProductId(countLines);
 
   // Waste: month-to-date tally per product at this location.
   const monthStart = new Date();
@@ -349,9 +338,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         carry a product from that product&apos;s own page. moEND shows the calculated value from
         the latest count sheet this month — post a physical count to lock in the real number and
         flag any discrepancy; moSTART carries forward from last month&apos;s posted (or
-        calculated) moEND.
+        calculated) moEND. Set a Threshold to flag low On-Hand (shown in red) and to include the
+        item in the daily low-stock report; check Request to add it to the{" "}
+        <Link href="/restock-requests" className="text-brand hover:underline">
+          Restock Requests
+        </Link>{" "}
+        queue.
       </p>
-      <div className="max-w-5xl overflow-x-auto">
+      <div className="max-w-6xl overflow-x-auto">
         {productsByArea.map(({ area, products }) => (
           <div key={area.id} className="mb-6">
             <p className="mb-2 text-xs font-medium text-gray-500">{area.name}</p>
@@ -360,8 +354,10 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                 <tr>
                   <th className="pb-2 pr-3"></th>
                   <th className="pb-2 pr-3">Product</th>
+                  <th className="pb-2 pr-3">Request</th>
                   <th className="pb-2 pr-3">moSTART</th>
                   <th className="pb-2 pr-3">On-Hand</th>
+                  <th className="pb-2 pr-3">Threshold</th>
                   <th className="pb-2 pr-3">Waste</th>
                   <th className="pb-2 pr-3">moEND</th>
                 </tr>
@@ -370,6 +366,11 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                 {products.map((p) => {
                   const onHand = onHandByProductId.get(p.id);
                   const waste = wasteByProductId.get(p.id);
+                  const threshold = thresholdByProductId.get(p.id);
+                  const isLow =
+                    !!threshold &&
+                    threshold.reorder_threshold > 0 &&
+                    eachEquivalent(onHand?.qty_each, onHand?.qty_cases, p.case_size) <= threshold.reorder_threshold;
 
                   const physicalPrev = monthEndByProductMonth.get(`${p.id}:${prevYear}-${prevMonth}`);
                   const calcPrev = calculatedForMonth(p.id, prevYear, prevMonth);
@@ -395,9 +396,34 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                           {p.description}
                         </Link>
                       </td>
-                      <td className="py-2 pr-3">{moStart ?? <span className="text-gray-400">—</span>}</td>
                       <td className="py-2 pr-3">
+                        <RequestRestockCheckbox
+                          locationId={location.id}
+                          productId={p.id}
+                          requested={!!threshold?.requested_at}
+                        />
+                      </td>
+                      <td className="py-2 pr-3">{moStart ?? <span className="text-gray-400">—</span>}</td>
+                      <td className={`py-2 pr-3 ${isLow ? "font-medium text-red-600" : ""}`}>
                         {onHand ? fmtQty(onHand.qty_each, onHand.qty_cases) : <span className="text-gray-400">—</span>}
+                      </td>
+                      <td className="py-2 pr-3">
+                        <ActionForm action={upsertThreshold} savedLabel="Saved" className="flex items-center gap-1">
+                          <input type="hidden" name="location_id" value={location.id} />
+                          <input type="hidden" name="product_id" value={p.id} />
+                          <input
+                            name="reorder_threshold"
+                            type="number"
+                            step="0.01"
+                            min={0}
+                            placeholder="—"
+                            defaultValue={threshold?.reorder_threshold ?? ""}
+                            className="w-16 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
+                          />
+                          <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
+                            Save
+                          </button>
+                        </ActionForm>
                       </td>
                       <td className="py-2 pr-3">{waste ? waste : <span className="text-gray-400">—</span>}</td>
                       <td className="py-2 pr-3">

@@ -20,6 +20,7 @@ export interface Profile {
   role: UserRole;
   phone: string | null;
   active: boolean;
+  receives_low_stock_report: boolean;
   created_at: string;
 }
 
@@ -154,6 +155,8 @@ export interface InventoryThreshold {
   location_id: string;
   reorder_threshold: number;
   reorder_qty: number;
+  requested_at: string | null;
+  requested_by: string | null;
   updated_at: string;
 }
 

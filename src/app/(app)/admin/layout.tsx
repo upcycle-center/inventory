@@ -7,7 +7,7 @@ const SECTIONS = [
   { href: "/admin/events", label: "Events" },
   { href: "/admin/suppliers", label: "Suppliers" },
   { href: "/admin/products", label: "Products" },
-  { href: "/admin/thresholds", label: "Thresholds" },
+  { href: "/restock-requests", label: "Restock Requests" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/yellow-dog-mapping", label: "Yellow Dog CSV Mapping" },
 ];
