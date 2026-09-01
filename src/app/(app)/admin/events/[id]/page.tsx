@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile } from "@/lib/supabase/types";
@@ -272,12 +273,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
                               {isOpen ? "Open" : "Closed"}
                             </button>
                           </form>
-                          <span>
+                          <Link href={`/admin/locations/${location.id}`} className="text-brand hover:underline">
                             {location.yellow_dog_code && (
                               <span className="mr-1 font-mono text-xs text-gray-400">{location.yellow_dog_code}</span>
                             )}
                             {location.name}
-                          </span>
+                          </Link>
                         </div>
                       </td>
                       <td className="py-2 pr-3">
