@@ -19,14 +19,19 @@ const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
 export default async function AdminUsersPage() {
   const supabase = createClient();
   const [{ data: users }, { data: certTypes }] = await Promise.all([
-    supabase.from("profiles").select("*").order("name"),
+    supabase.from("profiles").select("*").eq("active", true).order("name"),
     supabase.from("certification_types").select("*").order("sort_order"),
   ]);
 
   return (
     <div>
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Users" }]} />
-      <h1 className="mb-6 text-lg font-semibold">Users</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Users</h1>
+        <Link href="/admin/users/inactive" className="text-sm text-brand hover:underline">
+          View inactive
+        </Link>
+      </div>
 
       <div className="mb-8 grid gap-6 sm:grid-cols-2">
         <InviteUserForm />

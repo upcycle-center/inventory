@@ -5,6 +5,8 @@ import { certificationStatus } from "@/lib/certifications";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateUserProfile, setUserCertification } from "./actions";
+import { toggleUserActive } from "../actions";
+import { DeleteUserButton } from "./DeleteUserButton";
 
 export default async function UserDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -35,10 +37,17 @@ export default async function UserDetailPage({ params }: { params: { id: string 
       />
       <h1 className="mb-6 text-lg font-semibold">{user.name}</h1>
 
+      {!user.active && (
+        <div className="mb-4 max-w-md rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-800">
+          This user is deactivated and can&apos;t log in.
+        </div>
+      )}
+
       <ActionForm
+        id="edit-profile-form"
         action={updateUserProfile}
         savedLabel="Profile saved"
-        className="mb-8 grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
+        className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={user.id} />
         <p className="text-sm font-medium">Profile</p>
@@ -65,10 +74,21 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             <option value="admin">Admin</option>
           </select>
         </label>
-        <button type="submit" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+      </ActionForm>
+
+      <div className="mb-8 mt-3 flex items-center gap-3">
+        <button type="submit" form="edit-profile-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
           Save
         </button>
-      </ActionForm>
+        <ActionForm action={toggleUserActive} className="contents" savedLabel={user.active ? "Deactivated" : "Reactivated"}>
+          <input type="hidden" name="id" value={user.id} />
+          <input type="hidden" name="active" value={String(user.active)} />
+          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+            {user.active ? "Deactivate" : "Reactivate"}
+          </button>
+        </ActionForm>
+        <DeleteUserButton userId={user.id} />
+      </div>
 
       <p className="mb-3 text-sm font-medium">Certifications</p>
       <p className="mb-3 text-sm text-gray-500">

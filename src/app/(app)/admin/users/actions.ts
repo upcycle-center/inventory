@@ -44,6 +44,28 @@ export async function toggleCertificationTypeActive(formData: FormData) {
   revalidatePath("/admin/users");
 }
 
+// Deactivating also bans the auth account so the person can't log in —
+// otherwise "Deactivate" would only be cosmetic for someone who still
+// holds a password. Reactivate lifts the ban.
+export async function toggleUserActive(formData: FormData) {
+  const requester = await requireProfile(["admin"]);
+  const id = String(formData.get("id"));
+  const active = formData.get("active") === "true";
+  if (requester.id === id && active) return;
+
+  const supabase = createClient();
+  await supabase.from("profiles").update({ active: !active }).eq("id", id);
+
+  const admin = createServiceRoleClient();
+  await admin.auth.admin.updateUserById(id, {
+    ban_duration: active ? "876000h" : "none",
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/users/inactive");
+  revalidatePath(`/admin/users/${id}`);
+}
+
 export async function inviteUser(formData: FormData): Promise<{ message: string }> {
   await requireProfile(["admin"]);
   const email = String(formData.get("email") || "").trim();

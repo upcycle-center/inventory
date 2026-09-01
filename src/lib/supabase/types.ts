@@ -19,6 +19,7 @@ export interface Profile {
   email: string;
   role: UserRole;
   phone: string | null;
+  active: boolean;
   created_at: string;
 }
 

@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import type { UserRole } from "@/lib/supabase/types";
 
@@ -53,4 +54,25 @@ export async function setUserCertification(formData: FormData) {
 
   revalidatePath(`/admin/users/${userId}`);
   revalidatePath("/admin/users");
+}
+
+export async function deleteUser(id: string): Promise<{ error: string } | void> {
+  const requester = await requireProfile(["admin"]);
+  if (requester.id === id) {
+    return { error: "You can't delete your own account." };
+  }
+
+  const admin = createServiceRoleClient();
+  const { error } = await admin.auth.admin.deleteUser(id);
+
+  if (error) {
+    const message = /foreign key|violat/i.test(error.message)
+      ? "Can't delete — this user has counts, assignments, or other records on file. Deactivate them instead."
+      : error.message;
+    return { error: message };
+  }
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/users/inactive");
+  redirect("/admin/users");
 }
