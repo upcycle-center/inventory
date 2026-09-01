@@ -134,9 +134,9 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
       <p className="mb-3 mt-8 text-sm font-medium">Locations</p>
       <p className="mb-6 text-sm text-gray-500">
-        Every location is checked (sold there) by default. Uncheck a location if this product
-        isn&apos;t sold there — it will no longer show on that location&apos;s Count Sheet. Only
-        checked locations show the product on their Count Sheet.
+        Every location is checked (stocked) by default. Uncheck a location if this product isn&apos;t
+        stocked there — it will no longer show on that location&apos;s Count Sheet. Only checked
+        locations show the product on their Count Sheet.
       </p>
 
       <ActionForm
@@ -148,7 +148,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         <table className="w-full text-left text-sm">
           <thead className="text-gray-500">
             <tr>
-              <th className="pb-2">Sold here</th>
+              <th className="pb-2">Stock</th>
               <th className="pb-2">Location</th>
               <th className="pb-2">Storage area</th>
             </tr>

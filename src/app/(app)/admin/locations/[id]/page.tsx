@@ -224,7 +224,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         {!tiers.length && <li className="text-sm text-gray-400">No attendance tiers set yet.</li>}
       </ul>
 
-      <p className="mb-3 text-sm font-medium">Products sold here</p>
+      <p className="mb-3 text-sm font-medium">Products stocked here</p>
       <p className="mb-3 text-sm text-gray-500">
         Only products checked for this location show up on its Count Sheet. Edit which locations
         carry a product from that product&apos;s own page.
@@ -245,7 +245,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
             </ul>
           </div>
         ))}
-        {!productsByArea.length && <p className="text-sm text-gray-400">No products sold here yet.</p>}
+        {!productsByArea.length && <p className="text-sm text-gray-400">No products stocked here yet.</p>}
       </div>
     </div>
   );
