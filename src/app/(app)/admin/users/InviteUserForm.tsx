@@ -24,8 +24,8 @@ export function InviteUserForm() {
       <select name="role" defaultValue="stand_lead" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
         <option value="stand_lead">Stand Lead</option>
         <option value="warehouse">Warehouse</option>
-        <option value="kitchen">Kitchen Manager</option>
-        <option value="catering">Catering Manager</option>
+        <option value="kitchen">Kitchen</option>
+        <option value="catering">Catering</option>
         <option value="ops">Operations</option>
         <option value="admin">Admin</option>
       </select>
