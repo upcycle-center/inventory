@@ -14,11 +14,18 @@ export async function updateUserProfile(formData: FormData) {
   const phone = String(formData.get("phone") || "").trim();
   const role = String(formData.get("role")) as UserRole;
   const receivesLowStockReport = formData.get("receives_low_stock_report") === "on";
+  const lowStockReportEmail = String(formData.get("low_stock_report_email") || "").trim();
   if (!id || !name) return;
 
   await supabase
     .from("profiles")
-    .update({ name, phone: phone || null, role, receives_low_stock_report: receivesLowStockReport })
+    .update({
+      name,
+      phone: phone || null,
+      role,
+      receives_low_stock_report: receivesLowStockReport,
+      low_stock_report_email: lowStockReportEmail || null,
+    })
     .eq("id", id);
 
   revalidatePath(`/admin/users/${id}`);

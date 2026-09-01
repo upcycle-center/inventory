@@ -56,7 +56,9 @@ export async function GET(request: Request) {
   }
 
   const { data: recipients } = await supabase.from("profiles").select("*").eq("receives_low_stock_report", true);
-  const emails = ((recipients as Profile[] | null) ?? []).map((p) => p.email).filter(Boolean);
+  const emails = ((recipients as Profile[] | null) ?? [])
+    .map((p) => p.low_stock_report_email || p.email)
+    .filter(Boolean);
 
   if (!emails.length) {
     return Response.json({ sent: false, reason: "no opted-in recipients", lowItemCount: lowItems.length });

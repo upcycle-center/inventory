@@ -83,6 +83,17 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           />
           Receives daily low-stock report email
         </label>
+        <label className="text-sm text-gray-600">
+          Report email (optional)
+          <input
+            name="low_stock_report_email"
+            type="email"
+            defaultValue={user.low_stock_report_email ?? ""}
+            placeholder={user.email}
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <span className="mt-1 block text-xs text-gray-400">Leave blank to use the login email above.</span>
+        </label>
       </ActionForm>
 
       <div className="mb-8 mt-3 flex items-center gap-3">

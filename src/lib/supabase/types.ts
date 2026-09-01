@@ -21,6 +21,7 @@ export interface Profile {
   phone: string | null;
   active: boolean;
   receives_low_stock_report: boolean;
+  low_stock_report_email: string | null;
   created_at: string;
 }
 
