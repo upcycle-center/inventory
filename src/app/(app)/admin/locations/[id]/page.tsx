@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
+import type { LocationStaffRole, LocationStaffTier, StorageArea } from "@/lib/supabase/types";
 import { STAFF_ROLES } from "@/lib/staffRoles";
+import { sortStorageAreas } from "@/lib/storageAreas";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { toggleLocationActive } from "../actions";
@@ -12,16 +13,32 @@ import { DeleteLocationButton } from "./DeleteLocationButton";
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: location }, { data: staffRoles }, { data: staffTiers }] = await Promise.all([
-    supabase.from("locations").select("*").eq("id", params.id).single(),
-    supabase.from("location_staff_roles").select("*").eq("location_id", params.id).order("sort_order"),
-    supabase.from("location_staff_tiers").select("*").eq("location_id", params.id).order("min_attendance"),
-  ]);
+  const [{ data: location }, { data: staffRoles }, { data: staffTiers }, { data: locationProducts }] =
+    await Promise.all([
+      supabase.from("locations").select("*").eq("id", params.id).single(),
+      supabase.from("location_staff_roles").select("*").eq("location_id", params.id).order("sort_order"),
+      supabase.from("location_staff_tiers").select("*").eq("location_id", params.id).order("min_attendance"),
+      supabase
+        .from("location_products")
+        .select("product_id, product:products(id, sku, description, active), storage_area:storage_areas(id, code, name)")
+        .eq("location_id", params.id),
+    ]);
 
   if (!location) notFound();
 
   const roles = (staffRoles as LocationStaffRole[] | null) ?? [];
   const tiers = (staffTiers as LocationStaffTier[] | null) ?? [];
+
+  const areaMap = new Map<string, { area: StorageArea; products: any[] }>();
+  for (const row of (locationProducts as any[]) ?? []) {
+    if (!row.product?.active || !row.storage_area) continue;
+    const entry = areaMap.get(row.storage_area.id) ?? { area: row.storage_area, products: [] as any[] };
+    entry.products.push(row.product);
+    areaMap.set(row.storage_area.id, entry);
+  }
+  const productsByArea = sortStorageAreas(Array.from(areaMap.values()).map((e) => e.area)).map(
+    (area) => areaMap.get(area.id)!
+  );
 
   return (
     <div>
@@ -206,6 +223,30 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         ))}
         {!tiers.length && <li className="text-sm text-gray-400">No attendance tiers set yet.</li>}
       </ul>
+
+      <p className="mb-3 text-sm font-medium">Products sold here</p>
+      <p className="mb-3 text-sm text-gray-500">
+        Only products checked for this location show up on its Count Sheet. Edit which locations
+        carry a product from that product&apos;s own page.
+      </p>
+      <div className="max-w-2xl">
+        {productsByArea.map(({ area, products }) => (
+          <div key={area.id} className="mb-4">
+            <p className="mb-2 text-xs font-medium text-gray-500">{area.name}</p>
+            <ul className="space-y-1">
+              {products.map((p) => (
+                <li key={p.id} className="rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
+                  <Link href={`/admin/products/${p.id}`} className="text-brand hover:underline">
+                    {p.description}
+                  </Link>
+                  <span className="ml-2 text-gray-400">({p.sku})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        {!productsByArea.length && <p className="text-sm text-gray-400">No products sold here yet.</p>}
+      </div>
     </div>
   );
 }

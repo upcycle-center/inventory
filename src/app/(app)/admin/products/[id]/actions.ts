@@ -64,28 +64,35 @@ export async function updateProduct(formData: FormData) {
   revalidatePath("/admin/products");
 }
 
-export async function assignProductToLocation(formData: FormData) {
+// One combined form drives all locations at once: a location is "sold
+// here" (shows on that location's count sheet) exactly when its checkbox
+// is checked, which upserts a location_products row with the chosen
+// storage area; unchecked removes the row.
+export async function syncProductLocations(formData: FormData) {
   const supabase = createClient();
   const productId = String(formData.get("product_id"));
-  const locationId = String(formData.get("location_id"));
-  const storageAreaId = String(formData.get("storage_area_id"));
-  if (!productId || !locationId || !storageAreaId) return;
+  if (!productId) return;
 
-  await supabase
-    .from("location_products")
-    .upsert(
-      { location_id: locationId, product_id: productId, storage_area_id: storageAreaId },
-      { onConflict: "location_id,product_id" }
-    );
+  const { data: locations } = await supabase.from("locations").select("id").eq("active", true);
 
-  revalidatePath(`/admin/products/${productId}`);
-}
+  for (const loc of locations ?? []) {
+    const sold = formData.get(`sold_${loc.id}`) === "on";
+    const storageAreaId = String(formData.get(`area_${loc.id}`) || "");
 
-export async function removeProductFromLocation(formData: FormData) {
-  const supabase = createClient();
-  const id = String(formData.get("id"));
-  const productId = String(formData.get("product_id"));
-  await supabase.from("location_products").delete().eq("id", id);
+    if (sold && storageAreaId) {
+      await supabase.from("location_products").upsert(
+        { location_id: loc.id, product_id: productId, storage_area_id: storageAreaId },
+        { onConflict: "location_id,product_id" }
+      );
+    } else {
+      await supabase
+        .from("location_products")
+        .delete()
+        .eq("location_id", loc.id)
+        .eq("product_id", productId);
+    }
+  }
+
   revalidatePath(`/admin/products/${productId}`);
 }
 

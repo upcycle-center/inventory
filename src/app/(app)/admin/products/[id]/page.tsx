@@ -6,7 +6,7 @@ import { sortStorageAreas } from "@/lib/storageAreas";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { assignProductToLocation, removeProductFromLocation, updateProduct } from "./actions";
+import { syncProductLocations, updateProduct } from "./actions";
 import { toggleProductActive } from "../actions";
 import { DeleteProductButton } from "./DeleteProductButton";
 
@@ -21,14 +21,20 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       supabase.from("storage_areas").select("*").eq("active", true),
       supabase
         .from("location_products")
-        .select("id, location_id, storage_area_id, location:locations(id, name), storage_area:storage_areas(id, code, name)")
+        .select("location_id, storage_area_id")
         .eq("product_id", params.id),
     ]);
 
   if (!product) notFound();
 
   const areas = sortStorageAreas((storageAreas as StorageArea[]) ?? []);
-  const assignments = (locationProducts as any[] | null) ?? [];
+  const storageAreaIdByLocationId = new Map(
+    ((locationProducts as { location_id: string; storage_area_id: string }[] | null) ?? []).map((lp) => [
+      lp.location_id,
+      lp.storage_area_id,
+    ])
+  );
+  const defaultAreaId = areas.find((a) => a.code === "OTH")?.id ?? areas[0]?.id ?? "";
 
   return (
     <div>
@@ -128,61 +134,68 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
       <p className="mb-3 mt-8 text-sm font-medium">Locations</p>
       <p className="mb-6 text-sm text-gray-500">
-        Assign which locations carry this product and the storage area it lives in there — this
-        drives the photo-grid count screen.
+        Every location is checked (sold there) by default. Uncheck a location if this product
+        isn&apos;t sold there — it will no longer show on that location&apos;s Count Sheet. Only
+        checked locations show the product on their Count Sheet.
       </p>
 
       <ActionForm
-        action={assignProductToLocation}
-        savedLabel="Assigned"
-        className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+        action={syncProductLocations}
+        savedLabel="Locations saved"
+        className="max-w-2xl rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="product_id" value={product.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Location</label>
-          <select name="location_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {(locations as Location[] | null)?.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Storage area</label>
-          <select name="storage_area_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {areas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Assign
+        <table className="w-full text-left text-sm">
+          <thead className="text-gray-500">
+            <tr>
+              <th className="pb-2">Sold here</th>
+              <th className="pb-2">Location</th>
+              <th className="pb-2">Storage area</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(locations as Location[] | null)?.map((l) => {
+              const existingAreaId = storageAreaIdByLocationId.get(l.id);
+              return (
+                <tr key={l.id} className="border-t border-gray-100">
+                  <td className="py-2">
+                    <input
+                      type="checkbox"
+                      name={`sold_${l.id}`}
+                      defaultChecked={storageAreaIdByLocationId.has(l.id) || !locationProducts?.length}
+                      className="h-4 w-4"
+                    />
+                  </td>
+                  <td className="py-2">{l.name}</td>
+                  <td className="py-2">
+                    <select
+                      name={`area_${l.id}`}
+                      defaultValue={existingAreaId ?? defaultAreaId}
+                      className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                    >
+                      {areas.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              );
+            })}
+            {!locations?.length && (
+              <tr>
+                <td colSpan={3} className="py-4 text-gray-400">
+                  No locations available.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <button type="submit" className="mt-4 rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Save
         </button>
       </ActionForm>
-
-      <ul className="space-y-1">
-        {assignments.map((a) => (
-          <li
-            key={a.id}
-            className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm"
-          >
-            <span>
-              {a.location?.name} <span className="text-gray-400">({a.storage_area?.name})</span>
-            </span>
-            <form action={removeProductFromLocation}>
-              <input type="hidden" name="id" value={a.id} />
-              <input type="hidden" name="product_id" value={product.id} />
-              <button type="submit" className="text-red-600 hover:underline">
-                Remove
-              </button>
-            </form>
-          </li>
-        ))}
-        {!assignments.length && <p className="text-sm text-gray-400">Not assigned to any location yet.</p>}
-      </ul>
     </div>
   );
 }
