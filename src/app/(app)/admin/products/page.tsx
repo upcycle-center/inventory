@@ -2,7 +2,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { createProduct } from "./actions";
-import { CsvUploadForm } from "./CsvUploadForm";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -40,12 +39,17 @@ export default async function AdminProductsPage({
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Products" }]} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Products</h1>
-        <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">
-          View inactive
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/admin/products/bulk-upload" className="text-sm text-brand hover:underline">
+            Bulk upload from CSV
+          </Link>
+          <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">
+            View inactive
+          </Link>
+        </div>
       </div>
 
-      <div className="mb-8 grid gap-6 sm:grid-cols-2">
+      <div className="mb-8 max-w-md">
         <ActionForm
           action={createProduct}
           encType="multipart/form-data"
@@ -83,8 +87,6 @@ export default async function AdminProductsPage({
             Save
           </button>
         </ActionForm>
-
-        <CsvUploadForm suppliers={supplierList} />
       </div>
 
       <form className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
