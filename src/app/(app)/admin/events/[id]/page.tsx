@@ -50,7 +50,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
       supabase.from("profiles").select("*").order("name"),
       supabase
         .from("event_location_assignments")
-        .select("id, location_id, location_lead_user_id, location:locations(id, name), location_lead:profiles(id, name, certifications)")
+        .select("id, location_id, location_lead_user_id, location:locations(id, name), location_lead:profiles(id, name)")
         .eq("event_id", params.id),
       supabase
         .from("event_locations")
@@ -79,8 +79,31 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const leadUserIdByLocationId = new Map(
     ((assignments as any[] | null) ?? []).map((a) => [a.location_id, a.location_lead_user_id as string])
   );
+
+  const leadIds = [...new Set(((assignments as any[] | null) ?? []).map((a) => a.location_lead_user_id).filter(Boolean))];
+  const { data: leadCertRows } = leadIds.length
+    ? await supabase
+        .from("user_certifications")
+        .select("user_id, expires_at, certification_type:certification_types(name)")
+        .in("user_id", leadIds)
+    : { data: [] as any[] };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const validCertNamesByUserId = new Map<string, string[]>();
+  for (const row of (leadCertRows as any[]) ?? []) {
+    if (row.expires_at && row.expires_at < today) continue;
+    const name = row.certification_type?.name;
+    if (!name) continue;
+    const list = validCertNamesByUserId.get(row.user_id) ?? [];
+    list.push(name);
+    validCertNamesByUserId.set(row.user_id, list);
+  }
+
   const leadCertsByLocationId = new Map(
-    ((assignments as any[] | null) ?? []).map((a) => [a.location_id, (a.location_lead?.certifications as string[]) ?? []])
+    ((assignments as any[] | null) ?? []).map((a) => [
+      a.location_id,
+      validCertNamesByUserId.get(a.location_lead_user_id) ?? [],
+    ])
   );
   const rolesByLocationId = new Map<string, LocationStaffRole[]>();
   for (const role of (staffRoles as LocationStaffRole[] | null) ?? []) {

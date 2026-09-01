@@ -14,15 +14,26 @@ export async function updateUserRole(formData: FormData) {
   revalidatePath("/admin/users");
 }
 
-export async function updateUserCertifications(formData: FormData) {
+export async function addCertificationType(formData: FormData) {
+  await requireProfile(["admin"]);
+  const supabase = createClient();
+  const name = String(formData.get("name") || "").trim();
+  if (!name) return;
+
+  const { count } = await supabase
+    .from("certification_types")
+    .select("*", { count: "exact", head: true });
+
+  await supabase.from("certification_types").insert({ name, sort_order: count ?? 0 });
+  revalidatePath("/admin/users");
+}
+
+export async function toggleCertificationTypeActive(formData: FormData) {
   await requireProfile(["admin"]);
   const supabase = createClient();
   const id = String(formData.get("id"));
-  const certifications = String(formData.get("certifications") || "")
-    .split(",")
-    .map((c) => c.trim())
-    .filter(Boolean);
-  await supabase.from("profiles").update({ certifications }).eq("id", id);
+  const active = formData.get("active") === "true";
+  await supabase.from("certification_types").update({ active: !active }).eq("id", id);
   revalidatePath("/admin/users");
 }
 

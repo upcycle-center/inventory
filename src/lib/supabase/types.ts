@@ -18,7 +18,24 @@ export interface Profile {
   name: string;
   email: string;
   role: UserRole;
-  certifications: string[];
+  phone: string | null;
+  created_at: string;
+}
+
+export interface CertificationType {
+  id: string;
+  name: string;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface UserCertification {
+  id: string;
+  user_id: string;
+  certification_type_id: string;
+  certified_at: string | null;
+  expires_at: string | null;
   created_at: string;
 }
 
