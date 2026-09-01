@@ -145,15 +145,15 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <thead className="text-gray-500">
             <tr>
               <th className="pb-2 pr-3 whitespace-nowrap">Location</th>
+              <th className="pb-2 pr-3"></th>
+              <th className="pb-2 pr-3 whitespace-nowrap" title="Fixed baseline — always 1 when open">
+                Lead
+              </th>
               {STAFF_ROLES.map((r) => (
                 <th key={r} className="pb-2 pr-3 whitespace-nowrap" title={r}>
                   {STAFF_ROLE_SHORT_LABEL[r]}
                 </th>
               ))}
-              <th className="pb-2 pr-3 whitespace-nowrap" title="Fixed baseline — always 1 when open">
-                Lead
-              </th>
-              <th className="pb-2 pr-3"></th>
               <th className="pb-2 pr-3">Total</th>
               <th className="pb-2"></th>
             </tr>
@@ -221,14 +221,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           </span>
                         </div>
                       </td>
-                      {roleCounts.map(({ roleName, count, note }) => (
-                        <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
-                          {count == null ? <span className="text-gray-300">—</span> : count}
-                        </td>
-                      ))}
-                      <td className="py-2 pr-3 text-center">
-                        {isOpen ? 1 : <span className="text-gray-300">—</span>}
-                      </td>
                       <td className="py-2 pr-3">
                         <LocationLeadSelect
                           eventId={event.id}
@@ -239,6 +231,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           disabled={confirmed}
                         />
                       </td>
+                      <td className="py-2 pr-3 text-center">
+                        {isOpen ? 1 : <span className="text-gray-300">—</span>}
+                      </td>
+                      {roleCounts.map(({ roleName, count, note }) => (
+                        <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
+                          {count == null ? <span className="text-gray-300">—</span> : count}
+                        </td>
+                      ))}
                       <td className="py-2 pr-3 font-medium">
                         {displayedStaff}
                         {confirmed && recommended !== displayedStaff && (
