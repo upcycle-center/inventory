@@ -107,7 +107,8 @@ export default async function DashboardPage() {
   }
 
   let standValue = 0;
-  let warehouseValue = 0;
+  let mainWarehouseValue = 0;
+  let liquorRoomValue = 0;
   let kitchenValue = 0;
   const locationValues: { label: string; value: number }[] = [];
   for (const loc of activeLocations) {
@@ -123,8 +124,11 @@ export default async function DashboardPage() {
     }
     if (total > 0) locationValues.push({ label: loc.name, value: total });
     if (loc.type === "stand") standValue += total;
-    else if (loc.type === "warehouse") warehouseValue += total;
-    else if (loc.type === "kitchen") kitchenValue += total;
+    else if (loc.type === "warehouse") {
+      // Same alcohol-warehouse heuristic as src/lib/restockUnit.ts.
+      if (/liquor|alcohol/i.test(loc.name)) liquorRoomValue += total;
+      else mainWarehouseValue += total;
+    } else if (loc.type === "kitchen") kitchenValue += total;
   }
 
   // ---- Shared: upcoming/open events + their location open/confirm state ----
@@ -238,20 +242,27 @@ export default async function DashboardPage() {
         <SummaryCard label="Open events" value={openEventCount ?? 0} href="/admin/events" />
         <SummaryCard label="Open restock requests" value={openRequestCount ?? 0} href="/restock-requests" />
       </div>
-      <div className="mt-8 flex gap-3">
+      <div className="mt-8 flex flex-wrap gap-3">
         <Link href="/receive" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Receive
         </Link>
         <Link href="/transfer" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
           Transfer
         </Link>
+        <Link href="/restock-requests" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
+          Requests
+        </Link>
+        <Link href="/admin/events?status=open" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
+          Events (open only)
+        </Link>
       </div>
 
       <Section title="TOT Inventory">
-        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="TOT $Value — Stand" value={fmtCurrency(standValue)} />
-          <StatCard label="TOT $Value — Warehouse" value={fmtCurrency(warehouseValue)} />
-          <StatCard label="TOT $Value — Kitchen" value={fmtCurrency(kitchenValue)} />
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="TOT $Warehouse" value={fmtCurrency(mainWarehouseValue)} />
+          <StatCard label="TOT $Liquor Room" value={fmtCurrency(liquorRoomValue)} />
+          <StatCard label="TOT $Kitchen" value={fmtCurrency(kitchenValue)} />
+          <StatCard label="TOT $Stands" value={fmtCurrency(standValue)} />
         </div>
         <div className="rounded-md border border-gray-200 bg-white p-4">
           <p className="mb-3 text-xs font-medium text-gray-500">By location</p>

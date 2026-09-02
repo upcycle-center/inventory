@@ -1,6 +1,6 @@
 {
-  "name": "Venue Inventory Tracking",
-  "short_name": "VenueInv",
+  "name": "BWP Operations",
+  "short_name": "BWP Ops",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#f9fafb",

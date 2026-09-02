@@ -85,7 +85,7 @@ export async function GET(request: Request) {
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
-    from: process.env.REPORT_FROM_EMAIL || "Venue Inventory <inventory@yourdomain.com>",
+    from: process.env.REPORT_FROM_EMAIL || "BWP Operations <inventory@yourdomain.com>",
     to: emails,
     subject: `Missing Closing Counts — ${today}`,
     html: `<p>${missing.length} location(s) confirmed open haven't submitted a closing count. Full list attached.</p>`,

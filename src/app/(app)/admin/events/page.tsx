@@ -5,17 +5,32 @@ import { createEvent } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
-export default async function AdminEventsPage() {
+export default async function AdminEventsPage({
+  searchParams,
+}: {
+  searchParams: { status?: string };
+}) {
   const supabase = createClient();
-  const { data: events } = await supabase
-    .from("events")
-    .select("*")
-    .order("event_date", { ascending: false });
+  const { status } = searchParams;
+
+  let query = supabase.from("events").select("*").order("event_date", { ascending: false });
+  if (status) query = query.eq("status", status);
+  const { data: events } = await query;
 
   return (
     <div>
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Events" }]} />
-      <h1 className="mb-6 text-lg font-semibold">Events</h1>
+      <div className="mb-6 flex items-center gap-3">
+        <h1 className="text-lg font-semibold">Events</h1>
+        {status && (
+          <>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs uppercase text-gray-600">{status} only</span>
+            <Link href="/admin/events" className="text-xs text-brand hover:underline">
+              Clear filter
+            </Link>
+          </>
+        )}
+      </div>
 
       <ActionForm action={createEvent} savedLabel="Event created" className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
         <div>
