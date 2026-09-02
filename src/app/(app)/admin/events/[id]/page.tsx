@@ -8,6 +8,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
 import { confirmLocationStaffing, postTotTickets, toggleLocationOpen, unlockLocationStaffing, updateEstTickets } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
+import { DeleteEventButton } from "./DeleteEventButton";
 import { effectiveCount, totalRecommendedStaff as totalRecommendedStaffAcross } from "@/lib/staffing";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
@@ -82,18 +83,21 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <h1 className="mb-1 text-lg font-semibold">{event.name}</h1>
       <p className="mb-6 text-sm text-gray-500">{event.event_date}</p>
 
-      <ActionForm action={updateEventStatus} savedLabel="Status updated" className="mb-8 flex items-center gap-2">
-        <input type="hidden" name="id" value={event.id} />
-        <label className="text-sm text-gray-500">Status</label>
-        <select name="status" defaultValue={event.status} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
-          <option value="upcoming">Upcoming</option>
-          <option value="open">Open</option>
-          <option value="closed">Closed</option>
-        </select>
-        <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
-          Update
-        </button>
-      </ActionForm>
+      <div className="mb-8 flex items-center justify-between">
+        <ActionForm action={updateEventStatus} savedLabel="Status updated" className="flex items-center gap-2">
+          <input type="hidden" name="id" value={event.id} />
+          <label className="text-sm text-gray-500">Status</label>
+          <select name="status" defaultValue={event.status} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
+            <option value="upcoming">Upcoming</option>
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+            Update
+          </button>
+        </ActionForm>
+        <DeleteEventButton eventId={event.id} />
+      </div>
 
       <div className="mb-8 flex flex-wrap gap-4">
         <ActionForm
