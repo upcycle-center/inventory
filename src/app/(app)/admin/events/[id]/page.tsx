@@ -171,7 +171,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
       )}
 
       <div className="mb-8 overflow-x-auto rounded-md border border-gray-200 bg-white p-4">
-        <p className="mb-3 text-sm font-medium">Locations</p>
+        <p className="mb-3 text-sm font-medium">WFM Shifts</p>
         <table className="w-full text-left text-sm">
           <thead className="text-gray-500">
             <tr>
@@ -192,6 +192,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <tbody>
             {(() => {
               let grandTotal = 0;
+              let leadColumnTotal = 0;
+              const roleColumnTotals = new Map<string, number>();
 
               const rows = ((locations as Location[] | null) ?? []).map((l) => {
                 const isOpen = openByLocationId.get(l.id) ?? true;
@@ -219,6 +221,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
                     ? eventLocation?.confirmed_staff_count ?? recommended
                     : recommended;
                 grandTotal += displayedStaff;
+                leadColumnTotal += leadCount;
+                for (const { roleName, count } of roleCounts) {
+                  roleColumnTotals.set(roleName, (roleColumnTotals.get(roleName) ?? 0) + (count ?? 0));
+                }
 
                 return { location: l, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff };
               });
@@ -315,9 +321,15 @@ export default async function EventDetailPage({ params }: { params: { id: string
                     </tr>
                   )}
                   {rows.length > 0 && (
-                    <tr className="border-t border-gray-200">
-                      <td colSpan={3 + STAFF_ROLES.length} />
-                      <td className="py-2 pr-3 font-medium">{grandTotal}</td>
+                    <tr className="border-t border-gray-200 font-medium">
+                      <td colSpan={2} />
+                      <td className="py-2 pr-3 text-center">{leadColumnTotal}</td>
+                      {STAFF_ROLES.map((roleName) => (
+                        <td key={roleName} className="py-2 pr-3 text-center">
+                          {roleColumnTotals.get(roleName) ?? 0}
+                        </td>
+                      ))}
+                      <td className="py-2 pr-3">{grandTotal}</td>
                       <td />
                     </tr>
                   )}
