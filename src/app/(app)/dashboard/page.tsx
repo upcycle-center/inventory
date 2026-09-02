@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { Location, LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 import { getLocationCountLines, latestByProductId } from "@/lib/onHand";
 import { lineValue } from "@/lib/inventoryValue";
-import { totalRecommendedStaff } from "@/lib/staffing";
+import { effectiveCount, totalRecommendedStaff } from "@/lib/staffing";
+import { STAFF_ROLES } from "@/lib/staffRoles";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 
@@ -175,6 +176,37 @@ export default async function DashboardPage() {
     wfmShifts += totalRecommendedStaff(standLocationIds, openMap, rolesByLocationId, staffTiers, ev.est_tickets);
   }
 
+  // ---- WFM Staff: TOT Headcount — role split across CONFIRMED locations
+  // only (not just open), since that's the staffing that's actually locked in.
+  const confirmedLocationIdsByEvent = new Map<string, string[]>();
+  for (const r of eventLocationRows) {
+    if (!r.is_open || !r.confirmed) continue;
+    const list = confirmedLocationIdsByEvent.get(r.event_id) ?? [];
+    list.push(r.location_id);
+    confirmedLocationIdsByEvent.set(r.event_id, list);
+  }
+
+  let leadHeadcount = 0;
+  const roleHeadcounts = new Map<string, number>();
+  for (const ev of activeEvents) {
+    const confirmedLocationIds = confirmedLocationIdsByEvent.get(ev.id) ?? [];
+    for (const locationId of confirmedLocationIds) {
+      leadHeadcount += 1;
+      const roles = rolesByLocationId.get(locationId) ?? [];
+      for (const roleName of STAFF_ROLES) {
+        const role = roles.find((r) => r.role_name === roleName);
+        if (!role) continue;
+        const { count } = effectiveCount(role, staffTiers, ev.est_tickets);
+        roleHeadcounts.set(roleName, (roleHeadcounts.get(roleName) ?? 0) + count);
+      }
+    }
+  }
+  const totHeadcount = leadHeadcount + Array.from(roleHeadcounts.values()).reduce((a, b) => a + b, 0);
+  const headcountSlices = [
+    { label: "Stand Lead", value: leadHeadcount },
+    ...STAFF_ROLES.map((roleName) => ({ label: roleName, value: roleHeadcounts.get(roleName) ?? 0 })),
+  ];
+
   // ---- Count: PDF Printer Ready / By Location / %Completion ----
   const { data: readyRowsRaw } = activeEventIds.length
     ? await supabase
@@ -219,16 +251,27 @@ export default async function DashboardPage() {
         </div>
         <div className="rounded-md border border-gray-200 bg-white p-4">
           <p className="mb-3 text-xs font-medium text-gray-500">By location</p>
-          <DonutChart slices={locationValues} centerLabel="on hand" />
+          <DonutChart slices={locationValues} centerLabel="on hand" emptyLabel="No inventory value on record yet." />
         </div>
       </Section>
 
       <Section title="WFM Staff">
-        <div className="max-w-xs rounded-md border border-gray-200 bg-white p-4">
+        <div className="mb-4 max-w-xs rounded-md border border-gray-200 bg-white p-4">
           <Meter
             label="Confirmed vs unconfirmed (open locations, upcoming/open events)"
             numerator={confirmedOpenCount}
             denominator={openRows.length}
+          />
+        </div>
+        <div className="rounded-md border border-gray-200 bg-white p-4">
+          <p className="mb-3 text-xs font-medium text-gray-500">
+            TOT Headcount — {totHeadcount} confirmed, by role
+          </p>
+          <DonutChart
+            slices={headcountSlices}
+            centerLabel="confirmed"
+            format="count"
+            emptyLabel="No confirmed staffing yet."
           />
         </div>
       </Section>
