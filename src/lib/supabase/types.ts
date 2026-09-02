@@ -223,6 +223,7 @@ export interface InventoryMovement {
   type: MovementType;
   quantity: number;
   event_id: string | null;
+  reason_code: string | null;
   note: string | null;
   user_id: string;
   created_at: string;

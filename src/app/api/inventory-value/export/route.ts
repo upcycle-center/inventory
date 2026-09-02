@@ -2,6 +2,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { buildInventoryReport } from "@/lib/inventoryReport";
 import { toCsv } from "@/lib/csv";
+import { exportFilename } from "@/lib/exportFilename";
 
 export async function GET() {
   const profile = await getCurrentProfile();
@@ -31,7 +32,7 @@ export async function GET() {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="inventory-value-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="${exportFilename("Inventory-Value", "csv")}"`,
     },
   });
 }

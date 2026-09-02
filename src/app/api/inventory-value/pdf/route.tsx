@@ -3,6 +3,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { buildInventoryReport } from "@/lib/inventoryReport";
 import { InventoryReportDocument } from "@/lib/pdf/InventoryReportDocument";
+import { exportFilename } from "@/lib/exportFilename";
 
 export async function GET() {
   const profile = await getCurrentProfile();
@@ -20,7 +21,7 @@ export async function GET() {
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="inventory-value-${new Date().toISOString().slice(0, 10)}.pdf"`,
+      "Content-Disposition": `attachment; filename="${exportFilename("Inventory-Value", "pdf")}"`,
     },
   });
 }

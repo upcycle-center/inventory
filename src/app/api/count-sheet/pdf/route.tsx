@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { CountSheetDocument } from "@/lib/pdf/CountSheetDocument";
+import { exportFilename } from "@/lib/exportFilename";
 
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
@@ -83,7 +84,7 @@ export async function GET(request: Request) {
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="count-sheet-${filenameSafeLocation}.pdf"`,
+      "Content-Disposition": `attachment; filename="${exportFilename(`Count-Sheet-${filenameSafeLocation}`, "pdf")}"`,
     },
   });
 }

@@ -5,6 +5,7 @@ import type { Location, LocationStaffRole, LocationStaffTier } from "@/lib/supab
 import { getLocationCountLines, latestByProductId } from "@/lib/onHand";
 import { lineValue } from "@/lib/inventoryValue";
 import { totalRecommendedStaff } from "@/lib/staffing";
+import { formatRelativeTime, formatTimestamp } from "@/lib/relativeTime";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 
@@ -82,6 +83,17 @@ export default async function DashboardPage() {
   const { data: activeLocationsRaw } = await supabase.from("locations").select("id, name, type").eq("active", true);
   const activeLocations = (activeLocationsRaw as { id: string; name: string; type: string }[] | null) ?? [];
   const activeLocationIds = activeLocations.map((l) => l.id);
+
+  const { data: lastCountRaw } = activeLocationIds.length
+    ? await supabase
+        .from("location_counts")
+        .select("submitted_at")
+        .in("location_id", activeLocationIds)
+        .order("submitted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    : { data: null };
+  const lastCountSubmittedAt = (lastCountRaw as { submitted_at: string } | null)?.submitted_at ?? null;
 
   const { data: locationProductsRaw } = activeLocationIds.length
     ? await supabase
@@ -234,12 +246,20 @@ export default async function DashboardPage() {
         <Link href="/restock-requests" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
           RequestQ
         </Link>
+        <Link href="/return" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
+          Return
+        </Link>
       </div>
 
       <Section
         title="TOT Inventory"
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            {lastCountSubmittedAt && (
+              <span className="text-xs text-gray-400" title={formatTimestamp(lastCountSubmittedAt)}>
+                Last count: {formatRelativeTime(lastCountSubmittedAt)}
+              </span>
+            )}
             <Link
               href="/api/inventory-value/export"
               className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
