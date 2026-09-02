@@ -15,7 +15,7 @@ export async function updateUserProfile(formData: FormData): Promise<{ error: st
   const phone = String(formData.get("phone") || "").trim();
   const role = String(formData.get("role")) as UserRole;
   const receivesLowStockReport = formData.get("receives_low_stock_report") === "on";
-  const lowStockReportEmail = String(formData.get("low_stock_report_email") || "").trim();
+  const notificationEmail = String(formData.get("notification_email") || "").trim();
   if (!id || !name) return;
   if (!username) return { error: "Username can't be empty." };
 
@@ -27,7 +27,7 @@ export async function updateUserProfile(formData: FormData): Promise<{ error: st
       phone: phone || null,
       role,
       receives_low_stock_report: receivesLowStockReport,
-      low_stock_report_email: lowStockReportEmail || null,
+      notification_email: notificationEmail || null,
     })
     .eq("id", id);
 
@@ -72,6 +72,22 @@ export async function setUserCertification(formData: FormData) {
 
   revalidatePath(`/admin/users/${userId}`);
   revalidatePath("/admin/users");
+}
+
+// A companion to self-service Reset Password: that flow emails a link to
+// the Auth email, which for a user without a real company email is just
+// a non-deliverable placeholder. This lets an admin set a new password
+// directly instead.
+export async function adminSetPassword(formData: FormData): Promise<{ error: string } | void> {
+  await requireProfile(["admin"]);
+  const id = String(formData.get("id"));
+  const password = String(formData.get("password") || "").trim();
+  if (!id) return;
+  if (password.length < 8) return { error: "Password must be at least 8 characters." };
+
+  const admin = createServiceRoleClient();
+  const { error } = await admin.auth.admin.updateUserById(id, { password });
+  if (error) return { error: error.message };
 }
 
 export async function deleteUser(id: string): Promise<{ error: string } | void> {

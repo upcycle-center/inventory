@@ -68,14 +68,14 @@ export async function toggleUserActive(formData: FormData) {
 
 export async function inviteUser(formData: FormData): Promise<{ message: string }> {
   await requireProfile(["admin"]);
-  const email = String(formData.get("email") || "").trim();
+  const notificationEmail = String(formData.get("notification_email") || "").trim();
   const username = String(formData.get("username") || "").trim().toLowerCase();
   const name = String(formData.get("name") || "").trim();
   const role = String(formData.get("role") || "stand_lead") as UserRole;
   const password = String(formData.get("password") || "").trim();
 
-  if (!email || !username || !password) {
-    return { message: "Username, email, and a temporary password are required." };
+  if (!username || !password) {
+    return { message: "Username and a temporary password are required." };
   }
 
   const admin = createServiceRoleClient();
@@ -85,19 +85,28 @@ export async function inviteUser(formData: FormData): Promise<{ message: string 
     return { message: `Username "${username}" is already taken.` };
   }
 
+  // Supabase Auth still needs some email internally, but not every staff
+  // member has a real company one — fall back to a non-routable
+  // placeholder tied to their username. email_confirm skips ever trying
+  // to deliver anything there.
+  const authEmail = notificationEmail || `${username}@noemail.invalid`;
+
   const { data: created, error } = await admin.auth.admin.createUser({
-    email,
+    email: authEmail,
     password,
     email_confirm: true,
-    user_metadata: { name: name || email },
+    user_metadata: { name: name || username },
   });
 
   if (error || !created.user) {
     return { message: `Could not create user: ${error?.message ?? "unknown error"}` };
   }
 
-  await admin.from("profiles").update({ role, name: name || email, username }).eq("id", created.user.id);
+  await admin
+    .from("profiles")
+    .update({ role, name: name || username, username, notification_email: notificationEmail || null })
+    .eq("id", created.user.id);
 
   revalidatePath("/admin/users");
-  return { message: `Created ${username} (${email}) as ${role}.` };
+  return { message: `Created ${username} as ${role}.` };
 }

@@ -27,10 +27,9 @@ export function InviteUserForm() {
         className="rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
       <input
-        name="email"
+        name="notification_email"
         type="email"
-        placeholder="Email (for notifications, not login)"
-        required
+        placeholder="Email (optional — for notifications, not login)"
         className="rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
       <input name="password" placeholder="Temporary password" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />

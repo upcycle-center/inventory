@@ -55,10 +55,13 @@ export async function GET(request: Request) {
     return Response.json({ sent: false, reason: "no items below threshold" });
   }
 
+  // No fallback to the Auth email here — that column is login-technical
+  // now and, for users without a real company email, may not be a
+  // deliverable address at all.
   const { data: recipients } = await supabase.from("profiles").select("*").eq("receives_low_stock_report", true);
   const emails = ((recipients as Profile[] | null) ?? [])
-    .map((p) => p.low_stock_report_email || p.email)
-    .filter(Boolean);
+    .map((p) => p.notification_email)
+    .filter((e): e is string => !!e);
 
   if (!emails.length) {
     return Response.json({ sent: false, reason: "no opted-in recipients", lowItemCount: lowItems.length });

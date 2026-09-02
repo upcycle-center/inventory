@@ -108,7 +108,7 @@ export default async function AdminUsersPage() {
                   </Link>
                 </td>
                 <td className="whitespace-nowrap py-2 pr-6 font-mono text-gray-500">{u.username}</td>
-                <td className="whitespace-nowrap py-2 pr-6 text-gray-500">{u.email}</td>
+                <td className="whitespace-nowrap py-2 pr-6 text-gray-500">{u.notification_email ?? "—"}</td>
                 <td className="whitespace-nowrap py-2 pr-6 text-gray-500">{u.phone ?? "—"}</td>
                 <td className="whitespace-nowrap py-2">
                   <RoleSelect user={u} />

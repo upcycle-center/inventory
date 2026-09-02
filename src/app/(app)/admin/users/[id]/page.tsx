@@ -4,7 +4,7 @@ import type { CertificationType, UserCertification } from "@/lib/supabase/types"
 import { certificationStatus } from "@/lib/certifications";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { updateUserProfile, setUserCertification } from "./actions";
+import { updateUserProfile, setUserCertification, adminSetPassword } from "./actions";
 import { toggleUserActive } from "../actions";
 import { DeleteUserButton } from "./DeleteUserButton";
 
@@ -66,13 +66,6 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           />
         </label>
         <label className="text-sm text-gray-600">
-          Email
-          <input value={user.email} disabled className="mt-1 w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500" />
-          <span className="mt-1 block text-xs text-gray-400">
-            Used for notifications only — not for signing in.
-          </span>
-        </label>
-        <label className="text-sm text-gray-600">
           Contact number
           <input name="phone" type="tel" defaultValue={user.phone ?? ""} placeholder="e.g. (555) 123-4567" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
         </label>
@@ -87,6 +80,20 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             <option value="admin">Admin</option>
           </select>
         </label>
+        <label className="text-sm text-gray-600">
+          Email (optional)
+          <input
+            name="notification_email"
+            type="email"
+            defaultValue={user.notification_email ?? ""}
+            placeholder="Not all users have one"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <span className="mt-1 block text-xs text-gray-400">
+            Used for restock request notices, count-sheet confirmations, and other system emails.
+            Leave blank if this person doesn&apos;t have one.
+          </span>
+        </label>
         <label className="flex items-center gap-2 text-sm text-gray-600">
           <input
             type="checkbox"
@@ -96,17 +103,9 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           />
           Receives daily low-stock report email
         </label>
-        <label className="text-sm text-gray-600">
-          Report email (optional)
-          <input
-            name="low_stock_report_email"
-            type="email"
-            defaultValue={user.low_stock_report_email ?? ""}
-            placeholder={user.email}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-          <span className="mt-1 block text-xs text-gray-400">Leave blank to use the login email above.</span>
-        </label>
+        {user.receives_low_stock_report && !user.notification_email && (
+          <p className="text-xs text-orange-600">No email on file — this user won&apos;t receive the report until one is set above.</p>
+        )}
       </ActionForm>
 
       <div className="mb-8 mt-3 flex items-center gap-3">
@@ -122,6 +121,31 @@ export default async function UserDetailPage({ params }: { params: { id: string 
         </ActionForm>
         <DeleteUserButton userId={user.id} />
       </div>
+
+      <ActionForm
+        action={adminSetPassword}
+        savedLabel="Password updated"
+        className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+      >
+        <input type="hidden" name="id" value={user.id} />
+        <div>
+          <label className="mb-1 block text-xs text-gray-500">Set new password</label>
+          <input
+            name="password"
+            type="password"
+            minLength={8}
+            placeholder="At least 8 characters"
+            className="w-56 rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </div>
+        <button type="submit" className="rounded-md border border-gray-300 px-3 py-1.5 text-sm">
+          Update password
+        </button>
+        <p className="w-full text-xs text-gray-400">
+          For a user without an email on file, this is the only way to change their password —
+          they can&apos;t use Reset Password on the sign-in page.
+        </p>
+      </ActionForm>
 
       <p className="mb-3 text-sm font-medium">Certifications</p>
       <p className="mb-3 text-sm text-gray-500">

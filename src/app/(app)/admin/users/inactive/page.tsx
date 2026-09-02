@@ -47,7 +47,7 @@ export default async function InactiveUsersPage() {
                     {u.name}
                   </Link>
                 </td>
-                <td className="whitespace-nowrap px-4 py-2 text-gray-500">{u.email}</td>
+                <td className="whitespace-nowrap px-4 py-2 text-gray-500">{u.notification_email ?? "—"}</td>
                 <td className="whitespace-nowrap px-4 py-2 text-gray-500">{u.role}</td>
                 <td className="whitespace-nowrap px-4 py-2 text-right">
                   <ActionForm action={toggleUserActive} className="contents" savedLabel="Reactivated">
