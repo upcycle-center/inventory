@@ -1,20 +1,23 @@
 import { Resend } from "resend";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import { eachEquivalent, getOnHandByProductId } from "@/lib/onHand";
 import { getRestockUnitByProductId } from "@/lib/restockUnit";
+import { getSystemNotificationRecipients } from "@/lib/notifications";
 import { toCsv } from "@/lib/csv";
-import type { Profile } from "@/lib/supabase/types";
 
 // Vercel Cron calls this daily with `Authorization: Bearer ${CRON_SECRET}`
 // (see vercel.json). Anyone else gets a 401 — this route reads across every
-// location's counts, so it can't be left open.
+// location's counts, so it can't be left open. It also has no user
+// session (Cron sends no cookies), so it must use the service role —
+// the anon client would have every RLS policy that requires
+// auth.role() = 'authenticated' silently return zero rows.
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const supabase = createClient();
+  const supabase = createServiceRoleClient();
 
   const { data: thresholdRows } = await supabase
     .from("inventory_thresholds")
@@ -55,13 +58,7 @@ export async function GET(request: Request) {
     return Response.json({ sent: false, reason: "no items below threshold" });
   }
 
-  // No fallback to the Auth email here — that column is login-technical
-  // now and, for users without a real company email, may not be a
-  // deliverable address at all.
-  const { data: recipients } = await supabase.from("profiles").select("*").eq("receives_low_stock_report", true);
-  const emails = ((recipients as Profile[] | null) ?? [])
-    .map((p) => p.notification_email)
-    .filter((e): e is string => !!e);
+  const emails = await getSystemNotificationRecipients(supabase, "requests");
 
   if (!emails.length) {
     return Response.json({ sent: false, reason: "no opted-in recipients", lowItemCount: lowItems.length });

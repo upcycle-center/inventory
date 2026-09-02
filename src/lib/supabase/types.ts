@@ -21,7 +21,7 @@ export interface Profile {
   role: UserRole;
   phone: string | null;
   active: boolean;
-  receives_low_stock_report: boolean;
+  notification_categories: string[];
   notification_email: string | null;
   created_at: string;
 }

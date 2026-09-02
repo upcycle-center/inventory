@@ -8,31 +8,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
 import { confirmLocationStaffing, postTotTickets, toggleLocationOpen, unlockLocationStaffing, updateEstTickets } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
-
-function effectiveCount(
-  role: LocationStaffRole,
-  tiers: LocationStaffTier[],
-  attendance: number | null
-): { count: number; note: string | null } {
-  let count = role.base_count;
-  let note: string | null = null;
-
-  if (attendance != null) {
-    const tier = tiers.find(
-      (t) =>
-        t.location_id === role.location_id &&
-        t.role_name === role.role_name &&
-        attendance >= t.min_attendance &&
-        (t.max_attendance == null || attendance < t.max_attendance)
-    );
-    if (tier) {
-      count = tier.count;
-      note = `tier: ${tier.min_attendance}${tier.max_attendance ? `–${tier.max_attendance}` : "+"} attendance`;
-    }
-  }
-
-  return { count, note };
-}
+import { effectiveCount, totalRecommendedStaff as totalRecommendedStaffAcross } from "@/lib/staffing";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -88,18 +64,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
   // Total recommended staff (fixed Lead + tier-driven roles) for all open
   // locations, at a given attendance figure — used to compare the
   // EST-driven plan against the posted TOT (actual) attendance.
-  function totalRecommendedStaff(attendance: number | null) {
-    return ((locations as Location[] | null) ?? []).reduce((total, l) => {
-      const isOpen = openByLocationId.get(l.id) ?? true;
-      if (!isOpen) return total;
-      const roles = rolesByLocationId.get(l.id) ?? [];
-      const roleTotal = STAFF_ROLES.reduce((sum, roleName) => {
-        const role = roles.find((r) => r.role_name === roleName);
-        return role ? sum + effectiveCount(role, tiers, attendance).count : sum;
-      }, 0);
-      return total + 1 + roleTotal;
-    }, 0);
-  }
+  const totalRecommendedStaff = (attendance: number | null) =>
+    totalRecommendedStaffAcross(locationIds, openByLocationId, rolesByLocationId, tiers, attendance);
 
   const estRecommended = totalRecommendedStaff(event.est_tickets);
   const totRecommended = event.tot_tickets_posted_at ? totalRecommendedStaff(event.tot_tickets) : null;

@@ -14,7 +14,6 @@ export async function updateUserProfile(formData: FormData): Promise<{ error: st
   const username = String(formData.get("username") || "").trim().toLowerCase();
   const phone = String(formData.get("phone") || "").trim();
   const role = String(formData.get("role")) as UserRole;
-  const receivesLowStockReport = formData.get("receives_low_stock_report") === "on";
   const notificationEmail = String(formData.get("notification_email") || "").trim();
   if (!id || !name) return;
   if (!username) return { error: "Username can't be empty." };
@@ -26,7 +25,6 @@ export async function updateUserProfile(formData: FormData): Promise<{ error: st
       username,
       phone: phone || null,
       role,
-      receives_low_stock_report: receivesLowStockReport,
       notification_email: notificationEmail || null,
     })
     .eq("id", id);
@@ -40,6 +38,18 @@ export async function updateUserProfile(formData: FormData): Promise<{ error: st
 
   revalidatePath(`/admin/users/${id}`);
   revalidatePath("/admin/users");
+}
+
+export async function updateUserNotifications(formData: FormData) {
+  await requireProfile(["admin"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  if (!id) return;
+
+  const categories = formData.getAll("notification_categories").map(String);
+  await supabase.from("profiles").update({ notification_categories: categories }).eq("id", id);
+
+  revalidatePath(`/admin/users/${id}`);
 }
 
 export async function setUserCertification(formData: FormData) {

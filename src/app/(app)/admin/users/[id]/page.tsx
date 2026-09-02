@@ -2,9 +2,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { CertificationType, UserCertification } from "@/lib/supabase/types";
 import { certificationStatus } from "@/lib/certifications";
+import { NOTIFICATION_CATEGORIES } from "@/lib/notifications";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { updateUserProfile, setUserCertification, adminSetPassword } from "./actions";
+import { updateUserProfile, setUserCertification, adminSetPassword, updateUserNotifications } from "./actions";
 import { toggleUserActive } from "../actions";
 import { DeleteUserButton } from "./DeleteUserButton";
 
@@ -94,18 +95,6 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             Leave blank if this person doesn&apos;t have one.
           </span>
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            name="receives_low_stock_report"
-            defaultChecked={user.receives_low_stock_report}
-            className="h-4 w-4"
-          />
-          Receives daily low-stock report email
-        </label>
-        {user.receives_low_stock_report && !user.notification_email && (
-          <p className="text-xs text-orange-600">No email on file — this user won&apos;t receive the report until one is set above.</p>
-        )}
       </ActionForm>
 
       <div className="mb-8 mt-3 flex items-center gap-3">
@@ -145,6 +134,51 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           For a user without an email on file, this is the only way to change their password —
           they can&apos;t use Reset Password on the sign-in page.
         </p>
+      </ActionForm>
+
+      <p className="mb-3 text-sm font-medium">Notifications</p>
+      <p className="mb-3 text-sm text-gray-500">
+        Which system emails this user gets, sent to the Email address above. &ldquo;All&rdquo;
+        subscribes to everything regardless of what else is checked.
+      </p>
+      <ActionForm
+        action={updateUserNotifications}
+        savedLabel="Notifications saved"
+        className="mb-8 max-w-md rounded-md border border-gray-200 bg-white p-4"
+      >
+        <input type="hidden" name="id" value={user.id} />
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          {NOTIFICATION_CATEGORIES.map((c) => (
+            <label key={c.value} className="flex items-center gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox"
+                name="notification_categories"
+                value={c.value}
+                defaultChecked={user.notification_categories?.includes(c.value)}
+                className="h-4 w-4"
+              />
+              {c.label}
+            </label>
+          ))}
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-800">
+            <input
+              type="checkbox"
+              name="notification_categories"
+              value="all"
+              defaultChecked={user.notification_categories?.includes("all")}
+              className="h-4 w-4"
+            />
+            All
+          </label>
+        </div>
+        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Save
+        </button>
+        {!!user.notification_categories?.length && !user.notification_email && (
+          <p className="mt-2 text-xs text-orange-600">
+            No email on file — this user won&apos;t receive any notifications until one is set above.
+          </p>
+        )}
       </ActionForm>
 
       <p className="mb-3 text-sm font-medium">Certifications</p>
