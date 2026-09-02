@@ -67,8 +67,18 @@ export default async function NewProductPage({
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm text-gray-600">
-            Unit cost
-            <input name="unit_cost" type="number" step="0.01" defaultValue={from?.unit_cost ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            Case cost
+            <input name="case_cost" type="number" step="0.01" defaultValue={from?.case_cost ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+          <label className="text-sm text-gray-600">
+            Sale price (each)
+            <input name="sale_price" type="number" step="0.01" defaultValue={from?.sale_price ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm text-gray-600">
+            Case size (units per case)
+            <input name="case_size" type="number" step="1" min={0} defaultValue={from?.case_size ?? ""} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm text-gray-600">
             Unit of measure
@@ -78,10 +88,6 @@ export default async function NewProductPage({
             </select>
           </label>
         </div>
-        <label className="text-sm text-gray-600">
-          Case size (units per case)
-          <input name="case_size" type="number" step="1" min={0} defaultValue={from?.case_size ?? ""} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
         <label className="text-sm text-gray-600">
           Photo (for the count screen&apos;s photo grid)
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />

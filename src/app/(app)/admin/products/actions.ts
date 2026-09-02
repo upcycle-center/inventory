@@ -13,7 +13,8 @@ export async function createProduct(formData: FormData) {
 
   const upc = String(formData.get("upc") || "").trim() || null;
   const supplierId = String(formData.get("supplier_id") || "") || null;
-  const unitCostRaw = String(formData.get("unit_cost") || "").trim();
+  const caseCostRaw = String(formData.get("case_cost") || "").trim();
+  const salePriceRaw = String(formData.get("sale_price") || "").trim();
   const unitOfMeasure = String(formData.get("unit_of_measure") || "each").trim() || "each";
   const caseSizeRaw = String(formData.get("case_size") || "").trim();
 
@@ -43,7 +44,8 @@ export async function createProduct(formData: FormData) {
       upc,
       description,
       supplier_id: supplierId,
-      unit_cost: unitCostRaw ? Number(unitCostRaw) : null,
+      case_cost: caseCostRaw ? Number(caseCostRaw) : null,
+      sale_price: salePriceRaw ? Number(salePriceRaw) : null,
       unit_of_measure: unitOfMeasure,
       case_size: caseSizeRaw ? Number(caseSizeRaw) : null,
       photo_url: photoUrl,

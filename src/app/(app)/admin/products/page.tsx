@@ -69,16 +69,28 @@ export default async function AdminProductsPage({
             ))}
           </select>
           <div className="grid grid-cols-2 gap-3">
-            <input name="unit_cost" type="number" step="0.01" placeholder="Unit cost" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            <select name="unit_of_measure" defaultValue="each" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-              <option value="each">Each</option>
-              <option value="case">Case</option>
-            </select>
+            <label className="text-sm text-gray-600">
+              Case cost
+              <input name="case_cost" type="number" step="0.01" placeholder="e.g. 36.00" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-sm text-gray-600">
+              Sale price (each)
+              <input name="sale_price" type="number" step="0.01" placeholder="e.g. 8.00" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
           </div>
-          <label className="text-sm text-gray-600">
-            Case size (units per case)
-            <input name="case_size" type="number" step="1" min={0} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-sm text-gray-600">
+              Case size (units per case)
+              <input name="case_size" type="number" step="1" min={0} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-sm text-gray-600">
+              Unit of measure
+              <select name="unit_of_measure" defaultValue="each" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="each">Each</option>
+                <option value="case">Case</option>
+              </select>
+            </label>
+          </div>
           <label className="text-sm text-gray-600">
             Photo (for the count screen&apos;s photo grid)
             <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />

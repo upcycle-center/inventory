@@ -92,7 +92,7 @@ export default async function DashboardPage() {
   const { data: locationProductsRaw } = activeLocationIds.length
     ? await supabase
         .from("location_products")
-        .select("location_id, product_id, product:products(id, unit_cost, unit_of_measure, case_size)")
+        .select("location_id, product_id, product:products(id, case_cost, case_size)")
         .in("location_id", activeLocationIds)
         .eq("active", true)
     : { data: [] as any[] };

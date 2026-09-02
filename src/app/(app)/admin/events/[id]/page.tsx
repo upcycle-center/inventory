@@ -145,8 +145,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
             Post
           </button>
           {event.tot_tickets_posted_at && (
-            <span className="text-xs text-gray-400" title={event.tot_tickets_posted_at}>
-              Posted{(event as any).tot_tickets_posted_by_profile?.name ? ` by ${(event as any).tot_tickets_posted_by_profile.name}` : ""}
+            <span className="text-xs text-gray-400">
+              Posted{(event as any).tot_tickets_posted_by_profile?.name ? ` by ${(event as any).tot_tickets_posted_by_profile.name}` : ""} on{" "}
+              {new Date(event.tot_tickets_posted_at).toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
             </span>
           )}
         </ActionForm>

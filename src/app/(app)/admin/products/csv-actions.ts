@@ -61,7 +61,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const skuIdx = header.indexOf("sku");
   const upcIdx = header.indexOf("upc");
   const descIdx = header.indexOf("description");
-  const costIdx = header.indexOf("unit_cost");
+  const costIdx = header.indexOf("case_cost");
+  const salePriceIdx = header.indexOf("sale_price");
   const uomIdx = header.indexOf("unit_of_measure");
   const caseSizeIdx = header.indexOf("case_size");
 
@@ -86,7 +87,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     }
 
     const upc = upcIdx !== -1 && cols[upcIdx]?.trim() ? cols[upcIdx].trim() : null;
-    const unitCost = costIdx !== -1 && cols[costIdx]?.trim() ? Number(cols[costIdx]) : null;
+    const caseCost = costIdx !== -1 && cols[costIdx]?.trim() ? Number(cols[costIdx]) : null;
+    const salePrice = salePriceIdx !== -1 && cols[salePriceIdx]?.trim() ? Number(cols[salePriceIdx]) : null;
     const unitOfMeasure = uomIdx !== -1 && cols[uomIdx]?.trim() ? cols[uomIdx].trim() : "each";
     const caseSize = caseSizeIdx !== -1 && cols[caseSizeIdx]?.trim() ? Number(cols[caseSizeIdx]) : null;
 
@@ -103,7 +105,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           description,
           upc,
           supplier_id: supplierId,
-          unit_cost: unitCost,
+          case_cost: caseCost,
+          sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
           case_size: caseSize,
         })
@@ -117,7 +120,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           upc,
           description,
           supplier_id: supplierId,
-          unit_cost: unitCost,
+          case_cost: caseCost,
+          sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
           case_size: caseSize,
           created_by: user?.id ?? null,

@@ -135,7 +135,8 @@ export interface Product {
   upc: string | null;
   description: string;
   supplier_id: string | null;
-  unit_cost: number | null;
+  case_cost: number | null;
+  sale_price: number | null;
   unit_of_measure: string;
   case_size: number | null;
   photo_url: string | null;
