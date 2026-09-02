@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import type { CountType } from "@/lib/supabase/types";
 
@@ -53,5 +53,42 @@ export async function submitCount(
     return { error: linesError.message };
   }
 
+  if (type === "closing") {
+    await maybeCloseEvent(eventId);
+  }
+
   redirect(`/count?event=${eventId}&location=${locationId}`);
+}
+
+// Once every open+confirmed location for the event has a closing count on
+// file, the event is done — flip it to closed automatically instead of
+// waiting on an admin. Uses the service role since events writes are
+// admin-only by RLS, but this runs for whichever stand lead happens to
+// submit the last one.
+async function maybeCloseEvent(eventId: string) {
+  const supabase = createClient();
+
+  const { data: readyLocations } = await supabase
+    .from("event_locations")
+    .select("location_id")
+    .eq("event_id", eventId)
+    .eq("is_open", true)
+    .eq("confirmed", true);
+  const readyLocationIds = ((readyLocations as { location_id: string }[] | null) ?? []).map((r) => r.location_id);
+  if (!readyLocationIds.length) return;
+
+  const { data: closingCounts } = await supabase
+    .from("location_counts")
+    .select("location_id")
+    .eq("event_id", eventId)
+    .eq("type", "closing")
+    .in("location_id", readyLocationIds);
+  const submittedLocationIds = new Set(
+    ((closingCounts as { location_id: string }[] | null) ?? []).map((c) => c.location_id)
+  );
+  const allSubmitted = readyLocationIds.every((id) => submittedLocationIds.has(id));
+  if (!allSubmitted) return;
+
+  const admin = createServiceRoleClient();
+  await admin.from("events").update({ status: "closed" }).eq("id", eventId).eq("status", "open");
 }

@@ -41,7 +41,7 @@ export default async function CountPage({
     />
   );
 
-  if (!eventLocation?.is_open || !eventLocation?.confirmed) {
+  if (event.status !== "open" || !eventLocation?.is_open || !eventLocation?.confirmed) {
     return (
       <div>
         {breadcrumb}
@@ -139,20 +139,22 @@ export default async function CountPage({
 async function CountPicker({ userId, isWarehouseOrAdmin }: { userId: string; isWarehouseOrAdmin: boolean }) {
   const supabase = createClient();
 
-  // A count sheet only exists for a location once it's been confirmed as
-  // open for the event — that's the admin's signal that staffing/lead is
-  // locked in and the location is actually running.
+  // A count sheet only exists for a location once its event has been
+  // marked OPEN and the location itself confirmed as open for it — that's
+  // the admin's signal that staffing/lead is locked in and it's actually
+  // running.
   const { data: openLocations } = await supabase
     .from("event_locations")
-    .select("id, event_id, location_id, event:events(id, name, event_date), location:locations(id, name)")
+    .select("id, event_id, location_id, event:events!inner(id, name, event_date, status), location:locations(id, name)")
     .eq("is_open", true)
     .eq("confirmed", true)
+    .eq("event.status", "open")
     .order("updated_at", { ascending: false });
 
   const rows = (openLocations as any[]) ?? [];
 
   if (isWarehouseOrAdmin) {
-    return <PickerList title="Pick an event & location to count" assignments={rows} />;
+    return <PickerList title="Open Events" assignments={rows} />;
   }
 
   const { data: assignments } = await supabase

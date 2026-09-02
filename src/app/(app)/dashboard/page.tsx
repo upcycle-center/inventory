@@ -30,9 +30,10 @@ export default async function DashboardPage() {
       ? await supabase.from("event_locations").select("event_id, location_id, is_open, confirmed").in("event_id", eventIds)
       : { data: [] as any[] };
 
+    const eventStatusById = new Map(rows.map((a) => [a.event_id, a.event?.status]));
     const confirmedOpen = new Set(
       ((eventLocations as any[]) ?? [])
-        .filter((el) => el.is_open && el.confirmed)
+        .filter((el) => el.is_open && el.confirmed && eventStatusById.get(el.event_id) === "open")
         .map((el) => `${el.event_id}:${el.location_id}`)
     );
 
@@ -129,11 +130,14 @@ export default async function DashboardPage() {
   // ---- Shared: upcoming/open events + their location open/confirm state ----
   const { data: activeEventsRaw } = await supabase
     .from("events")
-    .select("id, name, event_date, est_tickets")
+    .select("id, name, event_date, est_tickets, status")
     .in("status", ["upcoming", "open"])
     .order("event_date");
-  const activeEvents = (activeEventsRaw as { id: string; name: string; event_date: string; est_tickets: number | null }[] | null) ?? [];
+  const activeEvents = (activeEventsRaw as { id: string; name: string; event_date: string; est_tickets: number | null; status: string }[] | null) ?? [];
   const activeEventIds = activeEvents.map((e) => e.id);
+  // Count only cares about events that are actually running — an
+  // "upcoming" event has nothing to count yet.
+  const openEventIds = activeEvents.filter((e) => e.status === "open").map((e) => e.id);
 
   const { data: eventLocationsRaw } = activeEventIds.length
     ? await supabase.from("event_locations").select("event_id, location_id, is_open, confirmed").in("event_id", activeEventIds)
@@ -207,19 +211,19 @@ export default async function DashboardPage() {
     ...STAFF_ROLES.map((roleName) => ({ label: roleName, value: roleHeadcounts.get(roleName) ?? 0 })),
   ];
 
-  // ---- Count: PDF Printer Ready / By Location / %Completion ----
-  const { data: readyRowsRaw } = activeEventIds.length
+  // ---- Count: PDF Printer Ready / By Location / %Completion — OPEN events only ----
+  const { data: readyRowsRaw } = openEventIds.length
     ? await supabase
         .from("event_locations")
         .select("event_id, location_id, event:events(id, name, event_date), location:locations(id, name)")
-        .in("event_id", activeEventIds)
+        .in("event_id", openEventIds)
         .eq("is_open", true)
         .eq("confirmed", true)
     : { data: [] as any[] };
   const readyRows = (readyRowsRaw as any[]) ?? [];
 
-  const { data: closingCountsRaw } = activeEventIds.length
-    ? await supabase.from("location_counts").select("event_id, location_id").in("event_id", activeEventIds).eq("type", "closing")
+  const { data: closingCountsRaw } = openEventIds.length
+    ? await supabase.from("location_counts").select("event_id, location_id").in("event_id", openEventIds).eq("type", "closing")
     : { data: [] as any[] };
   const submittedKeys = new Set(
     ((closingCountsRaw as { event_id: string; location_id: string }[] | null) ?? []).map((c) => `${c.event_id}:${c.location_id}`)
