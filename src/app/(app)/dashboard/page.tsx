@@ -134,10 +134,21 @@ export default async function DashboardPage() {
   // ---- Shared: upcoming/open events + their location open/confirm state ----
   const { data: activeEventsRaw } = await supabase
     .from("events")
-    .select("id, name, event_date, est_tickets, status")
+    .select("id, name, event_date, est_tickets, tot_tickets, tot_tickets_posted_at, status")
     .in("status", ["upcoming", "open"])
     .order("event_date");
-  const activeEvents = (activeEventsRaw as { id: string; name: string; event_date: string; est_tickets: number | null; status: string }[] | null) ?? [];
+  const activeEvents =
+    (activeEventsRaw as
+      | {
+          id: string;
+          name: string;
+          event_date: string;
+          est_tickets: number | null;
+          tot_tickets: number | null;
+          tot_tickets_posted_at: string | null;
+          status: string;
+        }[]
+      | null) ?? [];
   const activeEventIds = activeEvents.map((e) => e.id);
   // Count only cares about events that are actually running — an
   // "upcoming" event has nothing to count yet.
@@ -178,10 +189,24 @@ export default async function DashboardPage() {
     openByLocationIdByEvent.set(r.event_id, map);
   }
 
+  const confirmedByLocationIdByEvent = new Map<string, Map<string, boolean>>();
+  for (const r of eventLocationRows) {
+    const map = confirmedByLocationIdByEvent.get(r.event_id) ?? new Map();
+    map.set(r.location_id, r.is_open && r.confirmed);
+    confirmedByLocationIdByEvent.set(r.event_id, map);
+  }
+
   let wfmShifts = 0;
+  const openShiftsByEventId = new Map<string, number>();
+  const confirmedShiftsByEventId = new Map<string, number>();
   for (const ev of activeEvents) {
     const openMap = openByLocationIdByEvent.get(ev.id) ?? new Map();
-    wfmShifts += totalRecommendedStaff(standLocationIds, openMap, rolesByLocationId, staffTiers, ev.est_tickets);
+    const confirmedMap = confirmedByLocationIdByEvent.get(ev.id) ?? new Map();
+    const openShiftsForEvent = totalRecommendedStaff(standLocationIds, openMap, rolesByLocationId, staffTiers, ev.est_tickets);
+    const confirmedShiftsForEvent = totalRecommendedStaff(standLocationIds, confirmedMap, rolesByLocationId, staffTiers, ev.est_tickets);
+    wfmShifts += openShiftsForEvent;
+    openShiftsByEventId.set(ev.id, openShiftsForEvent);
+    confirmedShiftsByEventId.set(ev.id, confirmedShiftsForEvent);
   }
 
   // ---- WFM Staff: TOT Headcount — role split across CONFIRMED locations
@@ -300,26 +325,32 @@ export default async function DashboardPage() {
           <table className="w-full whitespace-nowrap text-left text-sm">
             <thead className="text-gray-500">
               <tr>
-                <th className="px-4 py-2">Event</th>
-                <th className="px-4 py-2">Date</th>
+                <th className="px-4 py-2">Event Date</th>
+                <th className="px-4 py-2">Event Name</th>
+                <th className="px-4 py-2">Open Shifts</th>
+                <th className="px-4 py-2">Confirmed Shifts</th>
                 <th className="px-4 py-2">EST Attendance</th>
+                <th className="px-4 py-2">TOT Attendance</th>
               </tr>
             </thead>
             <tbody>
               {activeEvents.map((e) => (
                 <tr key={e.id} className="border-t border-gray-100">
+                  <td className="px-4 py-2 text-gray-500">{e.event_date}</td>
                   <td className="px-4 py-2">
                     <Link href={`/admin/events/${e.id}`} className="text-brand hover:underline">
                       {e.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-2 text-gray-500">{e.event_date}</td>
+                  <td className="px-4 py-2 text-gray-500">{openShiftsByEventId.get(e.id) ?? 0}</td>
+                  <td className="px-4 py-2 text-gray-500">{confirmedShiftsByEventId.get(e.id) ?? 0}</td>
                   <td className="px-4 py-2 text-gray-500">{e.est_tickets ?? "—"}</td>
+                  <td className="px-4 py-2 text-gray-500">{e.tot_tickets_posted_at ? e.tot_tickets : "—"}</td>
                 </tr>
               ))}
               {!activeEvents.length && (
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                     No upcoming or open events.
                   </td>
                 </tr>
