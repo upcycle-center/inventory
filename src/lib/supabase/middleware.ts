@@ -45,7 +45,13 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublicPath = pathname.startsWith("/login") || pathname.startsWith("/api/cron");
+  const isPublicPath =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/api/cron") ||
+    pathname.startsWith("/api/auth/resolve-username") ||
+    pathname.startsWith("/api/auth/forgot-password");
 
   if (!user && !isPublicPath) {
     const loginUrl = new URL("/login", request.url);

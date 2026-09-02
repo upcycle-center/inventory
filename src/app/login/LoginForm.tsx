@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -53,6 +54,12 @@ export function LoginForm() {
       <h1 className="mb-1 text-xl font-semibold">Venue Inventory</h1>
       <p className="mb-6 text-sm text-gray-500">Sign in to continue.</p>
 
+      {searchParams.get("reset") === "success" && (
+        <p className="mb-4 rounded-md bg-green-50 p-3 text-sm text-green-700">
+          Password updated. Sign in with your new password.
+        </p>
+      )}
+
       <label className="mb-1 block text-sm font-medium">Username</label>
       <input
         type="text"
@@ -64,7 +71,12 @@ export function LoginForm() {
         className="mb-4 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
 
-      <label className="mb-1 block text-sm font-medium">Password</label>
+      <div className="mb-1 flex items-center justify-between">
+        <label className="block text-sm font-medium">Password</label>
+        <Link href="/forgot-password" className="text-xs text-brand hover:underline">
+          Forgot password?
+        </Link>
+      </div>
       <input
         type="password"
         required
