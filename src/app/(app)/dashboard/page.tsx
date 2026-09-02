@@ -4,8 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Location, LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 import { getLocationCountLines, latestByProductId } from "@/lib/onHand";
 import { lineValue } from "@/lib/inventoryValue";
-import { effectiveCount, totalRecommendedStaff } from "@/lib/staffing";
-import { STAFF_ROLES } from "@/lib/staffRoles";
+import { totalRecommendedStaff } from "@/lib/staffing";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 
@@ -203,37 +202,6 @@ export default async function DashboardPage() {
     confirmedShiftsByEventId.set(ev.id, confirmedShiftsForEvent);
   }
 
-  // ---- WFM Staff: TOT Headcount — role split across CONFIRMED locations
-  // only (not just open), since that's the staffing that's actually locked in.
-  const confirmedLocationIdsByEvent = new Map<string, string[]>();
-  for (const r of eventLocationRows) {
-    if (!r.is_open || !r.confirmed) continue;
-    const list = confirmedLocationIdsByEvent.get(r.event_id) ?? [];
-    list.push(r.location_id);
-    confirmedLocationIdsByEvent.set(r.event_id, list);
-  }
-
-  let leadHeadcount = 0;
-  const roleHeadcounts = new Map<string, number>();
-  for (const ev of activeEvents) {
-    const confirmedLocationIds = confirmedLocationIdsByEvent.get(ev.id) ?? [];
-    for (const locationId of confirmedLocationIds) {
-      leadHeadcount += 1;
-      const roles = rolesByLocationId.get(locationId) ?? [];
-      for (const roleName of STAFF_ROLES) {
-        const role = roles.find((r) => r.role_name === roleName);
-        if (!role) continue;
-        const { count } = effectiveCount(role, staffTiers, ev.est_tickets);
-        roleHeadcounts.set(roleName, (roleHeadcounts.get(roleName) ?? 0) + count);
-      }
-    }
-  }
-  const totHeadcount = leadHeadcount + Array.from(roleHeadcounts.values()).reduce((a, b) => a + b, 0);
-  const headcountSlices = [
-    { label: "Stand Lead", value: leadHeadcount },
-    ...STAFF_ROLES.map((roleName) => ({ label: roleName, value: roleHeadcounts.get(roleName) ?? 0 })),
-  ];
-
   // ---- Count: PDF Printer Ready / By Location / %Completion — OPEN events only ----
   const { data: readyRowsRaw } = openEventIds.length
     ? await supabase
@@ -284,31 +252,17 @@ export default async function DashboardPage() {
         </div>
       </Section>
 
-      <Section title="WFM Staff">
-        <div className="mb-4 max-w-xs rounded-md border border-gray-200 bg-white p-4">
-          <Meter
-            label="Confirmed vs unconfirmed (open locations, upcoming/open events)"
-            numerator={confirmedOpenCount}
-            denominator={openRows.length}
-          />
-        </div>
-        <div className="rounded-md border border-gray-200 bg-white p-4">
-          <p className="mb-3 text-xs font-medium text-gray-500">
-            TOT Headcount — {totHeadcount} confirmed, by role
-          </p>
-          <DonutChart
-            slices={headcountSlices}
-            centerLabel="confirmed"
-            format="count"
-            emptyLabel="No confirmed staffing yet."
-          />
-        </div>
-      </Section>
-
       <Section title="Events">
-        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <StatCard label="WFM Shifts (recommended staff, upcoming/open events)" value={String(wfmShifts)} />
           <StatCard label="Events tracked" value={String(activeEvents.length)} />
+          <div className="rounded-md border border-gray-200 bg-white p-5">
+            <Meter
+              label="Confirmed vs unconfirmed (open locations, upcoming/open events)"
+              numerator={confirmedOpenCount}
+              denominator={openRows.length}
+            />
+          </div>
         </div>
         <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
           <table className="w-full whitespace-nowrap text-left text-sm">
@@ -320,6 +274,7 @@ export default async function DashboardPage() {
                 <th className="px-4 py-2">Confirmed Shifts</th>
                 <th className="px-4 py-2">EST Attendance</th>
                 <th className="px-4 py-2">TOT Attendance</th>
+                <th className="px-4 py-2">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -335,11 +290,12 @@ export default async function DashboardPage() {
                   <td className="px-4 py-2 text-gray-500">{confirmedShiftsByEventId.get(e.id) ?? 0}</td>
                   <td className="px-4 py-2 text-gray-500">{e.est_tickets ?? "—"}</td>
                   <td className="px-4 py-2 text-gray-500">{e.tot_tickets_posted_at ? e.tot_tickets : "—"}</td>
+                  <td className="px-4 py-2 uppercase text-gray-500">{e.status}</td>
                 </tr>
               ))}
               {!activeEvents.length && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                     No upcoming or open events.
                   </td>
                 </tr>
