@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
-import { createProduct } from "./actions";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
-import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminProductsPage({
@@ -46,59 +44,10 @@ export default async function AdminProductsPage({
           <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">
             View inactive
           </Link>
+          <Link href="/admin/products/new" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+            Add product
+          </Link>
         </div>
-      </div>
-
-      <div className="mb-8 max-w-md">
-        <ActionForm
-          action={createProduct}
-          encType="multipart/form-data"
-          savedLabel="Product added"
-          className="grid gap-3 rounded-md border border-gray-200 bg-white p-4"
-        >
-          <p className="text-sm font-medium">Add a product</p>
-          <input name="sku" placeholder="IC (Internal Code)" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          <input name="upc" placeholder="UPC (optional, if known)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          <input name="description" placeholder="Description" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          <select name="supplier_id" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">No supplier</option>
-            {supplierList.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm text-gray-600">
-              Case cost
-              <input name="case_cost" type="number" step="0.01" placeholder="e.g. 36.00" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </label>
-            <label className="text-sm text-gray-600">
-              Sale price (each)
-              <input name="sale_price" type="number" step="0.01" placeholder="e.g. 8.00" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </label>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="text-sm text-gray-600">
-              Case size (units per case)
-              <input name="case_size" type="number" step="1" min={0} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </label>
-            <label className="text-sm text-gray-600">
-              Unit of measure
-              <select name="unit_of_measure" defaultValue="each" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                <option value="each">Each</option>
-                <option value="case">Case</option>
-              </select>
-            </label>
-          </div>
-          <label className="text-sm text-gray-600">
-            Photo (for the count screen&apos;s photo grid)
-            <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
-          </label>
-          <button type="submit" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-            Save
-          </button>
-        </ActionForm>
       </div>
 
       <form className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
