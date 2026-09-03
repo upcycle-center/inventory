@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ProductQtyGrid } from "@/components/ProductQtyGrid";
-import { submitRequest, saveRequestDraft, type RequestLineInput } from "./actions";
+import { submitRequest, saveRequestDraft, cancelRequestDraft, type RequestLineInput } from "./actions";
 import type { Location } from "@/lib/supabase/types";
 
 interface ProductForRequest {
@@ -106,7 +106,19 @@ export function RequestForm({
     });
   }
 
+  function handleCancel() {
+    setError(null);
+    setSaved(false);
+    setDraftSaved(false);
+    startTransition(async () => {
+      await cancelRequestDraft();
+      setLocationId("");
+      setQty({});
+    });
+  }
+
   const filledCount = Object.values(qty).filter((v) => Number(v.cases) > 0 || Number(v.each) > 0).length;
+  const hasInput = !!locationId || filledCount > 0;
 
   return (
     <div className="max-w-3xl">
@@ -205,6 +217,16 @@ export function RequestForm({
         >
           Save for later
         </button>
+        {hasInput && (
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={isPending}
+            className="rounded-md border border-gray-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        )}
       </div>
     </div>
   );

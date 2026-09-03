@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import type { Location, Product, Supplier } from "@/lib/supabase/types";
-import { submitReturn, saveReturnDraft, RETURN_REASONS } from "./actions";
+import { submitReturn, saveReturnDraft, cancelReturnDraft, RETURN_REASONS } from "./actions";
 
 export function ReturnForm({
   products,
@@ -52,6 +52,16 @@ export function ReturnForm({
       } else {
         setDraftSaved(true);
       }
+    });
+  }
+
+  function handleCancel() {
+    setError(null);
+    setSaved(false);
+    setDraftSaved(false);
+    startTransition(async () => {
+      await cancelReturnDraft();
+      formRef.current?.reset();
     });
   }
 
@@ -150,6 +160,16 @@ export function ReturnForm({
         >
           Save for later
         </button>
+        {initialValues && (
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={isPending}
+            className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        )}
       </div>
     </form>
   );

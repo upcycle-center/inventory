@@ -25,6 +25,16 @@ export async function saveRequestDraft(locationId: string, lines: RequestLineInp
   revalidatePath("/dashboard");
 }
 
+export async function cancelRequestDraft(): Promise<void> {
+  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  const supabase = createClient();
+
+  await clearDraft(supabase, profile.id, "request");
+
+  revalidatePath("/request");
+  revalidatePath("/dashboard");
+}
+
 // Flags the same (location, product) threshold rows the Assigned Items
 // checkbox uses -- lands in the exact same Restock Requests queue, this
 // is just a friendlier standalone entry point for anyone, not only

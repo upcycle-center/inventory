@@ -3,7 +3,7 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getRestockUnitByProductId } from "@/lib/restockUnit";
-import { fulfillRestockRequest } from "./actions";
+import { fulfillRestockRequest, deleteRestockRequest } from "./actions";
 
 export default async function RestockRequestsPage() {
   const profile = await requireProfile();
@@ -71,12 +71,23 @@ export default async function RestockRequestsPage() {
                 <td className="px-4 py-2 text-gray-500">{new Date(r.requested_at).toLocaleDateString()}</td>
                 {isManager && (
                   <td className="px-4 py-2 text-right">
-                    <form action={fulfillRestockRequest}>
-                      <input type="hidden" name="id" value={r.id} />
-                      <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                        Mark fulfilled
-                      </button>
-                    </form>
+                    <div className="flex justify-end gap-2">
+                      <form action={fulfillRestockRequest}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
+                          Mark fulfilled
+                        </button>
+                      </form>
+                      <form action={deleteRestockRequest}>
+                        <input type="hidden" name="id" value={r.id} />
+                        <button
+                          type="submit"
+                          className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    </div>
                   </td>
                 )}
               </tr>

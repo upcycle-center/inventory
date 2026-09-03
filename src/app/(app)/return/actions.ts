@@ -27,6 +27,16 @@ export async function saveReturnDraft(formData: FormData): Promise<{ error: stri
   revalidatePath("/dashboard");
 }
 
+export async function cancelReturnDraft(): Promise<void> {
+  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  const supabase = createClient();
+
+  await clearDraft(supabase, profile.id, "return");
+
+  revalidatePath("/return");
+  revalidatePath("/dashboard");
+}
+
 export async function submitReturn(formData: FormData): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
   const supabase = createClient();
