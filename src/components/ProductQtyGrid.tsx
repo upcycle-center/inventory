@@ -22,28 +22,32 @@ export function ProductQtyGrid({
   caseOptions,
   eachOptions,
   showWaste,
+  showComp,
 }: {
   products: QtyGridProduct[];
-  qty: Record<string, { cases: string; each: string; waste?: string }>;
-  onSave: (productId: string, cases: string, each: string, waste: string) => void;
+  qty: Record<string, { cases: string; each: string; waste?: string; comp?: string }>;
+  onSave: (productId: string, cases: string, each: string, waste: string, comp: string) => void;
   caseOptions?: number[];
   eachOptions?: number[];
   showWaste?: boolean;
+  showComp?: boolean;
 }) {
   const [activeProduct, setActiveProduct] = useState<QtyGridProduct | null>(null);
   const [draftCases, setDraftCases] = useState("");
   const [draftEach, setDraftEach] = useState("");
   const [draftWaste, setDraftWaste] = useState("");
+  const [draftComp, setDraftComp] = useState("");
 
   function openPopup(p: QtyGridProduct) {
     setActiveProduct(p);
     setDraftCases(qty[p.id]?.cases ?? "");
     setDraftEach(qty[p.id]?.each ?? "");
     setDraftWaste(qty[p.id]?.waste ?? "");
+    setDraftComp(qty[p.id]?.comp ?? "");
   }
 
   function confirmPopup() {
-    if (activeProduct) onSave(activeProduct.id, draftCases, draftEach, draftWaste);
+    if (activeProduct) onSave(activeProduct.id, draftCases, draftEach, draftWaste, draftComp);
     setActiveProduct(null);
   }
 
@@ -54,7 +58,9 @@ export function ProductQtyGrid({
           const cases = qty[p.id]?.cases;
           const each = qty[p.id]?.each;
           const waste = qty[p.id]?.waste;
-          const filled = (!!cases && cases !== "0") || (!!each && each !== "0") || (!!waste && waste !== "0");
+          const comp = qty[p.id]?.comp;
+          const filled =
+            (!!cases && cases !== "0") || (!!each && each !== "0") || (!!waste && waste !== "0") || (!!comp && comp !== "0");
           return (
             <button
               key={p.id}
@@ -78,7 +84,8 @@ export function ProductQtyGrid({
                 <p className="mt-1 truncate text-[11px] font-medium text-brand">
                   {cases && cases !== "0" ? `${cases} CS ` : ""}
                   {each && each !== "0" ? `${each} EA ` : ""}
-                  {waste && waste !== "0" ? `· ${waste} waste` : ""}
+                  {waste && waste !== "0" ? `· ${waste} waste ` : ""}
+                  {comp && comp !== "0" ? `· ${comp} comp` : ""}
                 </p>
               )}
             </button>
@@ -164,18 +171,35 @@ export function ProductQtyGrid({
               </label>
             </div>
 
-            {showWaste && (
-              <label className="mb-4 block text-xs text-gray-500">
-                Waste (EA)
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  value={draftWaste}
-                  onChange={(e) => setDraftWaste(e.target.value)}
-                  className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
-                />
-              </label>
+            {(showWaste || showComp) && (
+              <div className="mb-4 grid grid-cols-2 gap-3">
+                {showWaste && (
+                  <label className="text-xs text-gray-500">
+                    Waste (EA)
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      value={draftWaste}
+                      onChange={(e) => setDraftWaste(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                    />
+                  </label>
+                )}
+                {showComp && (
+                  <label className="text-xs text-gray-500">
+                    Comp (EA)
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      value={draftComp}
+                      onChange={(e) => setDraftComp(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                    />
+                  </label>
+                )}
+              </div>
             )}
 
             <div className="flex gap-2">

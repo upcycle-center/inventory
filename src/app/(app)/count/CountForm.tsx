@@ -20,7 +20,7 @@ interface StorageAreaGroup {
   products: ProductForCount[];
 }
 
-type QtyState = Record<string, { each: string; cases: string; waste?: string }>;
+type QtyState = Record<string, { each: string; cases: string; waste?: string; comp?: string }>;
 
 export function CountForm({
   eventId,
@@ -66,8 +66,15 @@ export function CountForm({
             .map(([productId, v]) => ({ product_id: productId, quantity: Number(v.waste) }))
         : [];
 
+    const compLines =
+      type === "closing"
+        ? Object.entries(qty)
+            .filter(([, v]) => v.comp && Number(v.comp) > 0)
+            .map(([productId, v]) => ({ product_id: productId, quantity: Number(v.comp) }))
+        : [];
+
     startTransition(async () => {
-      const res = await submitCount(eventId, locationId, type, lines, notes, wasteLines);
+      const res = await submitCount(eventId, locationId, type, lines, notes, wasteLines, compLines);
       if (res?.error) {
         setError(res.error);
       } else {
@@ -116,8 +123,9 @@ export function CountForm({
                     products={group.products}
                     qty={qty}
                     showWaste={type === "closing"}
-                    onSave={(productId, cases, each, waste) => {
-                      setQty((prev) => ({ ...prev, [productId]: { cases, each, waste } }));
+                    showComp={type === "closing"}
+                    onSave={(productId, cases, each, waste, comp) => {
+                      setQty((prev) => ({ ...prev, [productId]: { cases, each, waste, comp } }));
                     }}
                   />
                 </div>

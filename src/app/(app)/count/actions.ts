@@ -16,13 +16,19 @@ export interface WasteLineInput {
   quantity: number;
 }
 
+export interface CompLineInput {
+  product_id: string;
+  quantity: number;
+}
+
 export async function submitCount(
   eventId: string,
   locationId: string,
   type: CountType,
   lines: CountLineInput[],
   notes?: string,
-  wasteLines?: WasteLineInput[]
+  wasteLines?: WasteLineInput[],
+  compLines?: CompLineInput[]
 ): Promise<{ error: string } | void> {
   const profile = await requireProfile();
   const supabase = createClient();
@@ -83,6 +89,19 @@ export async function submitCount(
         product_id: w.product_id,
         quantity: w.quantity,
         reason_code: "other" as const,
+        note: "Logged via closing count sheet",
+        user_id: profile.id,
+      }))
+    );
+  }
+
+  if (compLines?.length) {
+    await supabase.from("comp_records").insert(
+      compLines.map((c) => ({
+        event_id: eventId,
+        location_id: locationId,
+        product_id: c.product_id,
+        quantity: c.quantity,
         note: "Logged via closing count sheet",
         user_id: profile.id,
       }))

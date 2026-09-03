@@ -215,6 +215,17 @@ export interface WasteRecord {
   created_at: string;
 }
 
+export interface CompRecord {
+  id: string;
+  event_id: string | null;
+  location_id: string;
+  product_id: string;
+  quantity: number;
+  note: string | null;
+  user_id: string;
+  created_at: string;
+}
+
 export interface InventoryMovement {
   id: string;
   product_id: string;
