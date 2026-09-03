@@ -8,6 +8,7 @@ import { eachEquivalent, getLocationCountLines, latestByProductId } from "@/lib/
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
+import { locationDisplayName } from "@/lib/locationLabel";
 import { toggleLocationActive } from "../actions";
 import {
   addStaffRole,
@@ -126,7 +127,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         items={[
           { label: "Admin", href: "/admin" },
           { label: "Locations", href: "/admin/locations" },
-          { label: location.name },
+          { label: locationDisplayName(location) },
         ]}
       />
       <h1 className="mb-6 text-lg font-semibold">

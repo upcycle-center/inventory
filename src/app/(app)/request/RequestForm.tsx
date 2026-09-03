@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ProductQtyGrid } from "@/components/ProductQtyGrid";
 import { submitRequest, saveRequestDraft, cancelRequestDraft, type RequestLineInput } from "./actions";
+import { locationDisplayName } from "@/lib/locationLabel";
 import type { Location } from "@/lib/supabase/types";
 
 interface ProductForRequest {
@@ -138,7 +139,7 @@ export function RequestForm({
           <option value="">Select a location…</option>
           {locations.map((l) => (
             <option key={l.id} value={l.id}>
-              {l.name}
+              {locationDisplayName(l)}
             </option>
           ))}
         </select>

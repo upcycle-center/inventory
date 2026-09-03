@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Location, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { LocationLabel } from "@/components/LocationLabel";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { syncProductLocations, updateProduct } from "./actions";
@@ -172,7 +173,9 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
                       className="h-4 w-4"
                     />
                   </td>
-                  <td className="py-2">{l.name}</td>
+                  <td className="py-2">
+                    <LocationLabel location={l} />
+                  </td>
                   <td className="py-2">
                     <select
                       name={`area_${l.id}`}

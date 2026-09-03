@@ -9,6 +9,8 @@ import { formatRelativeTime, formatTimestamp } from "@/lib/relativeTime";
 import { getDraftTypesForUser } from "@/lib/actionDrafts";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
+import { LocationLabel } from "@/components/LocationLabel";
+import { locationDisplayName } from "@/lib/locationLabel";
 
 function fmtCurrency(value: number) {
   return `$${Math.round(value).toLocaleString()}`;
@@ -21,7 +23,7 @@ export default async function DashboardPage() {
   if (profile.role === "stand_lead") {
     const { data: assignments } = await supabase
       .from("event_location_assignments")
-      .select("id, event_id, location_id, event:events(id, name, event_date, status), location:locations(id, name)")
+      .select("id, event_id, location_id, event:events(id, name, event_date, status), location:locations(id, name, yellow_dog_code)")
       .eq("location_lead_user_id", profile.id)
       .order("created_at", { ascending: false });
 
@@ -55,7 +57,7 @@ export default async function DashboardPage() {
                   className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-4"
                 >
                   <div>
-                    <p className="font-medium">{a.location?.name}</p>
+                    <p className="font-medium">{a.location && <LocationLabel location={a.location} />}</p>
                     <p className="text-sm text-gray-500">
                       {a.event?.name} · {a.event?.event_date} ·{" "}
                       <span className="uppercase">{a.event?.status}</span>
@@ -81,8 +83,12 @@ export default async function DashboardPage() {
   }
 
   // ---- TOT Inventory: on-hand value per location, rolled up by type ----
-  const { data: activeLocationsRaw } = await supabase.from("locations").select("id, name, type").eq("active", true);
-  const activeLocations = (activeLocationsRaw as { id: string; name: string; type: string }[] | null) ?? [];
+  const { data: activeLocationsRaw } = await supabase
+    .from("locations")
+    .select("id, name, type, yellow_dog_code")
+    .eq("active", true);
+  const activeLocations =
+    (activeLocationsRaw as { id: string; name: string; type: string; yellow_dog_code: string | null }[] | null) ?? [];
   const activeLocationIds = activeLocations.map((l) => l.id);
 
   const { data: lastCountRaw } = activeLocationIds.length
@@ -128,7 +134,7 @@ export default async function DashboardPage() {
         if (product) total += lineValue(entry.qty_each, entry.qty_cases, product);
       }
     }
-    if (total > 0) locationValues.push({ label: loc.name, value: total });
+    if (total > 0) locationValues.push({ label: locationDisplayName(loc), value: total });
     if (loc.type === "stand") standValue += total;
     else if (loc.type === "warehouse") {
       // Same alcohol-warehouse heuristic as src/lib/restockUnit.ts.
@@ -246,7 +252,7 @@ export default async function DashboardPage() {
   const { data: readyRowsRaw } = openEventIds.length
     ? await supabase
         .from("event_locations")
-        .select("event_id, location_id, event:events(id, name, event_date), location:locations(id, name)")
+        .select("event_id, location_id, event:events(id, name, event_date), location:locations(id, name, yellow_dog_code)")
         .in("event_id", openEventIds)
         .eq("is_open", true)
         .eq("confirmed", true)
@@ -267,16 +273,20 @@ export default async function DashboardPage() {
   wasteMonthStart.setHours(0, 0, 0, 0);
   const { data: wasteRowsRaw } = await supabase
     .from("waste_records")
-    .select("quantity, location:locations(id, name), product:products(id, sku, description)")
+    .select("quantity, location:locations(id, name, yellow_dog_code), product:products(id, sku, description)")
     .gte("created_at", wasteMonthStart.toISOString());
 
-  const wasteByLocation = new Map<string, { name: string; total: number }>();
+  const wasteByLocation = new Map<string, { name: string; yellow_dog_code: string | null; total: number }>();
   const wasteByProduct = new Map<string, { name: string; total: number }>();
   let wasteTotal = 0;
   for (const row of (wasteRowsRaw as any[]) ?? []) {
     wasteTotal += Number(row.quantity);
     if (row.location) {
-      const entry = wasteByLocation.get(row.location.id) ?? { name: row.location.name, total: 0 };
+      const entry = wasteByLocation.get(row.location.id) ?? {
+        name: row.location.name,
+        yellow_dog_code: row.location.yellow_dog_code,
+        total: 0,
+      };
       entry.total += Number(row.quantity);
       wasteByLocation.set(row.location.id, entry);
     }
@@ -406,7 +416,7 @@ export default async function DashboardPage() {
         </div>
       </Section>
 
-      <Section title="Count">
+      <Section title="COUNT SHEETS by Event">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
             href="/count"
@@ -435,7 +445,7 @@ export default async function DashboardPage() {
                   <tr key={`${r.event_id}:${r.location_id}`} className="border-t border-gray-100">
                     <td className="px-4 py-2">
                       <Link href={`/admin/events/${r.event_id}`} className="text-brand hover:underline">
-                        {r.location?.name}
+                        {r.location && <LocationLabel location={r.location} />}
                       </Link>
                     </td>
                     <td className="px-4 py-2 text-gray-500">
@@ -479,7 +489,9 @@ export default async function DashboardPage() {
               <tbody>
                 {wasteByLocationRows.map((r) => (
                   <tr key={r.name} className="border-t border-gray-100">
-                    <td className="px-4 py-2">{r.name}</td>
+                    <td className="px-4 py-2">
+                      <LocationLabel location={r} />
+                    </td>
                     <td className="px-4 py-2 text-gray-500">{r.total}</td>
                   </tr>
                 ))}

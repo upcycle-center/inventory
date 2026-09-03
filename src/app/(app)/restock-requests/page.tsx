@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { LocationLabel } from "@/components/LocationLabel";
 import { getRestockUnitByProductId } from "@/lib/restockUnit";
 import { fulfillRestockRequest, deleteRestockRequest } from "./actions";
 
@@ -14,7 +15,7 @@ export default async function RestockRequestsPage() {
     supabase
       .from("inventory_thresholds")
       .select(
-        "id, product_id, reorder_threshold, requested_at, product:products(id, sku, description), location:locations(id, name), requested_by_profile:profiles(id, name)"
+        "id, product_id, reorder_threshold, requested_at, product:products(id, sku, description), location:locations(id, name, yellow_dog_code), requested_by_profile:profiles(id, name)"
       )
       .not("requested_at", "is", null)
       .order("requested_at", { ascending: true }),
@@ -61,7 +62,7 @@ export default async function RestockRequestsPage() {
               <tr key={r.id} className="border-t border-gray-100">
                 <td className="px-4 py-2">
                   <Link href={`/admin/locations/${r.location?.id}`} className="text-brand hover:underline">
-                    {r.location?.name}
+                    {r.location && <LocationLabel location={r.location} />}
                   </Link>
                 </td>
                 <td className="px-4 py-2">{r.product?.description}</td>

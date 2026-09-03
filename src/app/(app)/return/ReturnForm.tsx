@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import type { Location, Product, Supplier } from "@/lib/supabase/types";
+import { locationDisplayName } from "@/lib/locationLabel";
 import { submitReturn, saveReturnDraft, cancelReturnDraft, RETURN_REASONS } from "./actions";
 
 export function ReturnForm({
@@ -91,7 +92,7 @@ export function ReturnForm({
           <option value="">Select a location…</option>
           {locations.map((l) => (
             <option key={l.id} value={l.id}>
-              {l.name}
+              {locationDisplayName(l)}
             </option>
           ))}
         </select>

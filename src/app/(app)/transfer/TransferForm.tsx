@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ProductQtyGrid } from "@/components/ProductQtyGrid";
 import { submitTransfer, saveTransferDraft, cancelTransferDraft, type TransferLineInput } from "./actions";
+import { locationDisplayName } from "@/lib/locationLabel";
 import type { Location } from "@/lib/supabase/types";
 
 interface ProductForTransfer {
@@ -148,7 +149,7 @@ export function TransferForm({
             <option value="">Select a location…</option>
             {locations.map((l) => (
               <option key={l.id} value={l.id}>
-                {l.name}
+                {locationDisplayName(l)}
               </option>
             ))}
           </select>
@@ -166,7 +167,7 @@ export function TransferForm({
               .filter((l) => l.id !== fromLocationId)
               .map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.name}
+                  {locationDisplayName(l)}
                 </option>
               ))}
           </select>

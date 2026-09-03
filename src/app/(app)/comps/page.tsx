@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { LocationLabel } from "@/components/LocationLabel";
 
 export default async function CompsReportPage() {
   await requireProfile(["admin"]);
@@ -10,7 +11,7 @@ export default async function CompsReportPage() {
   const { data: comps } = await supabase
     .from("comp_records")
     .select(
-      "id, quantity, note, created_at, product:products(sku, description), location:locations(id, name), event:events(name, event_date), user:profiles(name)"
+      "id, quantity, note, created_at, product:products(sku, description), location:locations(id, name, yellow_dog_code), event:events(name, event_date), user:profiles(name)"
     )
     .order("created_at", { ascending: false });
 
@@ -50,7 +51,7 @@ export default async function CompsReportPage() {
                 <td className="px-4 py-2">{r.event?.name ?? "—"}</td>
                 <td className="px-4 py-2">
                   <Link href={`/admin/locations/${r.location?.id}`} className="text-brand hover:underline">
-                    {r.location?.name}
+                    {r.location && <LocationLabel location={r.location} />}
                   </Link>
                 </td>
                 <td className="px-4 py-2">{r.product?.description}</td>

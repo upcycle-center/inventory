@@ -6,6 +6,8 @@ import { getOnHandByProductId } from "@/lib/onHand";
 import { CountForm } from "./CountForm";
 import { EventsAccordion, type EventLocationStatus } from "./EventsAccordion";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { LocationLabel } from "@/components/LocationLabel";
+import { locationDisplayName } from "@/lib/locationLabel";
 import type { CountType, Event } from "@/lib/supabase/types";
 
 const COUNT_BREADCRUMB = { label: "Count", href: "/count" };
@@ -77,7 +79,7 @@ export default async function CountPage({
         { label: "Dashboard", href: "/dashboard" },
         COUNT_BREADCRUMB,
         { label: event.name, href: `/count?event=${eventId}` },
-        { label: location.name },
+        { label: locationDisplayName(location) },
       ]}
     />
   );
@@ -87,7 +89,8 @@ export default async function CountPage({
       <div>
         {breadcrumb}
         <p className="text-sm text-gray-500">
-          {location.name} isn&apos;t confirmed as open for {event.name} yet. Check with your event admin.
+          <LocationLabel location={location} /> isn&apos;t confirmed as open for {event.name} yet. Check with your
+          event admin.
         </p>
       </div>
     );
@@ -107,7 +110,8 @@ export default async function CountPage({
         <div>
           {breadcrumb}
           <p className="text-sm text-gray-500">
-            You&apos;re not assigned to {location.name} for {event.name}. Check with your event admin.
+            You&apos;re not assigned to <LocationLabel location={location} /> for {event.name}. Check with your
+            event admin.
           </p>
         </div>
       );
@@ -120,7 +124,9 @@ export default async function CountPage({
     return (
       <div>
         {breadcrumb}
-        <h1 className="mb-2 text-lg font-semibold">{location.name}</h1>
+        <h1 className="mb-2 text-lg font-semibold">
+          <LocationLabel location={location} />
+        </h1>
         <p className="text-sm text-gray-500">
           Both the opening and closing counts for {event.name} are already submitted.
         </p>
@@ -158,7 +164,9 @@ export default async function CountPage({
     return (
       <div>
         {breadcrumb}
-        <h1 className="mb-2 text-lg font-semibold">{location.name}</h1>
+        <h1 className="mb-2 text-lg font-semibold">
+          <LocationLabel location={location} />
+        </h1>
         <p className="text-sm text-gray-500">
           No products are assigned to this location yet. An admin can add them under Admin → Locations.
         </p>
@@ -185,7 +193,7 @@ export default async function CountPage({
     <div>
       {breadcrumb}
       <p className="mb-1 text-sm text-gray-500">
-        {location.name} · {event.name}
+        <LocationLabel location={location} /> · {event.name}
       </p>
       <CountForm eventId={eventId} locationId={locationId} type={type} groups={groups} initialQty={initialQty} />
     </div>
@@ -235,13 +243,13 @@ async function EventsPicker({ userId, isWarehouseOrAdmin }: { userId: string; is
   const { data: eventLocationsRaw } = eventIds.length
     ? await supabase
         .from("event_locations")
-        .select("event_id, location_id, location:locations(id, name, type)")
+        .select("event_id, location_id, location:locations(id, name, type, yellow_dog_code)")
         .in("event_id", eventIds)
         .eq("is_open", true)
         .eq("confirmed", true)
     : { data: [] as any[] };
 
-  const locationsByEvent = new Map<string, { id: string; name: string; type: string }[]>();
+  const locationsByEvent = new Map<string, { id: string; name: string; type: string; yellow_dog_code: string | null }[]>();
   for (const row of (eventLocationsRaw as any[]) ?? []) {
     if (!row.location) continue;
     const list = locationsByEvent.get(row.event_id) ?? [];
@@ -269,7 +277,7 @@ async function EventsPicker({ userId, isWarehouseOrAdmin }: { userId: string; is
         : done.has("opening")
         ? "opening_only"
         : "not_started";
-      return { id: loc.id, name: loc.name, status };
+      return { id: loc.id, name: loc.name, yellow_dog_code: loc.yellow_dog_code, status };
     });
 
     const standLocations = eventLocations.filter((loc) => loc.type === "stand");
@@ -301,7 +309,7 @@ async function LocationsForEvent({
 
   const { data: openLocationsRaw } = await supabase
     .from("event_locations")
-    .select("location_id, location:locations(id, name)")
+    .select("location_id, location:locations(id, name, yellow_dog_code)")
     .eq("event_id", event.id)
     .eq("is_open", true)
     .eq("confirmed", true);
@@ -334,7 +342,7 @@ async function LocationsForEvent({
         <ul className="space-y-3">
           {rows.map((r) => (
             <li key={r.location_id} className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-4">
-              <p className="font-medium">{r.location?.name}</p>
+              <p className="font-medium">{r.location && <LocationLabel location={r.location} />}</p>
               <div className="flex items-center gap-2">
                 <Link
                   href={`/api/count-sheet/pdf?event=${event.id}&location=${r.location_id}`}

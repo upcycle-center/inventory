@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { LocationLabel } from "@/components/LocationLabel";
 
 export interface EventLocationStatus {
   id: string;
   name: string;
+  yellow_dog_code: string | null;
   status: "not_started" | "opening_only" | "complete";
 }
 
@@ -74,7 +76,9 @@ export function EventsAccordion({ title, rows }: { title: string; rows: EventRow
                         {r.locations.map((loc) => (
                           <li key={loc.id} className="flex items-center justify-between px-4 py-3">
                             <div>
-                              <p className="text-sm font-medium">{loc.name}</p>
+                              <p className="text-sm font-medium">
+                                <LocationLabel location={loc} />
+                              </p>
                               <p className={`text-xs ${STATUS_COLOR[loc.status]}`}>{STATUS_LABEL[loc.status]}</p>
                             </div>
                             <div className="flex items-center gap-2">
