@@ -37,6 +37,9 @@ const styles = StyleSheet.create({
   colProduct: { flex: 3 },
   colGroupLabel: { flex: 2, textAlign: "center", fontSize: 8, color: "#555555" },
   colSmall: { flex: 1, textAlign: "center" },
+  commentSection: { marginTop: 20 },
+  commentLabel: { fontFamily: "Helvetica-Bold", fontSize: 9, color: "#555555", marginBottom: 6 },
+  commentLine: { borderBottomWidth: 1, borderBottomColor: "#000000", height: 20 },
 });
 
 type CountSheetProduct = { sku: string; description: string };
@@ -132,6 +135,13 @@ export function CountSheetDocument({
           </View>
           );
         })}
+
+        <View style={styles.commentSection}>
+          <Text style={styles.commentLabel}>COMMENTS</Text>
+          <View style={styles.commentLine} />
+          <View style={styles.commentLine} />
+          <View style={styles.commentLine} />
+        </View>
       </Page>
     </Document>
   );

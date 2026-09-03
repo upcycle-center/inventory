@@ -38,6 +38,7 @@ export function CountForm({
   const router = useRouter();
   const [openArea, setOpenArea] = useState<string | null>(groups[0]?.id ?? null);
   const [qty, setQty] = useState<QtyState>(initialQty ?? {});
+  const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -66,7 +67,7 @@ export function CountForm({
     }
 
     startTransition(async () => {
-      const res = await submitCount(eventId, locationId, type, lines);
+      const res = await submitCount(eventId, locationId, type, lines, notes);
       if (res?.error) {
         setError(res.error);
       } else {
@@ -124,6 +125,17 @@ export function CountForm({
           );
         })}
       </div>
+
+      <label className="mt-4 block text-sm text-gray-600">
+        Comment (optional)
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={3}
+          placeholder="Notes, things to flag for the next shift, etc."
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+      </label>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 

@@ -171,6 +171,7 @@ export interface LocationCount {
   type: CountType;
   submitted_at: string;
   csv_export_url: string | null;
+  notes: string | null;
 }
 
 export interface LocationCountLine {

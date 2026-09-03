@@ -15,7 +15,8 @@ export async function submitCount(
   eventId: string,
   locationId: string,
   type: CountType,
-  lines: CountLineInput[]
+  lines: CountLineInput[],
+  notes?: string
 ): Promise<{ error: string } | void> {
   const profile = await requireProfile();
   const supabase = createClient();
@@ -46,6 +47,7 @@ export async function submitCount(
       location_id: locationId,
       user_id: profile.id,
       type,
+      notes: notes?.trim() || null,
     })
     .select("id")
     .single();
