@@ -161,9 +161,15 @@ export default async function DashboardPage() {
   const openEventIds = activeEvents.filter((e) => e.status === "open").map((e) => e.id);
 
   const { data: eventLocationsRaw } = activeEventIds.length
-    ? await supabase.from("event_locations").select("event_id, location_id, is_open, confirmed").in("event_id", activeEventIds)
+    ? await supabase
+        .from("event_locations")
+        .select("event_id, location_id, is_open, confirmed, confirmed_staff_count")
+        .in("event_id", activeEventIds)
     : { data: [] as any[] };
-  const eventLocationRows = (eventLocationsRaw as { event_id: string; location_id: string; is_open: boolean; confirmed: boolean }[] | null) ?? [];
+  const eventLocationRows =
+    (eventLocationsRaw as
+      | { event_id: string; location_id: string; is_open: boolean; confirmed: boolean; confirmed_staff_count: number | null }[]
+      | null) ?? [];
 
   // ---- WFM Staff: %Confirmed vs Unconfirmed, across open locations ----
   const openRows = eventLocationRows.filter((r) => r.is_open);
@@ -217,6 +223,28 @@ export default async function DashboardPage() {
     confirmedShiftsByEventId.set(ev.id, confirmedShiftsForEvent);
   }
   const unconfirmedShifts = wfmShifts - confirmedShifts;
+
+  // ---- Avg staff variance: confirmed_staff_count vs recommended, across
+  // confirmed stand locations that have actually reported a headcount ----
+  const eventById = new Map(activeEvents.map((e) => [e.id, e]));
+  const standLocationIdSet = new Set(standLocationIds);
+  let staffVarianceSum = 0;
+  let staffVarianceCount = 0;
+  for (const r of eventLocationRows) {
+    if (!r.confirmed || r.confirmed_staff_count == null || !standLocationIdSet.has(r.location_id)) continue;
+    const ev = eventById.get(r.event_id);
+    if (!ev) continue;
+    const recommended = totalRecommendedStaff(
+      [r.location_id],
+      new Map([[r.location_id, true]]),
+      rolesByLocationId,
+      staffTiers,
+      ev.est_tickets
+    );
+    staffVarianceSum += r.confirmed_staff_count - recommended;
+    staffVarianceCount += 1;
+  }
+  const avgStaffVariance = staffVarianceCount ? staffVarianceSum / staffVarianceCount : 0;
 
   // ---- Count: PDF Printer Ready / By Location / %Completion — OPEN events only ----
   const { data: readyRowsRaw } = openEventIds.length
@@ -304,8 +332,11 @@ export default async function DashboardPage() {
       <Section title="Events">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <WfmShiftsCard shifts={wfmShifts} confirmed={confirmedShifts} pending={unconfirmedShifts} />
-          <StatCard label="Events tracked" value={String(activeEvents.length)} />
           <ConfirmedSplitBar confirmed={confirmedOpenCount} total={openRows.length} />
+          <StatCard
+            label="Avg staff variance (confirmed vs recommended)"
+            value={avgStaffVariance > 0 ? `+${avgStaffVariance.toFixed(1)}` : avgStaffVariance.toFixed(1)}
+          />
         </div>
         <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
           <table className="w-full whitespace-nowrap text-left text-sm">
@@ -447,8 +478,8 @@ function ConfirmedSplitBar({ confirmed, total }: { confirmed: number; total: num
         confirmed {confirmedPct}% : {unconfirmedPct}% unconfirmed
       </p>
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
-        <div className="h-full bg-brand" style={{ width: `${confirmedPct}%` }} />
-        <div className="h-full bg-gray-300" style={{ width: `${unconfirmedPct}%` }} />
+        <div className="h-full bg-green-500" style={{ width: `${confirmedPct}%` }} />
+        <div className="h-full bg-yellow-400" style={{ width: `${unconfirmedPct}%` }} />
       </div>
     </div>
   );
