@@ -235,6 +235,8 @@ export interface InventoryMovement {
   supplier_id: string | null;
   type: MovementType;
   quantity: number;
+  qty_cases: number | null;
+  qty_each: number | null;
   event_id: string | null;
   reason_code: string | null;
   note: string | null;
