@@ -329,7 +329,7 @@ export default async function DashboardPage() {
         </div>
       </Section>
 
-      <Section title="Events">
+      <Section title="WORKFORCE by Event">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <WfmShiftsCard shifts={wfmShifts} confirmed={confirmedShifts} pending={unconfirmedShifts} />
           <ConfirmedSplitBar confirmed={confirmedOpenCount} total={openRows.length} />
