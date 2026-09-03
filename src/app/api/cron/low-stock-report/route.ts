@@ -76,7 +76,7 @@ export async function GET(request: Request) {
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
-    from: process.env.REPORT_FROM_EMAIL || "BWP Operations <inventory@yourdomain.com>",
+    from: process.env.REPORT_FROM_EMAIL || "BWP Legends Operations <notifications@mercado.solutions>",
     to: emails,
     subject: `Daily Low Stock Report — ${today}`,
     html: `<p>${lowItems.length} item(s) at or below their restock threshold. Full list attached.</p>`,

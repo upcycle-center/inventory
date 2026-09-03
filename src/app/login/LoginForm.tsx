@@ -51,7 +51,7 @@ export function LoginForm() {
       onSubmit={handleSubmit}
       className="w-full max-w-sm rounded-lg border border-gray-200 bg-white p-8 shadow-sm"
     >
-      <h1 className="mb-1 text-xl font-semibold">BWP Operations</h1>
+      <h1 className="mb-1 text-xl font-semibold">BWP Legends Operations</h1>
       <p className="mb-6 text-sm text-gray-500">Sign in to continue.</p>
 
       {searchParams.get("reset") === "success" && (

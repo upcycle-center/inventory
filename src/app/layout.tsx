@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BWP Operations",
+  title: "BWP Legends Operations",
   description: "Warehouse receiving, stand counts, waste tracking, and restock reporting.",
   manifest: "/manifest.json",
 };
