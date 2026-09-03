@@ -6,57 +6,67 @@ import { requireProfile } from "@/lib/auth";
 import { saveDraft, clearDraft } from "@/lib/actionDrafts";
 import { eachEquivalent } from "@/lib/onHand";
 
-export interface TransferLineInput {
+export interface RecoveryLineInput {
   product_id: string;
   qty_cases: number;
   qty_each: number;
   case_size: number | null;
 }
 
-export async function saveTransferDraft(
+export async function saveRecoveryDraft(
   fromLocationId: string,
   toLocationId: string,
-  lines: TransferLineInput[]
+  lines: RecoveryLineInput[]
 ): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
-  if (!fromLocationId || !toLocationId) return { error: "Select a From and To location first." };
+  if (!fromLocationId || !toLocationId) return { error: "Select a From and To warehouse first." };
   const supabase = createClient();
 
-  const res = await saveDraft(supabase, profile.id, "transfer", {
+  const res = await saveDraft(supabase, profile.id, "recovery", {
     from_location_id: fromLocationId,
     to_location_id: toLocationId,
     lines,
   });
   if (res?.error) return res;
 
-  revalidatePath("/transfer");
+  revalidatePath("/recovery");
   revalidatePath("/dashboard");
 }
 
-export async function cancelTransferDraft(): Promise<void> {
+export async function cancelRecoveryDraft(): Promise<void> {
   const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
   const supabase = createClient();
 
-  await clearDraft(supabase, profile.id, "transfer");
+  await clearDraft(supabase, profile.id, "recovery");
 
-  revalidatePath("/transfer");
+  revalidatePath("/recovery");
   revalidatePath("/dashboard");
 }
 
-export async function submitTransfer(
+// Recovery is a Transfer that's always headed back to a warehouse -- kept
+// as its own movement type (not just a Transfer to a warehouse location)
+// so it's separately reportable, the way month/quarter/year-end
+// stand-closeout pulls need to be.
+export async function submitRecovery(
   fromLocationId: string,
   toLocationId: string,
-  lines: TransferLineInput[]
+  lines: RecoveryLineInput[]
 ): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
   const supabase = createClient();
 
   if (!fromLocationId || !toLocationId) {
-    return { error: "Select a From and To location first." };
+    return { error: "Select a From and To warehouse first." };
   }
   if (fromLocationId === toLocationId) {
     return { error: "From and To locations must be different." };
   }
+
+  const { data: toLocation } = await supabase.from("locations").select("type").eq("id", toLocationId).single();
+  if (toLocation?.type !== "warehouse") {
+    return { error: "Recoveries must go to a warehouse location." };
+  }
+
   const nonZero = lines.filter((l) => l.qty_cases > 0 || l.qty_each > 0);
   if (!nonZero.length) {
     return { error: "Set a quantity for at least one product." };
@@ -66,7 +76,7 @@ export async function submitTransfer(
     product_id: l.product_id,
     from_location_id: fromLocationId,
     to_location_id: toLocationId,
-    type: "transfer" as const,
+    type: "recovery" as const,
     quantity: eachEquivalent(l.qty_each, l.qty_cases, l.case_size),
     qty_cases: l.qty_cases,
     qty_each: l.qty_each,
@@ -79,8 +89,9 @@ export async function submitTransfer(
     return { error: error.message };
   }
 
-  await clearDraft(supabase, profile.id, "transfer");
+  await clearDraft(supabase, profile.id, "recovery");
 
-  revalidatePath("/transfer");
+  revalidatePath("/recovery");
+  revalidatePath("/recoveries");
   revalidatePath("/dashboard");
 }

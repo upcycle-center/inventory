@@ -196,6 +196,26 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         <DeleteLocationButton locationId={location.id} />
       </div>
 
+      <div className="mb-8 flex items-start gap-4 rounded-md border border-gray-200 bg-white p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/api/locations/${location.id}/qr`}
+          alt="Stand check-in QR code"
+          className="h-28 w-28 shrink-0 rounded border border-gray-100"
+        />
+        <div>
+          <p className="mb-1 text-sm font-medium">Stand check-in QR code</p>
+          <p className="mb-2 text-xs text-gray-500">
+            Print and post this at the stand. Scanning it opens the count sheet for whatever event
+            is currently open here — Open Stand before doors, then scan again at close to submit
+            the closing count.
+          </p>
+          <Link href={`/api/locations/${location.id}/qr?download=1`} className="text-sm text-brand hover:underline">
+            Download QR code
+          </Link>
+        </div>
+      </div>
+
       <p className="mb-3 text-sm font-medium">Base staffing needs</p>
       <p className="mb-3 text-sm text-gray-500">
         Positions needed to run this location.

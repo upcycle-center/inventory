@@ -5,8 +5,8 @@ import { getDraft } from "@/lib/actionDrafts";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { RequestForm, type StorageAreaGroup } from "./RequestForm";
 
-export default async function RequestPage() {
-  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+export default async function RequestPage({ searchParams }: { searchParams: { location?: string } }) {
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
   const supabase = createClient();
 
   const [{ data: locations }, { data: locationProducts }, draft] = await Promise.all([
@@ -43,7 +43,12 @@ export default async function RequestPage() {
         Pick a location, set case/each quantities for anything that needs restocking, then post — it
         lands in the RequestQ for Warehouse/Admin to fulfill.
       </p>
-      <RequestForm locations={locations ?? []} productsByLocation={productsByLocation} initialValues={draft} />
+      <RequestForm
+        locations={locations ?? []}
+        productsByLocation={productsByLocation}
+        initialValues={draft}
+        initialLocationId={searchParams.location}
+      />
     </div>
   );
 }

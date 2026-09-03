@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { ProductQtyGrid } from "@/components/ProductQtyGrid";
-import { submitTransfer, saveTransferDraft, cancelTransferDraft, type TransferLineInput } from "./actions";
+import { submitRecovery, saveRecoveryDraft, cancelRecoveryDraft, type RecoveryLineInput } from "./actions";
 import { locationDisplayName } from "@/lib/locationLabel";
 import type { Location } from "@/lib/supabase/types";
 
-interface ProductForTransfer {
+interface ProductForRecovery {
   id: string;
   sku: string;
   description: string;
@@ -18,25 +18,28 @@ export interface StorageAreaGroup {
   id: string;
   code: string;
   name: string;
-  products: ProductForTransfer[];
+  products: ProductForRecovery[];
 }
 
 type QtyState = Record<string, { cases: string; each: string }>;
 
-export function TransferForm({
+export function RecoveryForm({
   locations,
+  warehouses,
   productsByLocation,
   initialValues,
   initialFromLocationId,
 }: {
   locations: Location[];
+  warehouses: Location[];
   productsByLocation: Record<string, StorageAreaGroup[]>;
   initialValues?: Record<string, unknown> | null;
   initialFromLocationId?: string;
 }) {
   const initialFromId = (initialValues?.from_location_id as string | undefined) ?? initialFromLocationId ?? "";
-  const initialToId = (initialValues?.to_location_id as string | undefined) ?? "";
-  const initialLines = (initialValues?.lines as TransferLineInput[] | undefined) ?? [];
+  const initialToId =
+    (initialValues?.to_location_id as string | undefined) ?? (warehouses.length === 1 ? warehouses[0].id : "");
+  const initialLines = (initialValues?.lines as RecoveryLineInput[] | undefined) ?? [];
 
   const [fromLocationId, setFromLocationId] = useState(initialFromId);
   const [toLocationId, setToLocationId] = useState(initialToId);
@@ -56,7 +59,7 @@ export function TransferForm({
   const groups = productsByLocation[fromLocationId] ?? [];
   const allProducts = groups.flatMap((g) => g.products);
 
-  function buildLines(): TransferLineInput[] {
+  function buildLines(): RecoveryLineInput[] {
     const productsById = new Map(allProducts.map((p) => [p.id, p]));
     return Object.entries(qty)
       .map(([productId, v]) => ({ productId, cases: Number(v.cases) || 0, each: Number(v.each) || 0 }))
@@ -74,7 +77,7 @@ export function TransferForm({
     setSaved(false);
     setDraftSaved(false);
     if (!fromLocationId || !toLocationId) {
-      setError("Select a From and To location first.");
+      setError("Select a From and To warehouse first.");
       return;
     }
     if (fromLocationId === toLocationId) {
@@ -83,7 +86,7 @@ export function TransferForm({
     }
     const lines = buildLines();
     startTransition(async () => {
-      const res = await submitTransfer(fromLocationId, toLocationId, lines);
+      const res = await submitRecovery(fromLocationId, toLocationId, lines);
       if (res?.error) {
         setError(res.error);
       } else {
@@ -98,12 +101,12 @@ export function TransferForm({
     setSaved(false);
     setDraftSaved(false);
     if (!fromLocationId || !toLocationId) {
-      setError("Select a From and To location first.");
+      setError("Select a From and To warehouse first.");
       return;
     }
     const lines = buildLines();
     startTransition(async () => {
-      const res = await saveTransferDraft(fromLocationId, toLocationId, lines);
+      const res = await saveRecoveryDraft(fromLocationId, toLocationId, lines);
       if (res?.error) {
         setError(res.error);
       } else {
@@ -117,7 +120,7 @@ export function TransferForm({
     setSaved(false);
     setDraftSaved(false);
     startTransition(async () => {
-      await cancelTransferDraft();
+      await cancelRecoveryDraft();
       setFromLocationId("");
       setToLocationId("");
       setQty({});
@@ -125,13 +128,13 @@ export function TransferForm({
   }
 
   const filledCount = Object.values(qty).filter((v) => Number(v.cases) > 0 || Number(v.each) > 0).length;
-  const hasInput = !!fromLocationId || !!toLocationId || filledCount > 0;
+  const hasInput = !!fromLocationId || filledCount > 0;
   const bothSet = !!fromLocationId && !!toLocationId;
 
   return (
     <div className="max-w-3xl">
       {initialValues && (
-        <p className="mb-3 rounded-md bg-purple-50 px-3 py-2 text-xs text-purple-700">
+        <p className="mb-3 rounded-md bg-orange-50 px-3 py-2 text-xs text-orange-700">
           Resuming a saved draft — post it or keep editing.
         </p>
       )}
@@ -158,14 +161,14 @@ export function TransferForm({
         </label>
 
         <label className="block text-sm text-gray-600">
-          To
+          To (Warehouse)
           <select
             value={toLocationId}
             onChange={(e) => setToLocationId(e.target.value)}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           >
-            <option value="">Select a location…</option>
-            {locations
+            <option value="">Select a warehouse…</option>
+            {warehouses
               .filter((l) => l.id !== fromLocationId)
               .map((l) => (
                 <option key={l.id} value={l.id}>
@@ -227,8 +230,8 @@ export function TransferForm({
       )}
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
-      {saved && !isPending && <p className="mt-4 text-sm text-green-600">✓ Transfer logged</p>}
-      {draftSaved && !isPending && <p className="mt-4 text-sm text-purple-700">✓ Saved for later</p>}
+      {saved && !isPending && <p className="mt-4 text-sm text-green-600">✓ Recovery logged</p>}
+      {draftSaved && !isPending && <p className="mt-4 text-sm text-orange-700">✓ Saved for later</p>}
 
       <div className="mt-6 flex gap-2">
         <button
@@ -237,7 +240,7 @@ export function TransferForm({
           disabled={isPending}
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
-          {isPending ? "Submitting…" : "Log transfer"}
+          {isPending ? "Submitting…" : "Log recovery"}
         </button>
         <button
           type="button"

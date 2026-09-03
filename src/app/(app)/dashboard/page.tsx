@@ -328,6 +328,9 @@ export default async function DashboardPage() {
         <Link href="/return" className={draftTypes.has("return") ? `${ACTIVE_BUTTON} bg-fuchsia-600` : IDLE_BUTTON}>
           Return
         </Link>
+        <Link href="/recovery" className={draftTypes.has("recovery") ? `${ACTIVE_BUTTON} bg-orange-600` : IDLE_BUTTON}>
+          Recovery
+        </Link>
       </div>
 
       <Section

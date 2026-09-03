@@ -30,12 +30,14 @@ export function RequestForm({
   locations,
   productsByLocation,
   initialValues,
+  initialLocationId: queryLocationId,
 }: {
   locations: Location[];
   productsByLocation: Record<string, StorageAreaGroup[]>;
   initialValues?: Record<string, unknown> | null;
+  initialLocationId?: string;
 }) {
-  const initialLocationId = (initialValues?.location_id as string | undefined) ?? "";
+  const initialLocationId = (initialValues?.location_id as string | undefined) ?? queryLocationId ?? "";
   const initialLines = (initialValues?.lines as RequestLineInput[] | undefined) ?? [];
 
   const [locationId, setLocationId] = useState(initialLocationId);

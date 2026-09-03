@@ -3,21 +3,22 @@ import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getDraft } from "@/lib/actionDrafts";
 import { sortStorageAreas } from "@/lib/storageAreas";
-import { TransferForm, type StorageAreaGroup } from "./TransferForm";
+import { RecoveryForm, type StorageAreaGroup } from "./RecoveryForm";
 
-export default async function TransferPage({ searchParams }: { searchParams: { location?: string } }) {
+export default async function RecoveryPage({ searchParams }: { searchParams: { location?: string } }) {
   const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
   const supabase = createClient();
 
-  const [{ data: locations }, { data: locationProducts }, draft] = await Promise.all([
+  const [{ data: locations }, { data: warehouses }, { data: locationProducts }, draft] = await Promise.all([
     supabase.from("locations").select("*").eq("active", true).order("name"),
+    supabase.from("locations").select("*").eq("active", true).eq("type", "warehouse").order("name"),
     supabase
       .from("location_products")
       .select(
         "location_id, product:products(id, sku, description, photo_url, active, case_size), storage_area:storage_areas(id, code, name)"
       )
       .eq("active", true),
-    getDraft(supabase, profile.id, "transfer"),
+    getDraft(supabase, profile.id, "recovery"),
   ]);
 
   const areasByLocation = new Map<string, Map<string, StorageAreaGroup>>();
@@ -37,14 +38,16 @@ export default async function TransferPage({ searchParams }: { searchParams: { l
 
   return (
     <div>
-      <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Transfer" }]} />
-      <h1 className="mb-2 text-lg font-semibold">Transfer Stock</h1>
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Recovery" }]} />
+      <h1 className="mb-2 text-lg font-semibold">Recover Stock to Warehouse</h1>
       <p className="mb-6 text-sm text-gray-500">
-        Move stock between two locations — pick where it&apos;s coming from and going to, then set
-        case/each quantities for anything moving.
+        Pull stock back from a location into a warehouse — the month/quarter/year-end process for
+        clearing out stands that are closing for the season, so nothing sits exposed at a closed
+        location.
       </p>
-      <TransferForm
+      <RecoveryForm
         locations={locations ?? []}
+        warehouses={warehouses ?? []}
         productsByLocation={productsByLocation}
         initialValues={draft}
         initialFromLocationId={searchParams.location}

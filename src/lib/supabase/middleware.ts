@@ -5,12 +5,18 @@ import type { UserRole } from "./types";
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 const ADMIN_ONLY_PREFIXES = ["/admin"];
-const WAREHOUSE_PREFIXES = ["/receive", "/transfer", "/return", "/request"];
+const WAREHOUSE_PREFIXES = ["/receive", "/return"];
+// A stand lead reaches these from the checkin confirmation screen after
+// closing their own stand -- to Transfer/Request/Recover stock out of it.
+const STAND_ALLOWED_PREFIXES = ["/transfer", "/request", "/recovery"];
 
 function roleAllows(role: UserRole, pathname: string): boolean {
   if (role === "admin") return true;
   if (WAREHOUSE_PREFIXES.some((p) => pathname.startsWith(p))) {
     return role === "warehouse" || role === "kitchen" || role === "catering";
+  }
+  if (STAND_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
+    return role === "warehouse" || role === "kitchen" || role === "catering" || role === "stand_lead";
   }
   if (ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p))) {
     return false;

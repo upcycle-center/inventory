@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type ActionDraftType = "request" | "transfer" | "return";
+export type ActionDraftType = "request" | "transfer" | "return" | "recovery";
 
 export async function getDraft(
   supabase: SupabaseClient,
