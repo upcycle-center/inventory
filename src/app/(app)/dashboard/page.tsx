@@ -261,6 +261,34 @@ export default async function DashboardPage() {
   );
   const completedCount = readyRows.filter((r) => submittedKeys.has(`${r.event_id}:${r.location_id}`)).length;
 
+  // ---- Waste: month-to-date, by location and by product ----
+  const wasteMonthStart = new Date();
+  wasteMonthStart.setDate(1);
+  wasteMonthStart.setHours(0, 0, 0, 0);
+  const { data: wasteRowsRaw } = await supabase
+    .from("waste_records")
+    .select("quantity, location:locations(id, name), product:products(id, sku, description)")
+    .gte("created_at", wasteMonthStart.toISOString());
+
+  const wasteByLocation = new Map<string, { name: string; total: number }>();
+  const wasteByProduct = new Map<string, { name: string; total: number }>();
+  let wasteTotal = 0;
+  for (const row of (wasteRowsRaw as any[]) ?? []) {
+    wasteTotal += Number(row.quantity);
+    if (row.location) {
+      const entry = wasteByLocation.get(row.location.id) ?? { name: row.location.name, total: 0 };
+      entry.total += Number(row.quantity);
+      wasteByLocation.set(row.location.id, entry);
+    }
+    if (row.product) {
+      const entry = wasteByProduct.get(row.product.id) ?? { name: row.product.description, total: 0 };
+      entry.total += Number(row.quantity);
+      wasteByProduct.set(row.product.id, entry);
+    }
+  }
+  const wasteByLocationRows = Array.from(wasteByLocation.values()).sort((a, b) => b.total - a.total);
+  const wasteByProductRows = Array.from(wasteByProduct.values()).sort((a, b) => b.total - a.total);
+
   // ---- Overview buttons: RequestQ lights up while requests are pending;
   // Request/Transfer/Return light up while this user has a saved draft ----
   const { count: pendingRequestCount } = await supabase
@@ -432,6 +460,64 @@ export default async function DashboardPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </Section>
+
+      <Section title="Waste">
+        <div className="mb-4 max-w-xs">
+          <StatCard label="This month, all locations (EA)" value={String(wasteTotal)} />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+            <table className="w-full whitespace-nowrap text-left text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="px-4 py-2">Location</th>
+                  <th className="px-4 py-2">Waste (EA)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wasteByLocationRows.map((r) => (
+                  <tr key={r.name} className="border-t border-gray-100">
+                    <td className="px-4 py-2">{r.name}</td>
+                    <td className="px-4 py-2 text-gray-500">{r.total}</td>
+                  </tr>
+                ))}
+                {!wasteByLocationRows.length && (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-6 text-center text-gray-400">
+                      No waste logged this month.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+            <table className="w-full whitespace-nowrap text-left text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="px-4 py-2">Product</th>
+                  <th className="px-4 py-2">Waste (EA)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wasteByProductRows.map((r) => (
+                  <tr key={r.name} className="border-t border-gray-100">
+                    <td className="px-4 py-2">{r.name}</td>
+                    <td className="px-4 py-2 text-gray-500">{r.total}</td>
+                  </tr>
+                ))}
+                {!wasteByProductRows.length && (
+                  <tr>
+                    <td colSpan={2} className="px-4 py-6 text-center text-gray-400">
+                      No waste logged this month.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Section>
     </div>
