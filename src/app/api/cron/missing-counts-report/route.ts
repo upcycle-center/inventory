@@ -87,7 +87,7 @@ export async function GET(request: Request) {
   await resend.emails.send({
     from: process.env.REPORT_FROM_EMAIL || "BWP Legends Operations <noreply@mercado.solutions>",
     to: emails,
-    subject: `Missing Closing Counts — ${today}`,
+    subject: `Missing Closing Counts — ${missing.length} location${missing.length === 1 ? "" : "s"} — ${today}`,
     html: `<p>${missing.length} location(s) confirmed open haven't submitted a closing count. Full list attached.</p>`,
     attachments: [{ filename: `missing-counts-${today}.csv`, content: Buffer.from(csv).toString("base64") }],
   });

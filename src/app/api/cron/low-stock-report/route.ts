@@ -78,7 +78,7 @@ export async function GET(request: Request) {
   await resend.emails.send({
     from: process.env.REPORT_FROM_EMAIL || "BWP Legends Operations <noreply@mercado.solutions>",
     to: emails,
-    subject: `Daily Low Stock Report — ${today}`,
+    subject: `Daily Low Stock Report — ${lowItems.length} item${lowItems.length === 1 ? "" : "s"} — ${today}`,
     html: `<p>${lowItems.length} item(s) at or below their restock threshold. Full list attached.</p>`,
     attachments: [{ filename: `low-stock-${today}.csv`, content: Buffer.from(csv).toString("base64") }],
   });
