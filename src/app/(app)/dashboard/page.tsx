@@ -305,13 +305,7 @@ export default async function DashboardPage() {
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <WfmShiftsCard shifts={wfmShifts} confirmed={confirmedShifts} pending={unconfirmedShifts} />
           <StatCard label="Events tracked" value={String(activeEvents.length)} />
-          <div className="rounded-md border border-gray-200 bg-white p-5">
-            <Meter
-              label="Confirmed vs unconfirmed (open locations, upcoming/open events)"
-              numerator={confirmedOpenCount}
-              denominator={openRows.length}
-            />
-          </div>
+          <ConfirmedSplitBar confirmed={confirmedOpenCount} total={openRows.length} />
         </div>
         <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
           <table className="w-full whitespace-nowrap text-left text-sm">
@@ -439,6 +433,23 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-md border border-gray-200 bg-white p-5">
       <p className="text-2xl font-semibold">{value}</p>
       <p className="text-sm text-gray-500">{label}</p>
+    </div>
+  );
+}
+
+function ConfirmedSplitBar({ confirmed, total }: { confirmed: number; total: number }) {
+  const confirmedPct = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+  const unconfirmedPct = 100 - confirmedPct;
+
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-5">
+      <p className="mb-2 text-center text-sm font-medium">
+        confirmed {confirmedPct}% : {unconfirmedPct}% unconfirmed
+      </p>
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-gray-100">
+        <div className="h-full bg-brand" style={{ width: `${confirmedPct}%` }} />
+        <div className="h-full bg-gray-300" style={{ width: `${unconfirmedPct}%` }} />
+      </div>
     </div>
   );
 }
