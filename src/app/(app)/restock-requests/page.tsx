@@ -6,7 +6,8 @@ import { getRestockUnitByProductId } from "@/lib/restockUnit";
 import { fulfillRestockRequest } from "./actions";
 
 export default async function RestockRequestsPage() {
-  await requireProfile(["admin", "warehouse"]);
+  const profile = await requireProfile();
+  const isManager = ["admin", "warehouse"].includes(profile.role);
   const supabase = createClient();
 
   const [{ data: requests }, unitByProductId] = await Promise.all([
@@ -27,7 +28,7 @@ export default async function RestockRequestsPage() {
       <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Restock Requests" }]} />
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Restock Requests</h1>
-        {!!rows.length && (
+        {isManager && !!rows.length && (
           <Link
             href="/api/restock-requests/export"
             className="rounded-md bg-brand px-4 py-2 text-sm text-white"
@@ -37,8 +38,9 @@ export default async function RestockRequestsPage() {
         )}
       </div>
       <p className="mb-6 text-sm text-gray-500">
-        Items checked &ldquo;Request&rdquo; on a location&apos;s Assigned Items table. Mark a request
-        fulfilled once it&apos;s been restocked.
+        {isManager
+          ? "Items requested via the Request form or a location's Assigned Items table. Mark a request fulfilled once it's been restocked."
+          : "Live view of everything currently queued for restock — Warehouse and Admin manage fulfillment."}
       </p>
 
       <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
@@ -51,7 +53,7 @@ export default async function RestockRequestsPage() {
               <th className="px-4 py-2">Threshold</th>
               <th className="px-4 py-2">Requested by</th>
               <th className="px-4 py-2">Requested</th>
-              <th className="px-4 py-2"></th>
+              {isManager && <th className="px-4 py-2"></th>}
             </tr>
           </thead>
           <tbody>
@@ -67,19 +69,21 @@ export default async function RestockRequestsPage() {
                 <td className="px-4 py-2 text-gray-500">{r.reorder_threshold}</td>
                 <td className="px-4 py-2 text-gray-500">{r.requested_by_profile?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-gray-500">{new Date(r.requested_at).toLocaleDateString()}</td>
-                <td className="px-4 py-2 text-right">
-                  <form action={fulfillRestockRequest}>
-                    <input type="hidden" name="id" value={r.id} />
-                    <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                      Mark fulfilled
-                    </button>
-                  </form>
-                </td>
+                {isManager && (
+                  <td className="px-4 py-2 text-right">
+                    <form action={fulfillRestockRequest}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
+                        Mark fulfilled
+                      </button>
+                    </form>
+                  </td>
+                )}
               </tr>
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={isManager ? 7 : 6} className="px-4 py-6 text-center text-gray-400">
                   No open restock requests.
                 </td>
               </tr>

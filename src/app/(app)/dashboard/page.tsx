@@ -171,10 +171,6 @@ export default async function DashboardPage() {
       | { event_id: string; location_id: string; is_open: boolean; confirmed: boolean; confirmed_staff_count: number | null }[]
       | null) ?? [];
 
-  // ---- WFM Staff: %Confirmed vs Unconfirmed, across open locations ----
-  const openRows = eventLocationRows.filter((r) => r.is_open);
-  const confirmedOpenCount = openRows.filter((r) => r.confirmed).length;
-
   // ---- Events: WFM Shifts — total recommended staff across those events ----
   const { data: standLocationsRaw } = await supabase.from("locations").select("*").eq("active", true).eq("type", "stand");
   const standLocations = (standLocationsRaw as Location[] | null) ?? [];
@@ -285,6 +281,9 @@ export default async function DashboardPage() {
         >
           RequestQ{pendingRequestCount ? ` (${pendingRequestCount})` : ""}
         </Link>
+        <Link href="/request" className={draftTypes.has("request") ? `${ACTIVE_BUTTON} bg-yellow-400` : IDLE_BUTTON}>
+          Request
+        </Link>
         <Link href="/transfer" className={draftTypes.has("transfer") ? `${ACTIVE_BUTTON} bg-purple-600` : IDLE_BUTTON}>
           Transfer
         </Link>
@@ -332,7 +331,7 @@ export default async function DashboardPage() {
       <Section title="WORKFORCE by Event">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <WfmShiftsCard shifts={wfmShifts} confirmed={confirmedShifts} pending={unconfirmedShifts} />
-          <ConfirmedSplitBar confirmed={confirmedOpenCount} total={openRows.length} />
+          <ConfirmedSplitBar confirmed={confirmedShifts} total={wfmShifts} />
           <StatCard
             label="Avg staff variance (confirmed vs recommended)"
             value={avgStaffVariance > 0 ? `+${avgStaffVariance.toFixed(1)}` : avgStaffVariance.toFixed(1)}

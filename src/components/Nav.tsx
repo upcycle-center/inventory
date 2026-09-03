@@ -11,6 +11,7 @@ const LINKS: { href: string; label: string; roles?: Profile["role"][] }[] = [
   { href: "/receive", label: "Receive", roles: ["admin", "warehouse", "kitchen", "catering"] },
   { href: "/transfer", label: "Transfer", roles: ["admin", "warehouse", "kitchen", "catering"] },
   { href: "/return", label: "Return", roles: ["admin", "warehouse", "kitchen", "catering"] },
+  { href: "/request", label: "Request", roles: ["admin", "warehouse", "kitchen", "catering"] },
   { href: "/admin", label: "Admin", roles: ["admin"] },
 ];
 
