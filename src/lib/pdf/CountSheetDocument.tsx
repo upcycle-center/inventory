@@ -65,16 +65,7 @@ type CountSheetProduct = { sku: string; description: string };
 type CountSheetArea = { name: string; products: CountSheetProduct[] };
 type CountSheetRole = { name: string; count: number };
 
-export function CountSheetDocument({
-  locationName,
-  yellowDogCode,
-  eventName,
-  eventDate,
-  leadName,
-  estTickets,
-  roles,
-  areas,
-}: {
+type CountSheetPageProps = {
   locationName: string;
   yellowDogCode: string | null;
   eventName: string | null;
@@ -83,82 +74,107 @@ export function CountSheetDocument({
   estTickets: number | null;
   roles: CountSheetRole[];
   areas: CountSheetArea[];
-}) {
+};
+
+// The single-location page, factored out so a combined multi-location PDF
+// can render one of these per location inside one shared <Document> --
+// each <Page> starts a fresh sheet, so this is otherwise identical to what
+// the per-location download produces.
+function CountSheetPage({ locationName, yellowDogCode, eventName, eventDate, leadName, estTickets, roles, areas }: CountSheetPageProps) {
+  return (
+    <Page size="LETTER" style={styles.page}>
+      <Text style={styles.title}>
+        {yellowDogCode ? `${yellowDogCode} — ` : ""}
+        {locationName} — Count Sheet
+      </Text>
+      {eventName ? (
+        <Text style={styles.subtitle}>
+          {eventName} · {eventDate}
+        </Text>
+      ) : (
+        <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
+      )}
+      <Text style={styles.attendanceLine}>EST ATTENDANCE: {estTickets != null ? estTickets : "____________"}</Text>
+
+      <View style={styles.headerBox}>
+        <View style={styles.headerCol}>
+          <Text style={styles.headerLabel}>LEAD</Text>
+          {leadName ? <Text style={styles.headerValue}>{leadName}</Text> : <View style={styles.blankLine} />}
+        </View>
+        {roles.length > 0 && (
+          <View style={styles.headerColWide}>
+            <Text style={styles.headerLabel}>CONFIRMED TEAM</Text>
+            <Text style={styles.headerValue}>{roles.map((r) => `${r.count} ${r.name}`).join("  ·  ")}</Text>
+          </View>
+        )}
+      </View>
+
+      {areas.map((area) => {
+        const showEmpty = /liquor|wine/i.test(area.name);
+        return (
+        <View key={area.name}>
+          <Text style={styles.areaTitle}>{area.name}</Text>
+          <View style={styles.thHeadRow}>
+            <Text style={styles.colProduct}>Product</Text>
+            <Text style={styles.colGroupLabel}>OPEN</Text>
+            <Text style={styles.colSmall}>Waste</Text>
+            <Text style={styles.colSmall}>Comp</Text>
+            {showEmpty && <Text style={styles.colSmall}>Empty</Text>}
+            <Text style={styles.colGroupLabel}>CLOSE</Text>
+          </View>
+          <View style={styles.thRow}>
+            <Text style={styles.colProduct}></Text>
+            <Text style={styles.colSmall}>EA</Text>
+            <Text style={styles.colSmall}>CS</Text>
+            <Text style={styles.colSmall}>EA</Text>
+            <Text style={styles.colSmall}>EA</Text>
+            {showEmpty && <Text style={styles.colSmall}>EA</Text>}
+            <Text style={styles.colSmall}>EA</Text>
+            <Text style={styles.colSmall}>CS</Text>
+          </View>
+          {area.products.map((p) => (
+            <View key={p.sku} style={styles.tr}>
+              <Text style={styles.colProduct}>{p.description}</Text>
+              <Text style={styles.colSmall}></Text>
+              <Text style={styles.colSmall}></Text>
+              <Text style={styles.colSmall}></Text>
+              <Text style={styles.colSmall}></Text>
+              {showEmpty && <Text style={styles.colSmall}></Text>}
+              <Text style={styles.colSmall}></Text>
+              <Text style={styles.colSmall}></Text>
+            </View>
+          ))}
+        </View>
+        );
+      })}
+
+      <View style={styles.commentSection}>
+        <Text style={styles.commentLabel}>COMMENTS</Text>
+        <View style={styles.commentLine} />
+        <View style={styles.commentLine} />
+        <View style={styles.commentLine} />
+      </View>
+    </Page>
+  );
+}
+
+export function CountSheetDocument(props: CountSheetPageProps) {
   return (
     <Document>
-      <Page size="LETTER" style={styles.page}>
-        <Text style={styles.title}>
-          {yellowDogCode ? `${yellowDogCode} — ` : ""}
-          {locationName} — Count Sheet
-        </Text>
-        {eventName ? (
-          <Text style={styles.subtitle}>
-            {eventName} · {eventDate}
-          </Text>
-        ) : (
-          <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
-        )}
-        <Text style={styles.attendanceLine}>EST ATTENDANCE: {estTickets != null ? estTickets : "____________"}</Text>
+      <CountSheetPage {...props} />
+    </Document>
+  );
+}
 
-        <View style={styles.headerBox}>
-          <View style={styles.headerCol}>
-            <Text style={styles.headerLabel}>LEAD</Text>
-            {leadName ? <Text style={styles.headerValue}>{leadName}</Text> : <View style={styles.blankLine} />}
-          </View>
-          {roles.length > 0 && (
-            <View style={styles.headerColWide}>
-              <Text style={styles.headerLabel}>CONFIRMED TEAM</Text>
-              <Text style={styles.headerValue}>{roles.map((r) => `${r.count} ${r.name}`).join("  ·  ")}</Text>
-            </View>
-          )}
-        </View>
-
-        {areas.map((area) => {
-          const showEmpty = /liquor|wine/i.test(area.name);
-          return (
-          <View key={area.name}>
-            <Text style={styles.areaTitle}>{area.name}</Text>
-            <View style={styles.thHeadRow}>
-              <Text style={styles.colProduct}>Product</Text>
-              <Text style={styles.colGroupLabel}>OPEN</Text>
-              <Text style={styles.colSmall}>Waste</Text>
-              <Text style={styles.colSmall}>Comp</Text>
-              {showEmpty && <Text style={styles.colSmall}>Empty</Text>}
-              <Text style={styles.colGroupLabel}>CLOSE</Text>
-            </View>
-            <View style={styles.thRow}>
-              <Text style={styles.colProduct}></Text>
-              <Text style={styles.colSmall}>EA</Text>
-              <Text style={styles.colSmall}>CS</Text>
-              <Text style={styles.colSmall}>EA</Text>
-              <Text style={styles.colSmall}>EA</Text>
-              {showEmpty && <Text style={styles.colSmall}>EA</Text>}
-              <Text style={styles.colSmall}>EA</Text>
-              <Text style={styles.colSmall}>CS</Text>
-            </View>
-            {area.products.map((p) => (
-              <View key={p.sku} style={styles.tr}>
-                <Text style={styles.colProduct}>{p.description}</Text>
-                <Text style={styles.colSmall}></Text>
-                <Text style={styles.colSmall}></Text>
-                <Text style={styles.colSmall}></Text>
-                <Text style={styles.colSmall}></Text>
-                {showEmpty && <Text style={styles.colSmall}></Text>}
-                <Text style={styles.colSmall}></Text>
-                <Text style={styles.colSmall}></Text>
-              </View>
-            ))}
-          </View>
-          );
-        })}
-
-        <View style={styles.commentSection}>
-          <Text style={styles.commentLabel}>COMMENTS</Text>
-          <View style={styles.commentLine} />
-          <View style={styles.commentLine} />
-          <View style={styles.commentLine} />
-        </View>
-      </Page>
+// One combined PDF -- every location's count sheet as its own page in
+// page order, for handing out a single printout at staff check-in instead
+// of downloading each stand separately.
+export function AllCountSheetsDocument({ locations }: { locations: CountSheetPageProps[] }) {
+  return (
+    <Document>
+      {locations.map((loc, i) => (
+        <CountSheetPage key={i} {...loc} />
+      ))}
     </Document>
   );
 }

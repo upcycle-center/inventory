@@ -84,18 +84,26 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <p className="mb-6 text-sm text-gray-500">{event.event_date}</p>
 
       <div className="mb-8 flex items-center justify-between">
-        <ActionForm action={updateEventStatus} savedLabel="Status updated" className="flex items-center gap-2">
-          <input type="hidden" name="id" value={event.id} />
-          <label className="text-sm text-gray-500">Status</label>
-          <select name="status" defaultValue={event.status} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
-            <option value="upcoming">Upcoming</option>
-            <option value="open">Open</option>
-            <option value="closed">Closed</option>
-          </select>
-          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
-            Update
-          </button>
-        </ActionForm>
+        <div className="flex items-center gap-3">
+          <ActionForm action={updateEventStatus} savedLabel="Status updated" className="flex items-center gap-2">
+            <input type="hidden" name="id" value={event.id} />
+            <label className="text-sm text-gray-500">Status</label>
+            <select name="status" defaultValue={event.status} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
+              <option value="upcoming">Upcoming</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+            <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+              Update
+            </button>
+          </ActionForm>
+          <a
+            href={`/api/count-sheet/pdf/all?event=${event.id}`}
+            className="rounded-md bg-brand px-3 py-1.5 text-sm text-white"
+          >
+            Download All Count Sheets
+          </a>
+        </div>
         <DeleteEventButton eventId={event.id} />
       </div>
 
