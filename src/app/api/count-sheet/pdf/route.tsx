@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const [{ data: event }, { data: location }, { data: assignment }, { data: locationProducts }, { data: staffRoles }, { data: staffTiers }] =
     await Promise.all([
       eventId ? supabase.from("events").select("id, name, event_date, est_tickets").eq("id", eventId).single() : Promise.resolve({ data: null }),
-      supabase.from("locations").select("id, name, type, yellow_dog_code").eq("id", locationId).single(),
+      supabase.from("locations").select("id, name, type, yellow_dog_code, backup_lead_user_id").eq("id", locationId).single(),
       eventId
         ? supabase
             .from("event_location_assignments")
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   // (no event) blank template is a management action, not something a
   // stand lead needs.
   const isManager = ["admin", "warehouse", "kitchen", "catering"].includes(profile.role);
-  if (!isManager) {
+  if (!isManager && location.backup_lead_user_id !== profile.id) {
     if (!eventId) return new Response("Forbidden", { status: 403 });
     const { data: myAssignment } = await supabase
       .from("event_location_assignments")

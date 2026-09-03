@@ -44,6 +44,24 @@ export async function updateDefaultLead(formData: FormData) {
   revalidatePath(`/admin/locations/${id}`);
 }
 
+// Unlike Default Lead (a reference used to pre-fill the per-event Lead
+// dropdown), Backup Lead grants real access -- is_assigned_to_stand
+// checks this directly, so this person can run the stand for any event
+// at this location without a separate per-event assignment.
+export async function updateBackupLead(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const backupLeadUserId = String(formData.get("backup_lead_user_id") || "");
+  if (!id) return;
+
+  await supabase
+    .from("locations")
+    .update({ backup_lead_user_id: backupLeadUserId || null })
+    .eq("id", id);
+
+  revalidatePath(`/admin/locations/${id}`);
+}
+
 export async function deleteLocation(id: string): Promise<{ error: string } | void> {
   const supabase = createClient();
   const { error } = await supabase.from("locations").delete().eq("id", id);

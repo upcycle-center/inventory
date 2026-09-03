@@ -93,7 +93,7 @@ export default async function CountPage({
     );
   }
 
-  if (profile.role === "stand_lead") {
+  if (profile.role === "stand_lead" && location.backup_lead_user_id !== profile.id) {
     const { data: assignment } = await supabase
       .from("event_location_assignments")
       .select("id")
@@ -202,11 +202,21 @@ async function EventsPicker({ userId, isWarehouseOrAdmin }: { userId: string; is
     .order("event_date", { ascending: true });
 
   if (!isWarehouseOrAdmin) {
-    const { data: assignments } = await supabase
-      .from("event_location_assignments")
-      .select("event_id")
-      .eq("location_lead_user_id", userId);
-    const assignedEventIds = [...new Set(((assignments as { event_id: string }[] | null) ?? []).map((a) => a.event_id))];
+    const [{ data: assignments }, { data: backupLocations }] = await Promise.all([
+      supabase.from("event_location_assignments").select("event_id").eq("location_lead_user_id", userId),
+      supabase.from("locations").select("id").eq("backup_lead_user_id", userId),
+    ]);
+    const backupLocationIds = ((backupLocations as { id: string }[] | null) ?? []).map((l) => l.id);
+    const { data: backupEventLocations } = backupLocationIds.length
+      ? await supabase.from("event_locations").select("event_id").in("location_id", backupLocationIds).eq("is_open", true).eq("confirmed", true)
+      : { data: [] as { event_id: string }[] };
+
+    const assignedEventIds = [
+      ...new Set([
+        ...((assignments as { event_id: string }[] | null) ?? []).map((a) => a.event_id),
+        ...((backupEventLocations as { event_id: string }[] | null) ?? []).map((r) => r.event_id),
+      ]),
+    ];
     if (!assignedEventIds.length) {
       return (
         <div>
@@ -299,12 +309,14 @@ async function LocationsForEvent({
   let rows = (openLocationsRaw as any[]) ?? [];
 
   if (!isWarehouseOrAdmin) {
-    const { data: assignments } = await supabase
-      .from("event_location_assignments")
-      .select("location_id")
-      .eq("event_id", event.id)
-      .eq("location_lead_user_id", userId);
-    const assignedLocationIds = new Set(((assignments as { location_id: string }[] | null) ?? []).map((a) => a.location_id));
+    const [{ data: assignments }, { data: backupLocations }] = await Promise.all([
+      supabase.from("event_location_assignments").select("location_id").eq("event_id", event.id).eq("location_lead_user_id", userId),
+      supabase.from("locations").select("id").eq("backup_lead_user_id", userId),
+    ]);
+    const assignedLocationIds = new Set([
+      ...((assignments as { location_id: string }[] | null) ?? []).map((a) => a.location_id),
+      ...((backupLocations as { id: string }[] | null) ?? []).map((l) => l.id),
+    ]);
     rows = rows.filter((r) => assignedLocationIds.has(r.location_id));
   }
 
