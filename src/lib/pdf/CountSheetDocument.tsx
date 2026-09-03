@@ -3,7 +3,8 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
   title: { fontSize: 16, marginBottom: 2, fontFamily: "Helvetica-Bold" },
-  subtitle: { fontSize: 11, marginBottom: 12, color: "#555555" },
+  subtitle: { fontSize: 11, marginBottom: 4, color: "#555555" },
+  attendanceLine: { fontSize: 10, fontFamily: "Helvetica-Bold", marginBottom: 12 },
   headerBox: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -79,15 +80,12 @@ export function CountSheetDocument({
         ) : (
           <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
         )}
+        <Text style={styles.attendanceLine}>EST ATTENDANCE: {estTickets != null ? estTickets : "____________"}</Text>
 
         <View style={styles.headerBox}>
           <View style={styles.headerCol}>
             <Text style={styles.headerLabel}>LEAD</Text>
             {leadName ? <Text style={styles.headerValue}>{leadName}</Text> : <View style={styles.blankLine} />}
-          </View>
-          <View style={styles.headerCol}>
-            <Text style={styles.headerLabel}>EST ATTENDANCE</Text>
-            {estTickets != null ? <Text style={styles.headerValue}>{estTickets}</Text> : <View style={styles.blankLine} />}
           </View>
           {roles.length > 0 && (
             <View style={styles.headerColWide}>
