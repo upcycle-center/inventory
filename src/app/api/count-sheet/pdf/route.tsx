@@ -12,19 +12,21 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const eventId = searchParams.get("event");
   const locationId = searchParams.get("location");
-  if (!eventId || !locationId) return new Response("Missing event or location", { status: 400 });
+  if (!locationId) return new Response("Missing location", { status: 400 });
 
   const supabase = createClient();
 
   const [{ data: event }, { data: location }, { data: assignment }, { data: locationProducts }] = await Promise.all([
-    supabase.from("events").select("id, name, event_date, est_tickets").eq("id", eventId).single(),
+    eventId ? supabase.from("events").select("id, name, event_date, est_tickets").eq("id", eventId).single() : Promise.resolve({ data: null }),
     supabase.from("locations").select("id, name, yellow_dog_code").eq("id", locationId).single(),
-    supabase
-      .from("event_location_assignments")
-      .select("location_lead:profiles(name)")
-      .eq("event_id", eventId)
-      .eq("location_id", locationId)
-      .maybeSingle(),
+    eventId
+      ? supabase
+          .from("event_location_assignments")
+          .select("location_lead:profiles(name)")
+          .eq("event_id", eventId)
+          .eq("location_id", locationId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     supabase
       .from("location_products")
       .select("product:products(sku, description, active), storage_area:storage_areas(id, code, name)")
@@ -32,12 +34,16 @@ export async function GET(request: Request) {
       .eq("active", true),
   ]);
 
-  if (!event || !location) return new Response("Not found", { status: 404 });
+  if (!location) return new Response("Not found", { status: 404 });
+  if (eventId && !event) return new Response("Not found", { status: 404 });
 
   // Same access rule as /count: managers see any location, a stand lead
-  // only the location(s) they're assigned to for this event.
+  // only the location(s) they're assigned to for this event. A location-only
+  // (no event) blank template is a management action, not something a
+  // stand lead needs.
   const isManager = ["admin", "warehouse", "kitchen", "catering"].includes(profile.role);
   if (!isManager) {
+    if (!eventId) return new Response("Forbidden", { status: 403 });
     const { data: myAssignment } = await supabase
       .from("event_location_assignments")
       .select("id")
@@ -71,10 +77,10 @@ export async function GET(request: Request) {
       <CountSheetDocument
         locationName={location.name}
         yellowDogCode={location.yellow_dog_code}
-        eventName={event.name}
-        eventDate={event.event_date}
+        eventName={event?.name ?? null}
+        eventDate={event?.event_date ?? null}
         leadName={(assignment as any)?.location_lead?.name ?? null}
-        estTickets={event.est_tickets}
+        estTickets={event?.est_tickets ?? null}
         areas={areas}
       />
     ) as any

@@ -181,6 +181,12 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         >
           Duplicate
         </Link>
+        <Link
+          href={`/api/count-sheet/pdf?location=${location.id}`}
+          className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+        >
+          Download blank count sheet
+        </Link>
         <ActionForm action={toggleLocationActive} className="contents" savedLabel={location.active ? "Deactivated" : "Reactivated"}>
           <input type="hidden" name="id" value={location.id} />
           <input type="hidden" name="active" value={String(location.active)} />

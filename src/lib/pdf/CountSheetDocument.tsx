@@ -52,8 +52,8 @@ export function CountSheetDocument({
 }: {
   locationName: string;
   yellowDogCode: string | null;
-  eventName: string;
-  eventDate: string;
+  eventName: string | null;
+  eventDate: string | null;
   leadName: string | null;
   estTickets: number | null;
   areas: CountSheetArea[];
@@ -65,18 +65,30 @@ export function CountSheetDocument({
           {yellowDogCode ? `${yellowDogCode} — ` : ""}
           {locationName} — Count Sheet
         </Text>
-        <Text style={styles.subtitle}>
-          {eventName} · {eventDate}
-        </Text>
+        {eventName ? (
+          <Text style={styles.subtitle}>
+            {eventName} · {eventDate}
+          </Text>
+        ) : (
+          <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
+        )}
 
         <View style={styles.headerBox}>
           <View style={styles.headerCol}>
+            <Text style={styles.headerLabel}>EVENT</Text>
+            {eventName ? <Text style={styles.headerValue}>{eventName}</Text> : <View style={styles.blankLine} />}
+          </View>
+          <View style={styles.headerCol}>
+            <Text style={styles.headerLabel}>DATE</Text>
+            {eventDate ? <Text style={styles.headerValue}>{eventDate}</Text> : <View style={styles.blankLine} />}
+          </View>
+          <View style={styles.headerCol}>
             <Text style={styles.headerLabel}>LEAD</Text>
-            <Text style={styles.headerValue}>{leadName ?? "— Unassigned —"}</Text>
+            {leadName ? <Text style={styles.headerValue}>{leadName}</Text> : <View style={styles.blankLine} />}
           </View>
           <View style={styles.headerCol}>
             <Text style={styles.headerLabel}>EST ATTENDANCE</Text>
-            <Text style={styles.headerValue}>{estTickets ?? "—"}</Text>
+            {estTickets != null ? <Text style={styles.headerValue}>{estTickets}</Text> : <View style={styles.blankLine} />}
           </View>
           <View style={styles.headerCol}>
             <Text style={styles.headerLabel}>TOT ATTENDANCE</Text>
