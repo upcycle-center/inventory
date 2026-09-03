@@ -68,6 +68,22 @@ export async function createProduct(formData: FormData) {
   if (upc) barcodes.push({ product_id: product.id, barcode: upc });
   await supabase.from("product_barcodes").insert(barcodes);
 
+  // Locations: same checkbox-per-location + storage area picker as the
+  // edit page's Locations table, submitted in the same form -- when
+  // duplicating a product it arrives pre-checked for wherever the source
+  // product is stocked, so this is normally just a review/confirm step.
+  const { data: locations } = await supabase.from("locations").select("id").eq("active", true);
+  const locationProductRows = ((locations as { id: string }[] | null) ?? [])
+    .filter((l) => formData.get(`sold_${l.id}`) === "on" && formData.get(`area_${l.id}`))
+    .map((l) => ({
+      location_id: l.id,
+      product_id: product.id,
+      storage_area_id: String(formData.get(`area_${l.id}`)),
+    }));
+  if (locationProductRows.length) {
+    await supabase.from("location_products").insert(locationProductRows);
+  }
+
   revalidatePath("/admin/products");
   redirect("/admin/products");
 }

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Supplier } from "@/lib/supabase/types";
+import type { Location, StorageArea, Supplier } from "@/lib/supabase/types";
+import { sortStorageAreas } from "@/lib/storageAreas";
+import { LocationLabel } from "@/components/LocationLabel";
 import { createProduct } from "../actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -11,14 +13,25 @@ export default async function NewProductPage({
 }) {
   const supabase = createClient();
 
-  const [{ data: suppliers }, fromProductResult] = await Promise.all([
-    supabase.from("suppliers").select("*").order("name"),
-    searchParams.from
-      ? supabase.from("products").select("*").eq("id", searchParams.from).single()
-      : Promise.resolve({ data: null }),
-  ]);
+  const [{ data: suppliers }, { data: locations }, { data: storageAreas }, fromProductResult, fromLocationProductsResult] =
+    await Promise.all([
+      supabase.from("suppliers").select("*").order("name"),
+      supabase.from("locations").select("*").eq("active", true).order("name"),
+      supabase.from("storage_areas").select("*").eq("active", true),
+      searchParams.from
+        ? supabase.from("products").select("*").eq("id", searchParams.from).single()
+        : Promise.resolve({ data: null }),
+      searchParams.from
+        ? supabase.from("location_products").select("location_id, storage_area_id").eq("product_id", searchParams.from)
+        : Promise.resolve({ data: [] as { location_id: string; storage_area_id: string }[] }),
+    ]);
 
   const from = fromProductResult.data;
+  const areas = sortStorageAreas((storageAreas as StorageArea[]) ?? []);
+  const storageAreaIdByLocationId = new Map(
+    (fromLocationProductsResult.data ?? []).map((lp) => [lp.location_id, lp.storage_area_id])
+  );
+  const defaultAreaId = areas.find((a) => a.code === "OTH")?.id ?? areas[0]?.id ?? "";
 
   return (
     <div>
@@ -92,6 +105,65 @@ export default async function NewProductPage({
           Photo (for the count screen&apos;s photo grid)
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
+
+        <div>
+          <p className="mb-1 text-sm font-medium">Locations</p>
+          <p className="mb-3 text-sm text-gray-500">
+            {from
+              ? "Pre-checked to match the source product — review and adjust before saving."
+              : "Every location is checked (stocked) by default. Uncheck a location if this product isn't stocked there."}
+          </p>
+          <table className="w-full text-left text-sm">
+            <thead className="text-gray-500">
+              <tr>
+                <th className="pb-2">Stock</th>
+                <th className="pb-2">Location</th>
+                <th className="pb-2">Storage area</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(locations as Location[] | null)?.map((l) => {
+                const existingAreaId = storageAreaIdByLocationId.get(l.id);
+                return (
+                  <tr key={l.id} className="border-t border-gray-100">
+                    <td className="py-2">
+                      <input
+                        type="checkbox"
+                        name={`sold_${l.id}`}
+                        defaultChecked={from ? storageAreaIdByLocationId.has(l.id) : true}
+                        className="h-4 w-4"
+                      />
+                    </td>
+                    <td className="py-2">
+                      <LocationLabel location={l} />
+                    </td>
+                    <td className="py-2">
+                      <select
+                        name={`area_${l.id}`}
+                        defaultValue={existingAreaId ?? defaultAreaId}
+                        className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                      >
+                        {areas.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!locations?.length && (
+                <tr>
+                  <td colSpan={3} className="py-4 text-gray-400">
+                    No locations available.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
         <div className="flex items-center gap-3">
           <button type="submit" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
             Save
