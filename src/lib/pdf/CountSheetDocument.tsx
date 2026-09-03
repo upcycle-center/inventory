@@ -75,24 +75,12 @@ export function CountSheetDocument({
 
         <View style={styles.headerBox}>
           <View style={styles.headerCol}>
-            <Text style={styles.headerLabel}>EVENT</Text>
-            {eventName ? <Text style={styles.headerValue}>{eventName}</Text> : <View style={styles.blankLine} />}
-          </View>
-          <View style={styles.headerCol}>
-            <Text style={styles.headerLabel}>DATE</Text>
-            {eventDate ? <Text style={styles.headerValue}>{eventDate}</Text> : <View style={styles.blankLine} />}
-          </View>
-          <View style={styles.headerCol}>
             <Text style={styles.headerLabel}>LEAD</Text>
             {leadName ? <Text style={styles.headerValue}>{leadName}</Text> : <View style={styles.blankLine} />}
           </View>
           <View style={styles.headerCol}>
             <Text style={styles.headerLabel}>EST ATTENDANCE</Text>
             {estTickets != null ? <Text style={styles.headerValue}>{estTickets}</Text> : <View style={styles.blankLine} />}
-          </View>
-          <View style={styles.headerCol}>
-            <Text style={styles.headerLabel}>TOT ATTENDANCE</Text>
-            <View style={styles.blankLine} />
           </View>
         </View>
 
@@ -102,18 +90,24 @@ export function CountSheetDocument({
             <View style={styles.thRow}>
               <Text style={styles.colProduct}>Product</Text>
               <Text style={styles.colGroupLabel}>Opening</Text>
+              <Text style={styles.colSmall}>Waste</Text>
+              <Text style={styles.colSmall}>Comp</Text>
               <Text style={styles.colGroupLabel}>Closing</Text>
             </View>
             <View style={styles.thRow}>
               <Text style={styles.colProduct}></Text>
               <Text style={styles.colSmall}>EA</Text>
               <Text style={styles.colSmall}>CS</Text>
+              <Text style={styles.colSmall}></Text>
+              <Text style={styles.colSmall}></Text>
               <Text style={styles.colSmall}>EA</Text>
               <Text style={styles.colSmall}>CS</Text>
             </View>
             {area.products.map((p) => (
               <View key={p.sku} style={styles.tr}>
                 <Text style={styles.colProduct}>{p.description}</Text>
+                <Text style={styles.colSmall}></Text>
+                <Text style={styles.colSmall}></Text>
                 <Text style={styles.colSmall}></Text>
                 <Text style={styles.colSmall}></Text>
                 <Text style={styles.colSmall}></Text>
