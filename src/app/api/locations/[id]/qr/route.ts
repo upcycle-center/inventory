@@ -1,6 +1,6 @@
-import QRCode from "qrcode";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { checkinQrBuffer } from "@/lib/checkinQr";
 
 // Encodes an absolute URL to this location's /checkin landing page -- print
 // this and post it at the stand. Scanning it always lands on the same
@@ -16,9 +16,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
   if (!location) return new Response("Not found", { status: 404 });
 
   const { searchParams, origin } = new URL(request.url);
-  const checkinUrl = `${origin}/checkin/${location.id}`;
 
-  const buffer = await QRCode.toBuffer(checkinUrl, { type: "png", width: 512, margin: 2 });
+  const buffer = await checkinQrBuffer(origin, location.id);
 
   const filenameSafeLocation = location.name.replace(/[^a-zA-Z0-9]+/g, "-");
   const disposition = searchParams.get("download")

@@ -5,6 +5,7 @@ import { sortStorageAreas } from "@/lib/storageAreas";
 import { AllCountSheetsDocument } from "@/lib/pdf/CountSheetDocument";
 import { exportFilename } from "@/lib/exportFilename";
 import { effectiveCount } from "@/lib/staffing";
+import { checkinQrDataUri } from "@/lib/checkinQr";
 import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 
 // One combined download for handing out at staff check-in -- every open
@@ -75,33 +76,38 @@ export async function GET(request: Request) {
   }
   const tiers = (staffTiers as LocationStaffTier[] | null) ?? [];
 
-  const locationPages = openLocations.map((location) => {
-    const areaMap = areaMapByLocationId.get(location.id) ?? new Map();
-    const areas = sortStorageAreas(Array.from(areaMap.values()).map((e: any) => e.area)).map((area) => {
-      const entry = areaMap.get(area.id)!;
+  const { origin } = new URL(request.url);
+
+  const locationPages = await Promise.all(
+    openLocations.map(async (location) => {
+      const areaMap = areaMapByLocationId.get(location.id) ?? new Map();
+      const areas = sortStorageAreas(Array.from(areaMap.values()).map((e: any) => e.area)).map((area) => {
+        const entry = areaMap.get(area.id)!;
+        return {
+          name: area.name,
+          products: entry.products.slice().sort((a: any, b: any) => a.description.localeCompare(b.description)),
+        };
+      });
+
+      const roles: { name: string; count: number }[] = [{ name: "Stand Lead", count: 1 }];
+      for (const role of rolesByLocationId.get(location.id) ?? []) {
+        const { count } = effectiveCount(role, tiers, event.est_tickets);
+        if (count > 0) roles.push({ name: role.role_name, count });
+      }
+
       return {
-        name: area.name,
-        products: entry.products.slice().sort((a: any, b: any) => a.description.localeCompare(b.description)),
+        locationName: location.name,
+        yellowDogCode: location.yellow_dog_code,
+        eventName: event.name,
+        eventDate: event.event_date,
+        leadName: leadNameByLocationId.get(location.id) ?? null,
+        estTickets: event.est_tickets,
+        roles,
+        areas,
+        qrCodeDataUri: await checkinQrDataUri(origin, location.id),
       };
-    });
-
-    const roles: { name: string; count: number }[] = [{ name: "Stand Lead", count: 1 }];
-    for (const role of rolesByLocationId.get(location.id) ?? []) {
-      const { count } = effectiveCount(role, tiers, event.est_tickets);
-      if (count > 0) roles.push({ name: role.role_name, count });
-    }
-
-    return {
-      locationName: location.name,
-      yellowDogCode: location.yellow_dog_code,
-      eventName: event.name,
-      eventDate: event.event_date,
-      leadName: leadNameByLocationId.get(location.id) ?? null,
-      estTickets: event.est_tickets,
-      roles,
-      areas,
-    };
-  });
+    })
+  );
 
   const buffer = await renderToBuffer((<AllCountSheetsDocument locations={locationPages} />) as any);
 

@@ -5,6 +5,7 @@ import { sortStorageAreas } from "@/lib/storageAreas";
 import { CountSheetDocument } from "@/lib/pdf/CountSheetDocument";
 import { exportFilename } from "@/lib/exportFilename";
 import { effectiveCount } from "@/lib/staffing";
+import { checkinQrDataUri } from "@/lib/checkinQr";
 import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 
 export async function GET(request: Request) {
@@ -89,6 +90,9 @@ export async function GET(request: Request) {
     }
   }
 
+  const { origin } = new URL(request.url);
+  const qrCodeDataUri = await checkinQrDataUri(origin, locationId);
+
   const buffer = await renderToBuffer(
     (
       <CountSheetDocument
@@ -100,6 +104,7 @@ export async function GET(request: Request) {
         estTickets={event?.est_tickets ?? null}
         roles={roles}
         areas={areas}
+        qrCodeDataUri={qrCodeDataUri}
       />
     ) as any
   );

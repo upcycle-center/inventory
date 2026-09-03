@@ -1,10 +1,23 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  titleCol: { flex: 1, paddingRight: 12 },
   title: { fontSize: 16, marginBottom: 2, fontFamily: "Helvetica-Bold" },
   subtitle: { fontSize: 11, marginBottom: 4, color: "#555555" },
-  attendanceLine: { fontSize: 10, fontFamily: "Helvetica-Bold", marginBottom: 12 },
+  attendanceLine: { fontSize: 10, fontFamily: "Helvetica-Bold" },
+  qrRow: { flexDirection: "row", alignItems: "flex-start" },
+  qrImage: { width: 60, height: 60 },
+  qrStepsBox: {
+    width: 96,
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: "#000000",
+    padding: 4,
+  },
+  qrStepsTitle: { fontSize: 6.5, fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  qrStepsText: { fontSize: 6.5, lineHeight: 1.4, color: "#333333" },
   headerBox: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -74,29 +87,57 @@ type CountSheetPageProps = {
   estTickets: number | null;
   roles: CountSheetRole[];
   areas: CountSheetArea[];
+  qrCodeDataUri: string | null;
 };
 
 // The single-location page, factored out so a combined multi-location PDF
 // can render one of these per location inside one shared <Document> --
 // each <Page> starts a fresh sheet, so this is otherwise identical to what
 // the per-location download produces.
-function CountSheetPage({ locationName, yellowDogCode, eventName, eventDate, leadName, estTickets, roles, areas }: CountSheetPageProps) {
+function CountSheetPage({
+  locationName,
+  yellowDogCode,
+  eventName,
+  eventDate,
+  leadName,
+  estTickets,
+  roles,
+  areas,
+  qrCodeDataUri,
+}: CountSheetPageProps) {
   return (
     <Page size="LETTER" style={styles.page}>
-      <Text style={styles.title}>
-        {yellowDogCode ? `${yellowDogCode} — ` : ""}
-        {locationName} — Count Sheet
-      </Text>
-      {eventName ? (
-        <Text style={styles.subtitle}>
-          {eventName} · {eventDate}
-        </Text>
-      ) : (
-        <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
-      )}
-      <Text style={styles.attendanceLine}>EST ATTENDANCE: {estTickets != null ? estTickets : "____________"}</Text>
+      <View style={styles.topRow}>
+        <View style={styles.titleCol}>
+          <Text style={styles.title}>
+            {yellowDogCode ? `${yellowDogCode} — ` : ""}
+            {locationName} — Count Sheet
+          </Text>
+          {eventName ? (
+            <Text style={styles.subtitle}>
+              {eventName} · {eventDate}
+            </Text>
+          ) : (
+            <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
+          )}
+          <Text style={styles.attendanceLine}>EST ATTENDANCE: {estTickets != null ? estTickets : "____________"}</Text>
+        </View>
 
-      <View style={styles.headerBox}>
+        {qrCodeDataUri && (
+          <View style={styles.qrRow}>
+            <Image src={qrCodeDataUri} style={styles.qrImage} />
+            <View style={styles.qrStepsBox}>
+              <Text style={styles.qrStepsTitle}>SCAN TO OPEN/CLOSE STAND</Text>
+              <Text style={styles.qrStepsText}>
+                1. Scan to Open Stand{"\n"}2. Scan again to Close{"\n"}3. After closing: use Transfer, Request, or
+                Recovery
+              </Text>
+            </View>
+          </View>
+        )}
+      </View>
+
+      <View style={[styles.headerBox, { marginTop: 12 }]}>
         <View style={styles.headerCol}>
           <Text style={styles.headerLabel}>LEAD</Text>
           {leadName ? <Text style={styles.headerValue}>{leadName}</Text> : <View style={styles.blankLine} />}
