@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { ProductQtyGrid } from "@/components/ProductQtyGrid";
 import { submitCount, type CountLineInput } from "./actions";
 import type { CountType } from "@/lib/supabase/types";
 
@@ -110,53 +110,14 @@ export function CountForm({
               </button>
 
               {isOpen && (
-                <div className="grid grid-cols-2 gap-3 border-t border-gray-100 p-4 sm:grid-cols-3">
-                  {group.products.map((product) => (
-                    <div key={product.id} className="rounded-md border border-gray-100 p-2">
-                      <div className="mb-2 flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-gray-50">
-                        {product.photo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={product.photo_url}
-                            alt={product.description}
-                            className="h-full w-full object-contain"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <ProductPlaceholderIcon />
-                          </div>
-                        )}
-                      </div>
-                      <p className="mb-1 truncate text-xs font-medium" title={product.description}>
-                        {product.description}
-                      </p>
-                      <p className="mb-2 text-[11px] text-gray-400">{product.sku}</p>
-                      <div className="grid grid-cols-2 gap-1">
-                        <label className="text-[10px] text-gray-500">
-                          EA
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            value={qty[product.id]?.each ?? ""}
-                            onChange={(e) => setValue(product.id, "each", e.target.value)}
-                            className="mt-0.5 w-full rounded border border-gray-300 px-1.5 py-1 text-sm"
-                          />
-                        </label>
-                        <label className="text-[10px] text-gray-500">
-                          CS
-                          <input
-                            type="number"
-                            inputMode="decimal"
-                            min={0}
-                            value={qty[product.id]?.cases ?? ""}
-                            onChange={(e) => setValue(product.id, "cases", e.target.value)}
-                            className="mt-0.5 w-full rounded border border-gray-300 px-1.5 py-1 text-sm"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  ))}
+                <div className="border-t border-gray-100 p-3">
+                  <ProductQtyGrid
+                    products={group.products}
+                    qty={qty}
+                    onSave={(productId, cases, each) => {
+                      setQty((prev) => ({ ...prev, [productId]: { cases, each } }));
+                    }}
+                  />
                 </div>
               )}
             </div>

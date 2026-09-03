@@ -4,54 +4,54 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { saveDraft, clearDraft } from "@/lib/actionDrafts";
+import { eachEquivalent } from "@/lib/onHand";
 
-export async function saveRequestDraft(formData: FormData): Promise<{ error: string } | void> {
+export interface RequestLineInput {
+  product_id: string;
+  qty_cases: number;
+  qty_each: number;
+  case_size: number | null;
+}
+
+export async function saveRequestDraft(locationId: string, lines: RequestLineInput[]): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  if (!locationId) return { error: "Select a location first." };
   const supabase = createClient();
 
-  const draft = {
-    product_id: String(formData.get("product_id") || ""),
-    location_id: String(formData.get("location_id") || ""),
-    reorder_qty: String(formData.get("reorder_qty") || ""),
-  };
-
-  const res = await saveDraft(supabase, profile.id, "request", draft);
+  const res = await saveDraft(supabase, profile.id, "request", { location_id: locationId, lines });
   if (res?.error) return res;
 
   revalidatePath("/request");
   revalidatePath("/dashboard");
 }
 
-// Flags the same (location, product) threshold row the Assigned Items
-// checkbox uses -- it lands in the exact same Restock Requests queue,
-// this is just a friendlier standalone entry point for anyone, not only
-// admins working from a location's product table.
-export async function submitRequest(formData: FormData): Promise<{ error: string } | void> {
+// Flags the same (location, product) threshold rows the Assigned Items
+// checkbox uses -- lands in the exact same Restock Requests queue, this
+// is just a friendlier standalone entry point for anyone, not only
+// admins working from a location's product table. reorder_qty is stored
+// as an each-equivalent, same convention used everywhere else quantities
+// get compared (thresholds, low-stock report).
+export async function submitRequest(locationId: string, lines: RequestLineInput[]): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
   const supabase = createClient();
 
-  const productId = String(formData.get("product_id") || "");
-  const locationId = String(formData.get("location_id") || "");
-  const qtyRaw = String(formData.get("reorder_qty") || "").trim();
-
-  if (!productId || !locationId) {
-    return { error: "Product and location are required." };
+  if (!locationId) {
+    return { error: "Select a location first." };
   }
-  if (qtyRaw && !(Number(qtyRaw) > 0)) {
-    return { error: "Quantity must be greater than 0." };
+  const nonZero = lines.filter((l) => l.qty_cases > 0 || l.qty_each > 0);
+  if (!nonZero.length) {
+    return { error: "Set a quantity for at least one product." };
   }
 
-  const upsertData: Record<string, unknown> = {
-    product_id: productId,
+  const rows = nonZero.map((l) => ({
+    product_id: l.product_id,
     location_id: locationId,
+    reorder_qty: eachEquivalent(l.qty_each, l.qty_cases, l.case_size),
     requested_at: new Date().toISOString(),
     requested_by: profile.id,
-  };
-  if (qtyRaw) upsertData.reorder_qty = Number(qtyRaw);
+  }));
 
-  const { error } = await supabase
-    .from("inventory_thresholds")
-    .upsert(upsertData, { onConflict: "product_id,location_id" });
+  const { error } = await supabase.from("inventory_thresholds").upsert(rows, { onConflict: "product_id,location_id" });
 
   if (error) {
     return { error: error.message };
