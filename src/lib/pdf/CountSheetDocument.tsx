@@ -13,6 +13,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#000000",
   },
   headerCol: { flexDirection: "column" },
+  headerColWide: { flexDirection: "column", flex: 1, marginLeft: 16 },
   headerLabel: { fontFamily: "Helvetica-Bold", fontSize: 9, color: "#555555", marginBottom: 2 },
   headerValue: { fontSize: 11 },
   blankLine: { borderBottomWidth: 1, borderBottomColor: "#000000", minWidth: 90, height: 14 },
@@ -40,6 +41,7 @@ const styles = StyleSheet.create({
 
 type CountSheetProduct = { sku: string; description: string };
 type CountSheetArea = { name: string; products: CountSheetProduct[] };
+type CountSheetRole = { name: string; count: number };
 
 export function CountSheetDocument({
   locationName,
@@ -48,6 +50,7 @@ export function CountSheetDocument({
   eventDate,
   leadName,
   estTickets,
+  roles,
   areas,
 }: {
   locationName: string;
@@ -56,6 +59,7 @@ export function CountSheetDocument({
   eventDate: string | null;
   leadName: string | null;
   estTickets: number | null;
+  roles: CountSheetRole[];
   areas: CountSheetArea[];
 }) {
   return (
@@ -82,9 +86,17 @@ export function CountSheetDocument({
             <Text style={styles.headerLabel}>EST ATTENDANCE</Text>
             {estTickets != null ? <Text style={styles.headerValue}>{estTickets}</Text> : <View style={styles.blankLine} />}
           </View>
+          {roles.length > 0 && (
+            <View style={styles.headerColWide}>
+              <Text style={styles.headerLabel}>CONFIRMED TEAM</Text>
+              <Text style={styles.headerValue}>{roles.map((r) => `${r.count} ${r.name}`).join("  ·  ")}</Text>
+            </View>
+          )}
         </View>
 
-        {areas.map((area) => (
+        {areas.map((area) => {
+          const showEmpty = /liquor|wine/i.test(area.name);
+          return (
           <View key={area.name}>
             <Text style={styles.areaTitle}>{area.name}</Text>
             <View style={styles.thRow}>
@@ -92,6 +104,7 @@ export function CountSheetDocument({
               <Text style={styles.colGroupLabel}>Opening</Text>
               <Text style={styles.colSmall}>Waste</Text>
               <Text style={styles.colSmall}>Comp</Text>
+              {showEmpty && <Text style={styles.colSmall}>Empty</Text>}
               <Text style={styles.colGroupLabel}>Closing</Text>
             </View>
             <View style={styles.thRow}>
@@ -100,6 +113,7 @@ export function CountSheetDocument({
               <Text style={styles.colSmall}>CS</Text>
               <Text style={styles.colSmall}></Text>
               <Text style={styles.colSmall}></Text>
+              {showEmpty && <Text style={styles.colSmall}></Text>}
               <Text style={styles.colSmall}>EA</Text>
               <Text style={styles.colSmall}>CS</Text>
             </View>
@@ -110,12 +124,14 @@ export function CountSheetDocument({
                 <Text style={styles.colSmall}></Text>
                 <Text style={styles.colSmall}></Text>
                 <Text style={styles.colSmall}></Text>
+                {showEmpty && <Text style={styles.colSmall}></Text>}
                 <Text style={styles.colSmall}></Text>
                 <Text style={styles.colSmall}></Text>
               </View>
             ))}
           </View>
-        ))}
+          );
+        })}
       </Page>
     </Document>
   );
