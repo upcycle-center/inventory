@@ -129,29 +129,6 @@ export async function upsertThreshold(formData: FormData) {
   revalidatePath(`/admin/locations/${locationId}`);
 }
 
-// The Request checkbox turns the same (location, product) threshold row
-// into a restock request — it stays flagged until someone clears it from
-// the Restock Requests queue (marking it fulfilled), not just a one-off
-// CSV export.
-export async function toggleRestockRequest(locationId: string, productId: string, requested: boolean) {
-  const profile = await requireProfile(["admin"]);
-  const supabase = createClient();
-  if (!locationId || !productId) return;
-
-  await supabase.from("inventory_thresholds").upsert(
-    {
-      location_id: locationId,
-      product_id: productId,
-      requested_at: requested ? new Date().toISOString() : null,
-      requested_by: requested ? profile.id : null,
-    },
-    { onConflict: "product_id,location_id" }
-  );
-
-  revalidatePath(`/admin/locations/${locationId}`);
-  revalidatePath("/restock-requests");
-}
-
 // Posting a physical count is the deliberate "close the month" action —
 // once posted, it's the authoritative moEND for that product/location/month
 // and what next month's moSTART carries forward from.

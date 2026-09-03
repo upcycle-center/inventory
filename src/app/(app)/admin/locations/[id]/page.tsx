@@ -5,7 +5,6 @@ import type { InventoryThreshold, LocationStaffRole, LocationStaffTier, Profile,
 import { STAFF_ROLES } from "@/lib/staffRoles";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { eachEquivalent, getLocationCountLines, latestByProductId } from "@/lib/onHand";
-import { getRestockUnitByProductId } from "@/lib/restockUnit";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
@@ -21,7 +20,6 @@ import {
   upsertThreshold,
 } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
-import { RequestRestockCheckbox } from "./RequestRestockCheckbox";
 
 function fmtQty(each: number | null | undefined, cases: number | null | undefined) {
   if (each == null && cases == null) return null;
@@ -60,7 +58,6 @@ export default async function LocationDetailPage({ params }: { params: { id: str
   // between them) per product at this location, from any event's count.
   const countLines = await getLocationCountLines(supabase, params.id);
   const onHandByProductId = latestByProductId(countLines);
-  const restockUnitByProductId = await getRestockUnitByProductId(supabase);
 
   // Waste: month-to-date tally per product at this location.
   const monthStart = new Date();
@@ -347,11 +344,15 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         the latest count sheet this month — post a physical count to lock in the real number and
         flag any discrepancy; moSTART carries forward from last month&apos;s posted (or
         calculated) moEND. Set a Threshold to flag low On-Hand (shown in red) and to include the
-        item in the daily low-stock report; check Request to add it to the{" "}
+        item in the daily low-stock report. To flag something for restock, use the{" "}
+        <Link href="/request" className="text-brand hover:underline">
+          Request
+        </Link>{" "}
+        page — it shows up in the{" "}
         <Link href="/restock-requests" className="text-brand hover:underline">
           Restock Requests
         </Link>{" "}
-        queue.
+        queue the same way.
       </p>
       <div className="max-w-6xl overflow-x-auto">
         {productsByArea.map(({ area, products }) => (
@@ -366,7 +367,6 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                   <th className="whitespace-nowrap pb-2 pr-3">On-Hand</th>
                   <th className="whitespace-nowrap pb-2 pr-3">Waste</th>
                   <th className="whitespace-nowrap pb-2 pr-3">Threshold (EACH)</th>
-                  <th className="whitespace-nowrap pb-2 pr-3">Request</th>
                   <th className="whitespace-nowrap pb-2 pr-3">moEND</th>
                 </tr>
               </thead>
@@ -426,18 +426,6 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                             Save
                           </button>
                         </ActionForm>
-                      </td>
-                      <td className="whitespace-nowrap py-2 pr-3">
-                        <div className="flex items-center gap-1">
-                          <RequestRestockCheckbox
-                            locationId={location.id}
-                            productId={p.id}
-                            requested={!!threshold?.requested_at}
-                          />
-                          <span className="text-xs capitalize text-gray-400">
-                            {restockUnitByProductId.get(p.id) ?? "case"}
-                          </span>
-                        </div>
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">
                         <p className="mb-1 text-xs text-gray-400">
