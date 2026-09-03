@@ -25,9 +25,9 @@ export default async function RestockRequestsPage() {
 
   return (
     <div>
-      <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Restock Requests" }]} />
+      <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "RequestQ" }]} />
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Restock Requests</h1>
+        <h1 className="text-lg font-semibold">RequestQ</h1>
         {isManager && !!rows.length && (
           <Link
             href="/api/restock-requests/export"

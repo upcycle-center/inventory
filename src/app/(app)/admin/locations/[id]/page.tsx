@@ -377,7 +377,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         </Link>{" "}
         page — it shows up in the{" "}
         <Link href="/restock-requests" className="text-brand hover:underline">
-          Restock Requests
+          RequestQ
         </Link>{" "}
         queue the same way.
       </p>
