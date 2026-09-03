@@ -3,8 +3,29 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import { saveDraft, clearDraft } from "@/lib/actionDrafts";
 
 export const RETURN_REASONS = ["Wrong Item", "Broken/Damaged", "Expired", "Did Not Order", "Other"] as const;
+
+export async function saveReturnDraft(formData: FormData): Promise<{ error: string } | void> {
+  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  const supabase = createClient();
+
+  const draft = {
+    product_id: String(formData.get("product_id") || ""),
+    from_location_id: String(formData.get("from_location_id") || ""),
+    supplier_id: String(formData.get("supplier_id") || ""),
+    reason_code: String(formData.get("reason_code") || ""),
+    quantity: String(formData.get("quantity") || ""),
+    note: String(formData.get("note") || ""),
+  };
+
+  const res = await saveDraft(supabase, profile.id, "return", draft);
+  if (res?.error) return res;
+
+  revalidatePath("/return");
+  revalidatePath("/dashboard");
+}
 
 export async function submitReturn(formData: FormData): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
@@ -44,5 +65,8 @@ export async function submitReturn(formData: FormData): Promise<{ error: string 
     return { error: error.message };
   }
 
+  await clearDraft(supabase, profile.id, "return");
+
   revalidatePath("/return");
+  revalidatePath("/dashboard");
 }

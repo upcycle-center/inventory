@@ -6,6 +6,7 @@ import { getLocationCountLines, latestByProductId } from "@/lib/onHand";
 import { lineValue } from "@/lib/inventoryValue";
 import { totalRecommendedStaff } from "@/lib/staffing";
 import { formatRelativeTime, formatTimestamp } from "@/lib/relativeTime";
+import { getDraftTypesForUser } from "@/lib/actionDrafts";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 
@@ -236,19 +237,30 @@ export default async function DashboardPage() {
   );
   const completedCount = readyRows.filter((r) => submittedKeys.has(`${r.event_id}:${r.location_id}`)).length;
 
+  // ---- Overview buttons: RequestQ lights up while requests are pending;
+  // Request/Transfer/Return light up while this user has a saved draft ----
+  const { count: pendingRequestCount } = await supabase
+    .from("inventory_thresholds")
+    .select("id", { count: "exact", head: true })
+    .not("requested_at", "is", null);
+  const draftTypes = await getDraftTypesForUser(supabase, profile.id);
+
+  const ACTIVE_BUTTON = "rounded-md px-4 py-2 text-sm font-medium text-white";
+  const IDLE_BUTTON = "rounded-md border border-gray-300 px-4 py-2 text-sm";
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap gap-3">
-        <Link href="/receive" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Receive
+        <Link
+          href="/restock-requests"
+          className={pendingRequestCount ? `${ACTIVE_BUTTON} bg-orange-500` : IDLE_BUTTON}
+        >
+          RequestQ{pendingRequestCount ? ` (${pendingRequestCount})` : ""}
         </Link>
-        <Link href="/transfer" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
+        <Link href="/transfer" className={draftTypes.has("transfer") ? `${ACTIVE_BUTTON} bg-purple-600` : IDLE_BUTTON}>
           Transfer
         </Link>
-        <Link href="/restock-requests" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
-          RequestQ
-        </Link>
-        <Link href="/return" className="rounded-md border border-gray-300 px-4 py-2 text-sm">
+        <Link href="/return" className={draftTypes.has("return") ? `${ACTIVE_BUTTON} bg-fuchsia-600` : IDLE_BUTTON}>
           Return
         </Link>
       </div>
