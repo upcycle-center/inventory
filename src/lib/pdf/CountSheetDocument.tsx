@@ -26,18 +26,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     padding: 4,
   },
-  thRow: {
+  thHeadRow: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#000000",
+    borderWidth: 1,
+    borderColor: "#000000",
+    borderBottomWidth: 0,
     paddingVertical: 3,
     fontFamily: "Helvetica-Bold",
     fontSize: 9,
   },
-  tr: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#dddddd", paddingVertical: 4 },
-  colProduct: { flex: 3 },
-  colGroupLabel: { flex: 2, textAlign: "center", fontSize: 8, color: "#555555" },
-  colSmall: { flex: 1, textAlign: "center" },
+  thRow: {
+    flexDirection: "row",
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#000000",
+    paddingVertical: 3,
+    fontFamily: "Helvetica-Bold",
+    fontSize: 9,
+  },
+  tr: {
+    flexDirection: "row",
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#000000",
+    paddingVertical: 4,
+  },
+  colProduct: { flex: 3, paddingLeft: 3 },
+  colGroupLabel: { flex: 2, textAlign: "center", fontSize: 8, color: "#555555", borderLeftWidth: 1, borderLeftColor: "#000000" },
+  colSmall: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
   commentSection: { marginTop: 20 },
   commentLabel: { fontFamily: "Helvetica-Bold", fontSize: 9, color: "#555555", marginBottom: 6 },
   commentLine: { borderBottomWidth: 1, borderBottomColor: "#000000", height: 20 },
@@ -100,7 +118,7 @@ export function CountSheetDocument({
           return (
           <View key={area.name}>
             <Text style={styles.areaTitle}>{area.name}</Text>
-            <View style={styles.thRow}>
+            <View style={styles.thHeadRow}>
               <Text style={styles.colProduct}>Product</Text>
               <Text style={styles.colGroupLabel}>Opening</Text>
               <Text style={styles.colSmall}>Waste</Text>
