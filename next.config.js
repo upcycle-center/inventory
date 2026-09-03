@@ -7,6 +7,15 @@ const nextConfig = {
   // the documented fix for it crashing at runtime on Vercel.
   experimental: {
     serverComponentsExternalPackages: ["@react-pdf/renderer"],
+    // pdfkit (underneath @react-pdf/renderer) reads its standard-font
+    // data files off disk at runtime rather than require()-ing them, so
+    // Next's automatic file tracing misses them and Vercel's deployed
+    // function can't find them ("Cannot find module .../Helvetica.cjs").
+    // Force them into the trace for both PDF routes.
+    outputFileTracingIncludes: {
+      "/api/count-sheet/pdf": ["./node_modules/pdfkit/js/standard-fonts/**"],
+      "/api/inventory-value/pdf": ["./node_modules/pdfkit/js/standard-fonts/**"],
+    },
   },
 };
 
