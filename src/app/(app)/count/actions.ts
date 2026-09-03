@@ -11,12 +11,18 @@ export interface CountLineInput {
   qty_cases: number | null;
 }
 
+export interface WasteLineInput {
+  product_id: string;
+  quantity: number;
+}
+
 export async function submitCount(
   eventId: string,
   locationId: string,
   type: CountType,
   lines: CountLineInput[],
-  notes?: string
+  notes?: string,
+  wasteLines?: WasteLineInput[]
 ): Promise<{ error: string } | void> {
   const profile = await requireProfile();
   const supabase = createClient();
@@ -67,6 +73,20 @@ export async function submitCount(
 
   if (linesError) {
     return { error: linesError.message };
+  }
+
+  if (wasteLines?.length) {
+    await supabase.from("waste_records").insert(
+      wasteLines.map((w) => ({
+        event_id: eventId,
+        location_id: locationId,
+        product_id: w.product_id,
+        quantity: w.quantity,
+        reason_code: "other" as const,
+        note: "Logged via closing count sheet",
+        user_id: profile.id,
+      }))
+    );
   }
 
   if (type === "closing") {

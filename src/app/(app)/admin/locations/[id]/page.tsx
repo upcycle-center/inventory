@@ -182,7 +182,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           href={`/api/count-sheet/pdf?location=${location.id}`}
           className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
-          Download blank count sheet
+          PDF Count Sheet
         </Link>
         <ActionForm action={toggleLocationActive} className="contents" savedLabel={location.active ? "Deactivated" : "Reactivated"}>
           <input type="hidden" name="id" value={location.id} />
@@ -366,7 +366,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                   <th className="whitespace-nowrap pb-2 pr-3">moSTART</th>
                   <th className="whitespace-nowrap pb-2 pr-3">On-Hand</th>
                   <th className="whitespace-nowrap pb-2 pr-3">Waste</th>
-                  <th className="whitespace-nowrap pb-2 pr-3">Threshold (EACH)</th>
+                  <th className="whitespace-nowrap pb-2 pr-3">Threshold (EA)</th>
                   <th className="whitespace-nowrap pb-2 pr-3">moEND</th>
                 </tr>
               </thead>

@@ -20,7 +20,7 @@ interface StorageAreaGroup {
   products: ProductForCount[];
 }
 
-type QtyState = Record<string, { each: string; cases: string }>;
+type QtyState = Record<string, { each: string; cases: string; waste?: string }>;
 
 export function CountForm({
   eventId,
@@ -42,13 +42,6 @@ export function CountForm({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function setValue(productId: string, field: "each" | "cases", value: string) {
-    setQty((prev) => ({
-      ...prev,
-      [productId]: { each: prev[productId]?.each ?? "", cases: prev[productId]?.cases ?? "", [field]: value },
-    }));
-  }
-
   const filledCount = Object.values(qty).filter((v) => v.each.trim() || v.cases.trim()).length;
 
   function handleSubmit() {
@@ -66,8 +59,15 @@ export function CountForm({
       return;
     }
 
+    const wasteLines =
+      type === "closing"
+        ? Object.entries(qty)
+            .filter(([, v]) => v.waste && Number(v.waste) > 0)
+            .map(([productId, v]) => ({ product_id: productId, quantity: Number(v.waste) }))
+        : [];
+
     startTransition(async () => {
-      const res = await submitCount(eventId, locationId, type, lines, notes);
+      const res = await submitCount(eventId, locationId, type, lines, notes, wasteLines);
       if (res?.error) {
         setError(res.error);
       } else {
@@ -115,8 +115,9 @@ export function CountForm({
                   <ProductQtyGrid
                     products={group.products}
                     qty={qty}
-                    onSave={(productId, cases, each) => {
-                      setQty((prev) => ({ ...prev, [productId]: { cases, each } }));
+                    showWaste={type === "closing"}
+                    onSave={(productId, cases, each, waste) => {
+                      setQty((prev) => ({ ...prev, [productId]: { cases, each, waste } }));
                     }}
                   />
                 </div>

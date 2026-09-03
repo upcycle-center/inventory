@@ -21,25 +21,29 @@ export function ProductQtyGrid({
   onSave,
   caseOptions,
   eachOptions,
+  showWaste,
 }: {
   products: QtyGridProduct[];
-  qty: Record<string, { cases: string; each: string }>;
-  onSave: (productId: string, cases: string, each: string) => void;
+  qty: Record<string, { cases: string; each: string; waste?: string }>;
+  onSave: (productId: string, cases: string, each: string, waste: string) => void;
   caseOptions?: number[];
   eachOptions?: number[];
+  showWaste?: boolean;
 }) {
   const [activeProduct, setActiveProduct] = useState<QtyGridProduct | null>(null);
   const [draftCases, setDraftCases] = useState("");
   const [draftEach, setDraftEach] = useState("");
+  const [draftWaste, setDraftWaste] = useState("");
 
   function openPopup(p: QtyGridProduct) {
     setActiveProduct(p);
     setDraftCases(qty[p.id]?.cases ?? "");
     setDraftEach(qty[p.id]?.each ?? "");
+    setDraftWaste(qty[p.id]?.waste ?? "");
   }
 
   function confirmPopup() {
-    if (activeProduct) onSave(activeProduct.id, draftCases, draftEach);
+    if (activeProduct) onSave(activeProduct.id, draftCases, draftEach, draftWaste);
     setActiveProduct(null);
   }
 
@@ -49,7 +53,8 @@ export function ProductQtyGrid({
         {products.map((p) => {
           const cases = qty[p.id]?.cases;
           const each = qty[p.id]?.each;
-          const filled = (!!cases && cases !== "0") || (!!each && each !== "0");
+          const waste = qty[p.id]?.waste;
+          const filled = (!!cases && cases !== "0") || (!!each && each !== "0") || (!!waste && waste !== "0");
           return (
             <button
               key={p.id}
@@ -72,7 +77,8 @@ export function ProductQtyGrid({
               {filled && (
                 <p className="mt-1 truncate text-[11px] font-medium text-brand">
                   {cases && cases !== "0" ? `${cases} CS ` : ""}
-                  {each && each !== "0" ? `${each} EA` : ""}
+                  {each && each !== "0" ? `${each} EA ` : ""}
+                  {waste && waste !== "0" ? `· ${waste} waste` : ""}
                 </p>
               )}
             </button>
@@ -157,6 +163,20 @@ export function ProductQtyGrid({
                 )}
               </label>
             </div>
+
+            {showWaste && (
+              <label className="mb-4 block text-xs text-gray-500">
+                Waste (EA)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  value={draftWaste}
+                  onChange={(e) => setDraftWaste(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                />
+              </label>
+            )}
 
             <div className="flex gap-2">
               <button type="button" onClick={confirmPopup} className="flex-1 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white">
