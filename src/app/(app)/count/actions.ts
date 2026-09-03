@@ -25,6 +25,20 @@ export async function submitCount(
     return { error: "Enter at least one quantity before submitting." };
   }
 
+  const { data: thisEvent } = await supabase.from("events").select("event_date").eq("id", eventId).single();
+  if (thisEvent) {
+    const { data: earlierOpenEvents } = await supabase
+      .from("events")
+      .select("id")
+      .eq("status", "open")
+      .lt("event_date", thisEvent.event_date)
+      .neq("id", eventId)
+      .limit(1);
+    if (earlierOpenEvents?.length) {
+      return { error: "An earlier event is still open. Events must be completed in date order." };
+    }
+  }
+
   const { data: count, error: countError } = await supabase
     .from("location_counts")
     .insert({

@@ -27,15 +27,17 @@ export function CountForm({
   locationId,
   type,
   groups,
+  initialQty,
 }: {
   eventId: string;
   locationId: string;
   type: CountType;
   groups: StorageAreaGroup[];
+  initialQty?: QtyState;
 }) {
   const router = useRouter();
   const [openArea, setOpenArea] = useState<string | null>(groups[0]?.id ?? null);
-  const [qty, setQty] = useState<QtyState>({});
+  const [qty, setQty] = useState<QtyState>(initialQty ?? {});
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -79,6 +81,11 @@ export function CountForm({
         <h1 className="text-lg font-semibold capitalize">{type} Count</h1>
         <span className="text-sm text-gray-500">{filledCount} item{filledCount === 1 ? "" : "s"} entered</span>
       </div>
+      {type === "opening" && filledCount > 0 && (
+        <p className="mb-4 text-xs text-gray-400">
+          Pre-filled from the location&apos;s last closing count — adjust any quantities that have changed.
+        </p>
+      )}
 
       <div className="space-y-3">
         {groups.map((group) => {
