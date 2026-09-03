@@ -130,9 +130,9 @@ export function CountSheetDocument({
               <Text style={styles.colProduct}></Text>
               <Text style={styles.colSmall}>EA</Text>
               <Text style={styles.colSmall}>CS</Text>
-              <Text style={styles.colSmall}></Text>
-              <Text style={styles.colSmall}></Text>
-              {showEmpty && <Text style={styles.colSmall}></Text>}
+              <Text style={styles.colSmall}>EA</Text>
+              <Text style={styles.colSmall}>EA</Text>
+              {showEmpty && <Text style={styles.colSmall}>EA</Text>}
               <Text style={styles.colSmall}>EA</Text>
               <Text style={styles.colSmall}>CS</Text>
             </View>
