@@ -4,6 +4,7 @@ import { eachEquivalent, getOnHandByProductId } from "@/lib/onHand";
 import { getRestockUnitByProductId } from "@/lib/restockUnit";
 import { getSystemNotificationRecipients } from "@/lib/notifications";
 import { toCsv } from "@/lib/csv";
+import { easternDateString } from "@/lib/easternTime";
 
 // Vercel Cron calls this daily with `Authorization: Bearer ${CRON_SECRET}`
 // (see vercel.json). Anyone else gets a 401 — this route reads across every
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
     return Response.json({ sent: false, reason: "RESEND_API_KEY not configured", lowItemCount: lowItems.length });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = easternDateString();
   const csv = toCsv([
     ["Location", "IC", "Product", "Unit", "On-Hand", "Threshold"],
     ...lowItems.map((i) => [i.location, i.sku, i.description, i.unit, i.onHand, i.threshold]),

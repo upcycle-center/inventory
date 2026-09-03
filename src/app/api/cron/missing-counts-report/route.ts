@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getSystemNotificationRecipients } from "@/lib/notifications";
 import { toCsv } from "@/lib/csv";
+import { easternDateString } from "@/lib/easternTime";
 
 // Vercel Cron calls this daily at the same time the count window closes
 // (see vercel.json), with `Authorization: Bearer ${CRON_SECRET}`. Flags
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
     return Response.json({ sent: false, reason: "RESEND_API_KEY not configured", missingCount: missing.length });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = easternDateString();
   const csv = toCsv([
     ["Event", "Event Date", "Location", "Lead"],
     ...missing.map((m) => [m.event, m.eventDate, m.location, m.lead]),
