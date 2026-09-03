@@ -25,6 +25,12 @@ export default async function BulkUploadProductsPage() {
       </div>
 
       <div className="max-w-md">
+        <Link
+          href="/api/products/csv-template"
+          className="mb-4 inline-block text-sm text-brand hover:underline"
+        >
+          Download CSV template
+        </Link>
         <CsvUploadForm suppliers={(suppliers as Supplier[] | null) ?? []} />
       </div>
     </div>

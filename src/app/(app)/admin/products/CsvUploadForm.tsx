@@ -23,7 +23,14 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         Columns required: <code>sku</code>, <code>description</code>. Optional:{" "}
         <code>upc</code>, <code>case_cost</code>, <code>sale_price</code>,{" "}
         <code>unit_of_measure</code>, <code>case_size</code>. Existing
-        ICs are updated; new ones are created (with an auto-generated internal barcode).
+        SKUs are updated; new ones are created (with an auto-generated internal barcode).
+      </p>
+      <p className="text-xs text-gray-500">
+        To also assign a location (and skip doing it by hand under Admin → Locations), add{" "}
+        <code>location</code> (Yellow Dog code or location name) and <code>storage_area</code>{" "}
+        (its code or name) columns, plus an optional <code>reorder_threshold</code>. A product
+        going to more than one location needs one row per location — repeat the sku/description on
+        each, just changing <code>location</code>/<code>storage_area</code>/<code>reorder_threshold</code>.
       </p>
       <select name="supplier_id" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
         <option value="">No supplier</option>
