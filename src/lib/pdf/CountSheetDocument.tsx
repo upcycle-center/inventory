@@ -120,11 +120,11 @@ export function CountSheetDocument({
             <Text style={styles.areaTitle}>{area.name}</Text>
             <View style={styles.thHeadRow}>
               <Text style={styles.colProduct}>Product</Text>
-              <Text style={styles.colGroupLabel}>Opening</Text>
+              <Text style={styles.colGroupLabel}>OPEN</Text>
               <Text style={styles.colSmall}>Waste</Text>
               <Text style={styles.colSmall}>Comp</Text>
               {showEmpty && <Text style={styles.colSmall}>Empty</Text>}
-              <Text style={styles.colGroupLabel}>Closing</Text>
+              <Text style={styles.colGroupLabel}>CLOSE</Text>
             </View>
             <View style={styles.thRow}>
               <Text style={styles.colProduct}></Text>
