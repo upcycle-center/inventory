@@ -202,6 +202,7 @@ export default async function DashboardPage() {
   }
 
   let wfmShifts = 0;
+  let confirmedShifts = 0;
   const openShiftsByEventId = new Map<string, number>();
   const confirmedShiftsByEventId = new Map<string, number>();
   for (const ev of activeEvents) {
@@ -210,9 +211,11 @@ export default async function DashboardPage() {
     const openShiftsForEvent = totalRecommendedStaff(standLocationIds, openMap, rolesByLocationId, staffTiers, ev.est_tickets);
     const confirmedShiftsForEvent = totalRecommendedStaff(standLocationIds, confirmedMap, rolesByLocationId, staffTiers, ev.est_tickets);
     wfmShifts += openShiftsForEvent;
+    confirmedShifts += confirmedShiftsForEvent;
     openShiftsByEventId.set(ev.id, openShiftsForEvent);
     confirmedShiftsByEventId.set(ev.id, confirmedShiftsForEvent);
   }
+  const unconfirmedShifts = wfmShifts - confirmedShifts;
 
   // ---- Count: PDF Printer Ready / By Location / %Completion — OPEN events only ----
   const { data: readyRowsRaw } = openEventIds.length
@@ -235,8 +238,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-lg font-semibold">Overview</h1>
-      <div className="flex flex-wrap gap-3">
+      <div className="mb-6 flex flex-wrap gap-3">
         <Link href="/receive" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Receive
         </Link>
@@ -289,7 +291,7 @@ export default async function DashboardPage() {
 
       <Section title="Events">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="WFM Shifts (recommended staff, upcoming/open events)" value={String(wfmShifts)} />
+          <StatCard label="shifts : confirmed : pending" value={`${wfmShifts} : ${confirmedShifts} : ${unconfirmedShifts}`} />
           <StatCard label="Events tracked" value={String(activeEvents.length)} />
           <div className="rounded-md border border-gray-200 bg-white p-5">
             <Meter
