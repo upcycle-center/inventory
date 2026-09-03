@@ -291,7 +291,7 @@ export default async function DashboardPage() {
 
       <Section title="Events">
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="shifts : confirmed : pending" value={`${wfmShifts} : ${confirmedShifts} : ${unconfirmedShifts}`} />
+          <WfmShiftsCard shifts={wfmShifts} confirmed={confirmedShifts} pending={unconfirmedShifts} />
           <StatCard label="Events tracked" value={String(activeEvents.length)} />
           <div className="rounded-md border border-gray-200 bg-white p-5">
             <Meter
@@ -427,6 +427,29 @@ function StatCard({ label, value }: { label: string; value: string }) {
     <div className="rounded-md border border-gray-200 bg-white p-5">
       <p className="text-2xl font-semibold">{value}</p>
       <p className="text-sm text-gray-500">{label}</p>
+    </div>
+  );
+}
+
+function WfmShiftsCard({ shifts, confirmed, pending }: { shifts: number; confirmed: number; pending: number }) {
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-5">
+      <div className="flex items-start justify-center gap-3">
+        <div className="text-center">
+          <p className="text-2xl font-bold">{shifts}</p>
+          <p className="text-xs text-gray-500">shifts</p>
+        </div>
+        <p className="text-2xl font-bold text-gray-300">:</p>
+        <div className="text-center">
+          <p className="text-2xl font-bold">{confirmed}</p>
+          <p className="text-xs text-gray-500">confirmed</p>
+        </div>
+        <p className="text-2xl font-bold text-gray-300">:</p>
+        <div className="text-center">
+          <p className="text-2xl font-bold">{pending}</p>
+          <p className="text-xs text-gray-500">pending</p>
+        </div>
+      </div>
     </div>
   );
 }
