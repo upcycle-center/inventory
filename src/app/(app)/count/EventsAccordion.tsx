@@ -70,7 +70,8 @@ export function EventsAccordion({ title, rows, isManager }: { title: string; row
                 {isOpen && (
                   <div className="border-t border-gray-100">
                     {isManager && r.locations.length > 0 && (
-                      <div className="flex justify-end px-4 pt-3">
+                      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                        <p className="text-sm font-medium text-gray-500">All stands</p>
                         <Link
                           href={`/api/count-sheet/pdf/all?event=${r.id}`}
                           className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
