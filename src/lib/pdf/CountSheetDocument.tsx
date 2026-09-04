@@ -49,8 +49,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     padding: 4,
   },
+  // alignSelf: flex-start keeps these rows sized to their actual columns
+  // (Product + however many count boxes) instead of stretching to the
+  // full page width by default -- without it, a row with fewer columns
+  // (no Empty) left a gap between its last box and the row's own right
+  // border.
   thHeadRow: {
     flexDirection: "row",
+    alignSelf: "flex-start",
     borderWidth: 1,
     borderColor: "#000000",
     borderBottomWidth: 0,
@@ -60,6 +66,7 @@ const styles = StyleSheet.create({
   },
   thRow: {
     flexDirection: "row",
+    alignSelf: "flex-start",
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
@@ -70,6 +77,7 @@ const styles = StyleSheet.create({
   },
   tr: {
     flexDirection: "row",
+    alignSelf: "flex-start",
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
@@ -159,6 +167,7 @@ function CountSheetPage({
                 4) RETURN <Text style={styles.qrStepEmphasis}>PAPER COPY</Text> to the office.
               </Text>
             </View>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- react-pdf's Image has no alt prop */}
             <Image src={qrCodeDataUri} style={styles.qrImage} />
           </View>
         )}
