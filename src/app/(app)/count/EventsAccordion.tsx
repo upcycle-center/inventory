@@ -76,7 +76,7 @@ export function EventsAccordion({ title, rows, isManager }: { title: string; row
                           href={`/api/count-sheet/pdf/all?event=${r.id}`}
                           className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
                         >
-                          Download All Count Sheets
+                          Download All
                         </Link>
                       </div>
                     )}
