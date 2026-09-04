@@ -5,19 +5,26 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   titleCol: { flex: 1, paddingRight: 12 },
   title: { fontSize: 16, marginBottom: 2, fontFamily: "Helvetica-Bold" },
-  subtitle: { fontSize: 11, marginBottom: 4, color: "#555555" },
-  attendanceLine: { fontSize: 10, fontFamily: "Helvetica-Bold" },
+  eventLine: { fontSize: 14, marginBottom: 4, color: "#555555" },
+  eventLineMuted: { fontSize: 11, marginBottom: 4, color: "#555555" },
+  attendanceLine: { fontSize: 10 },
   qrRow: { flexDirection: "row", alignItems: "flex-start" },
-  qrImage: { width: 60, height: 60 },
+  qrImage: { width: 60, height: 60, marginLeft: 8 },
   qrStepsBox: {
-    width: 96,
-    marginLeft: 8,
+    width: 178,
     borderWidth: 1,
     borderColor: "#000000",
-    padding: 4,
+    padding: 6,
   },
-  qrStepsTitle: { fontSize: 6.5, fontFamily: "Helvetica-Bold", marginBottom: 2 },
-  qrStepsText: { fontSize: 6.5, lineHeight: 1.4, color: "#333333" },
+  qrStepsTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    textDecoration: "underline",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  qrStepLine: { fontSize: 7, lineHeight: 1.5 },
+  qrStepEmphasis: { fontFamily: "Helvetica-Bold", textDecoration: "underline" },
   headerBox: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -116,30 +123,40 @@ function CountSheetPage({
     <Page size="LETTER" style={styles.page}>
       <View style={styles.topRow}>
         <View style={styles.titleCol}>
+          <Text style={styles.title}>Count Sheet</Text>
           <Text style={styles.title}>
             {yellowDogCode ? `${yellowDogCode} — ` : ""}
-            {locationName} — Count Sheet
+            {locationName}
           </Text>
           {eventName ? (
-            <Text style={styles.subtitle}>
-              {eventName} · {eventDate}
+            <Text style={styles.eventLine}>
+              {eventName.toUpperCase()} · {eventDate}
             </Text>
           ) : (
-            <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
+            <Text style={styles.eventLineMuted}>Blank template — not tied to a specific event</Text>
           )}
-          <Text style={styles.attendanceLine}>TOT ATTENDANCE: {totTickets != null ? totTickets : "____________"}</Text>
+          <Text style={styles.attendanceLine}>ATTENDANCE: {totTickets != null ? totTickets : "____________"}</Text>
         </View>
 
         {qrCodeDataUri && (
           <View style={styles.qrRow}>
-            <Image src={qrCodeDataUri} style={styles.qrImage} />
             <View style={styles.qrStepsBox}>
-              <Text style={styles.qrStepsTitle}>SCAN TO OPEN/CLOSE STAND</Text>
-              <Text style={styles.qrStepsText}>
-                1. Scan to Open Stand{"\n"}2. Scan again to Close{"\n"}3. After closing: use Transfer, Request, or
-                Recovery
+              <Text style={styles.qrStepsTitle}>SCAN QR TO OPEN/CLOSE STAND</Text>
+              <Text style={styles.qrStepLine}>
+                1) SUBMIT <Text style={styles.qrStepEmphasis}>OPENING COUNT</Text> upon arrival.
+              </Text>
+              <Text style={styles.qrStepLine}>
+                2) TRACK <Text style={styles.qrStepEmphasis}>WASTE/COMPS</Text> during event.
+              </Text>
+              <Text style={styles.qrStepLine}>
+                3) SUBMIT <Text style={styles.qrStepEmphasis}>WASTE, COMPS and CLOSING COUNT</Text> at the end of
+                event.
+              </Text>
+              <Text style={styles.qrStepLine}>
+                4) RETURN <Text style={styles.qrStepEmphasis}>PAPER COPY</Text> to the office.
               </Text>
             </View>
+            <Image src={qrCodeDataUri} style={styles.qrImage} />
           </View>
         )}
       </View>
