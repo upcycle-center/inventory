@@ -1,9 +1,15 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { Resend } from "resend";
+import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import { CountConfirmationDocument } from "@/lib/pdf/CountConfirmationDocument";
+import { countSheetFilename } from "@/lib/exportFilename";
+import { easternDateTimeString } from "@/lib/easternTime";
 import type { CountType } from "@/lib/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface CountLineInput {
   product_id: string;
@@ -110,9 +116,98 @@ export async function submitCount(
 
   if (type === "closing") {
     await maybeCloseEvent(eventId);
+    await sendClosingCountConfirmation(supabase, {
+      eventId,
+      locationId,
+      submittedByName: profile.name,
+      submittedByEmail: profile.email,
+      lines: nonEmptyLines,
+      wasteLines: wasteLines ?? [],
+      compLines: compLines ?? [],
+      notes: notes?.trim() || null,
+    });
   }
 
   redirect(`/count?event=${eventId}&location=${locationId}`);
+}
+
+// Emails the submitting user a PDF confirming exactly what they just closed
+// out with — the digital equivalent of handing them a copy of the paper
+// count sheet. Best-effort: a failure here (missing API key, Resend error)
+// must never block the count from having been recorded.
+async function sendClosingCountConfirmation(
+  supabase: SupabaseClient,
+  {
+    eventId,
+    locationId,
+    submittedByName,
+    submittedByEmail,
+    lines,
+    wasteLines,
+    compLines,
+    notes,
+  }: {
+    eventId: string;
+    locationId: string;
+    submittedByName: string;
+    submittedByEmail: string;
+    lines: CountLineInput[];
+    wasteLines: WasteLineInput[];
+    compLines: CompLineInput[];
+    notes: string | null;
+  }
+) {
+  if (!submittedByEmail || !process.env.RESEND_API_KEY) return;
+
+  try {
+    const [{ data: event }, { data: location }, { data: products }] = await Promise.all([
+      supabase.from("events").select("name, event_date").eq("id", eventId).single(),
+      supabase.from("locations").select("name, yellow_dog_code").eq("id", locationId).single(),
+      supabase
+        .from("products")
+        .select("id, sku, description")
+        .in("id", [...new Set([...lines, ...wasteLines, ...compLines].map((l) => l.product_id))]),
+    ]);
+    if (!location) return;
+
+    const productById = new Map(((products as { id: string; sku: string; description: string }[] | null) ?? []).map((p) => [p.id, p]));
+    const describe = (productId: string) => productById.get(productId) ?? { sku: productId, description: productId };
+
+    const buffer = await renderToBuffer(
+      (
+        <CountConfirmationDocument
+          type="closing"
+          locationName={location.name}
+          yellowDogCode={location.yellow_dog_code}
+          eventName={event?.name ?? null}
+          eventDate={event?.event_date ?? null}
+          submittedByName={submittedByName}
+          submittedAt={easternDateTimeString()}
+          lines={lines.map((l) => ({ ...describe(l.product_id), qtyEach: l.qty_each, qtyCases: l.qty_cases }))}
+          wasteLines={wasteLines.map((w) => ({ ...describe(w.product_id), quantity: w.quantity }))}
+          compLines={compLines.map((c) => ({ ...describe(c.product_id), quantity: c.quantity }))}
+          notes={notes}
+        />
+      ) as any
+    );
+
+    const filename = countSheetFilename({
+      eventName: event?.name ?? null,
+      yellowDogCode: location.yellow_dog_code,
+      locationName: location.name,
+    });
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: process.env.REPORT_FROM_EMAIL || "BWP Legends Operations <noreply@mercado.solutions>",
+      to: submittedByEmail,
+      subject: `Closing count received — ${location.yellow_dog_code ? `${location.yellow_dog_code} — ` : ""}${location.name}`,
+      html: `<p>Thanks — your closing count for <strong>${location.name}</strong>${event?.name ? ` (${event.name})` : ""} has been received. A copy is attached as a PDF.</p>`,
+      attachments: [{ filename, content: buffer.toString("base64") }],
+    });
+  } catch (err) {
+    console.error("Failed to send closing count confirmation email", err);
+  }
 }
 
 // Once every open+confirmed location for the event has a closing count on
