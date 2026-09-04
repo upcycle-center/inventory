@@ -34,7 +34,7 @@ const STATUS_COLOR: Record<EventLocationStatus["status"], string> = {
   complete: "text-green-600",
 };
 
-export function EventsAccordion({ title, rows }: { title: string; rows: EventRow[] }) {
+export function EventsAccordion({ title, rows, isManager }: { title: string; rows: EventRow[]; isManager?: boolean }) {
   const [openId, setOpenId] = useState<string | null>(rows[0]?.id ?? null);
 
   return (
@@ -69,6 +69,16 @@ export function EventsAccordion({ title, rows }: { title: string; rows: EventRow
 
                 {isOpen && (
                   <div className="border-t border-gray-100">
+                    {isManager && r.locations.length > 0 && (
+                      <div className="flex justify-end px-4 pt-3">
+                        <Link
+                          href={`/api/count-sheet/pdf/all?event=${r.id}`}
+                          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+                        >
+                          Download All Count Sheets
+                        </Link>
+                      </div>
+                    )}
                     {!r.locations.length ? (
                       <p className="px-4 py-4 text-sm text-gray-500">No locations opened yet.</p>
                     ) : (

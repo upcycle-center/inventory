@@ -291,7 +291,7 @@ async function EventsPicker({ userId, isWarehouseOrAdmin }: { userId: string; is
   return (
     <div>
       <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Count" }]} />
-      <EventsAccordion title={isWarehouseOrAdmin ? "Open Events" : "Your assignments"} rows={rows} />
+      <EventsAccordion title={isWarehouseOrAdmin ? "Open Events" : "Your assignments"} rows={rows} isManager={isWarehouseOrAdmin} />
     </div>
   );
 }
