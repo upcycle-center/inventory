@@ -91,7 +91,7 @@ type CountSheetPageProps = {
   eventName: string | null;
   eventDate: string | null;
   leadName: string | null;
-  estTickets: number | null;
+  totTickets: number | null;
   roles: CountSheetRole[];
   areas: CountSheetArea[];
   qrCodeDataUri: string | null;
@@ -107,7 +107,7 @@ function CountSheetPage({
   eventName,
   eventDate,
   leadName,
-  estTickets,
+  totTickets,
   roles,
   areas,
   qrCodeDataUri,
@@ -127,7 +127,7 @@ function CountSheetPage({
           ) : (
             <Text style={styles.subtitle}>Blank template — not tied to a specific event</Text>
           )}
-          <Text style={styles.attendanceLine}>EST ATTENDANCE: {estTickets != null ? estTickets : "____________"}</Text>
+          <Text style={styles.attendanceLine}>TOT ATTENDANCE: {totTickets != null ? totTickets : "____________"}</Text>
         </View>
 
         {qrCodeDataUri && (
