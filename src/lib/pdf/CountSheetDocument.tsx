@@ -66,17 +66,16 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     paddingVertical: 4,
   },
-  // Product gets whatever width is left over after the fixed-width count
-  // columns -- keeps long descriptions ("Seltzer, 19.2oz Surfside
-  // Lemonade + Vodka") on one line instead of wrapping.
-  colProduct: { flex: 1, paddingLeft: 3, fontSize: 8.5 },
-  // OPEN/CLOSE header spans its two EA/CS sub-columns below (32 = 16 + 16).
-  colGroupLabel: { width: 32, textAlign: "center", fontSize: 6.5, color: "#555555", borderLeftWidth: 1, borderLeftColor: "#000000" },
-  // Waste/Comp/Empty are single EA-only columns, but need the extra width
-  // colSmall doesn't have room for -- their word labels would otherwise
-  // overflow into the neighboring column.
-  colMedium: { width: 32, textAlign: "center", fontSize: 6.5, color: "#555555", borderLeftWidth: 1, borderLeftColor: "#000000" },
-  colSmall: { width: 16, textAlign: "center", fontSize: 7, borderLeftWidth: 1, borderLeftColor: "#000000" },
+  // Product is a fixed width -- the same on every area's table on the
+  // page, liquor/wine's extra Empty column and all -- so the count boxes
+  // always start at the same X down the page instead of drifting per area.
+  // Wide enough for the longest real descriptions on one line.
+  colProduct: { width: 260, paddingLeft: 3, fontSize: 8.5 },
+  // OPEN/CLOSE header spans its two boxes below (80 = 40 + 40).
+  colGroupLabel: { width: 80, textAlign: "center", fontSize: 7, color: "#555555", borderLeftWidth: 1, borderLeftColor: "#000000" },
+  // Every count box (OPEN/CLOSE's EA+CS, and Waste/Comp/Empty) is this same
+  // width -- big enough to actually hand-write a number into.
+  colBox: { width: 40, textAlign: "center", fontSize: 7.5, borderLeftWidth: 1, borderLeftColor: "#000000" },
   commentSection: { marginTop: 20 },
   commentLabel: { fontFamily: "Helvetica-Bold", fontSize: 9, color: "#555555", marginBottom: 6 },
   commentLine: { borderBottomWidth: 1, borderBottomColor: "#000000", height: 20 },
@@ -166,31 +165,31 @@ function CountSheetPage({
           <View style={styles.thHeadRow}>
             <Text style={styles.colProduct}>Product</Text>
             <Text style={styles.colGroupLabel}>OPEN</Text>
-            <Text style={styles.colMedium}>Waste</Text>
-            <Text style={styles.colMedium}>Comp</Text>
-            {showEmpty && <Text style={styles.colMedium}>Empty</Text>}
+            <Text style={styles.colBox}>Waste</Text>
+            <Text style={styles.colBox}>Comp</Text>
+            {showEmpty && <Text style={styles.colBox}>Empty</Text>}
             <Text style={styles.colGroupLabel}>CLOSE</Text>
           </View>
           <View style={styles.thRow}>
             <Text style={styles.colProduct}></Text>
-            <Text style={styles.colSmall}>EA</Text>
-            <Text style={styles.colSmall}>CS</Text>
-            <Text style={styles.colMedium}>EA</Text>
-            <Text style={styles.colMedium}>EA</Text>
-            {showEmpty && <Text style={styles.colMedium}>EA</Text>}
-            <Text style={styles.colSmall}>EA</Text>
-            <Text style={styles.colSmall}>CS</Text>
+            <Text style={styles.colBox}>EA</Text>
+            <Text style={styles.colBox}>CS</Text>
+            <Text style={styles.colBox}>EA</Text>
+            <Text style={styles.colBox}>EA</Text>
+            {showEmpty && <Text style={styles.colBox}>EA</Text>}
+            <Text style={styles.colBox}>EA</Text>
+            <Text style={styles.colBox}>CS</Text>
           </View>
           {area.products.map((p) => (
             <View key={p.sku} style={styles.tr}>
               <Text style={styles.colProduct}>{p.description}</Text>
-              <Text style={styles.colSmall}></Text>
-              <Text style={styles.colSmall}></Text>
-              <Text style={styles.colMedium}></Text>
-              <Text style={styles.colMedium}></Text>
-              {showEmpty && <Text style={styles.colMedium}></Text>}
-              <Text style={styles.colSmall}></Text>
-              <Text style={styles.colSmall}></Text>
+              <Text style={styles.colBox}></Text>
+              <Text style={styles.colBox}></Text>
+              <Text style={styles.colBox}></Text>
+              <Text style={styles.colBox}></Text>
+              {showEmpty && <Text style={styles.colBox}></Text>}
+              <Text style={styles.colBox}></Text>
+              <Text style={styles.colBox}></Text>
             </View>
           ))}
         </View>
