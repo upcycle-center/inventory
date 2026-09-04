@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { AllCountSheetsDocument } from "@/lib/pdf/CountSheetDocument";
-import { exportFilename } from "@/lib/exportFilename";
+import { countSheetFilename } from "@/lib/exportFilename";
 import { effectiveCount } from "@/lib/staffing";
 import { checkinQrDataUri } from "@/lib/checkinQr";
 import type { LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
@@ -111,11 +111,11 @@ export async function GET(request: Request) {
 
   const buffer = await renderToBuffer((<AllCountSheetsDocument locations={locationPages} />) as any);
 
-  const filenameSafeEvent = event.name.replace(/[^a-zA-Z0-9]+/g, "-");
+  const filename = countSheetFilename({ eventName: event.name, yellowDogCode: null, locationName: "All" });
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${exportFilename(`Count-Sheets-All-${filenameSafeEvent}`, "pdf")}"`,
+      "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
 }
