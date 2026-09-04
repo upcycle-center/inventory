@@ -42,7 +42,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       <Breadcrumbs
         items={[
           { label: "Admin", href: "/admin" },
-          { label: "Products", href: "/admin/products" },
+          { label: "Products", href: `/admin/products?type=${product.product_type}` },
           { label: product.description },
         ]}
       />
@@ -78,6 +78,13 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         <label className="text-sm text-gray-600">
           Description
           <input name="description" defaultValue={product.description} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </label>
+        <label className="text-sm text-gray-600">
+          Type
+          <select name="product_type" defaultValue={product.product_type} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="sellable">Sellable</option>
+            <option value="consumable">Consumable (cups, napkins, koozies, etc.)</option>
+          </select>
         </label>
         <label className="text-sm text-gray-600">
           Supplier

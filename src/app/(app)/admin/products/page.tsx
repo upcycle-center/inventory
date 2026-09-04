@@ -7,15 +7,17 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: { q?: string; supplier?: string; unit?: string };
+  searchParams: { q?: string; supplier?: string; unit?: string; type?: string };
 }) {
   const supabase = createClient();
   const { q, supplier, unit } = searchParams;
+  const type = searchParams.type === "consumable" ? "consumable" : "sellable";
 
   let query = supabase
     .from("products")
     .select("*, supplier:suppliers(id, name)")
     .eq("active", true)
+    .eq("product_type", type)
     .order("description");
 
   if (q) {
@@ -44,13 +46,33 @@ export default async function AdminProductsPage({
           <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">
             View inactive
           </Link>
-          <Link href="/admin/products/new" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+          <Link href={`/admin/products/new?type=${type}`} className="rounded-md bg-brand px-4 py-2 text-sm text-white">
             Add product
           </Link>
         </div>
       </div>
 
+      <div className="mb-4 flex gap-1 border-b border-gray-200">
+        <Link
+          href="/admin/products?type=sellable"
+          className={`border-b-2 px-3 py-2 text-sm font-medium ${
+            type === "sellable" ? "border-brand text-brand" : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          Sellable
+        </Link>
+        <Link
+          href="/admin/products?type=consumable"
+          className={`border-b-2 px-3 py-2 text-sm font-medium ${
+            type === "consumable" ? "border-brand text-brand" : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          Consumables
+        </Link>
+      </div>
+
       <form className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">
+        <input type="hidden" name="type" value={type} />
         <label className="text-xs text-gray-500">
           Search
           <input
@@ -83,7 +105,7 @@ export default async function AdminProductsPage({
           Filter
         </button>
         {(q || supplier || unit) && (
-          <Link href="/admin/products" className="text-sm text-gray-500 hover:underline">
+          <Link href={`/admin/products?type=${type}`} className="text-sm text-gray-500 hover:underline">
             Clear
           </Link>
         )}

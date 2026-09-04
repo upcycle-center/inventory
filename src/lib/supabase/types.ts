@@ -5,6 +5,7 @@ export type LocationType = "warehouse" | "stand" | "kitchen" | "catering";
 export type MovementType = "receiving" | "return" | "transfer" | "adjustment" | "recovery";
 export type PoStatus = "placed" | "received" | "canceled";
 export type RequestStatus = "pending" | "fulfilled" | "canceled";
+export type ProductType = "sellable" | "consumable";
 export type WasteReason =
   | "spoiled"
   | "broken"
@@ -135,6 +136,7 @@ export interface Product {
   sku: string;
   upc: string | null;
   description: string;
+  product_type: ProductType;
   supplier_id: string | null;
   case_cost: number | null;
   sale_price: number | null;

@@ -9,7 +9,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 export default async function NewProductPage({
   searchParams,
 }: {
-  searchParams: { from?: string };
+  searchParams: { from?: string; type?: string };
 }) {
   const supabase = createClient();
 
@@ -32,6 +32,7 @@ export default async function NewProductPage({
     (fromLocationProductsResult.data ?? []).map((lp) => [lp.location_id, lp.storage_area_id])
   );
   const defaultAreaId = areas.find((a) => a.code === "OTH")?.id ?? areas[0]?.id ?? "";
+  const defaultProductType = from?.product_type ?? (searchParams.type === "consumable" ? "consumable" : "sellable");
 
   return (
     <div>
@@ -66,6 +67,13 @@ export default async function NewProductPage({
         <label className="text-sm text-gray-600">
           Description
           <input name="description" defaultValue={from?.description ?? ""} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        </label>
+        <label className="text-sm text-gray-600">
+          Type
+          <select name="product_type" defaultValue={defaultProductType} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="sellable">Sellable</option>
+            <option value="consumable">Consumable (cups, napkins, koozies, etc.)</option>
+          </select>
         </label>
         <label className="text-sm text-gray-600">
           Supplier

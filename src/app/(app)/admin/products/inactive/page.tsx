@@ -35,6 +35,7 @@ export default async function InactiveProductsPage() {
               <th className="px-4 py-2"></th>
               <th className="px-4 py-2">IC</th>
               <th className="px-4 py-2">Product</th>
+              <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Unit</th>
               <th className="px-4 py-2">Supplier</th>
               <th className="px-4 py-2"></th>
@@ -61,6 +62,7 @@ export default async function InactiveProductsPage() {
                     {p.description}
                   </Link>
                 </td>
+                <td className="px-4 py-2 text-gray-500 capitalize">{p.product_type}</td>
                 <td className="px-4 py-2 text-gray-500">
                   {p.unit_of_measure === "case" && p.case_size
                     ? `Case of ${p.case_size}`
@@ -82,7 +84,7 @@ export default async function InactiveProductsPage() {
             ))}
             {!products?.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                   No inactive products.
                 </td>
               </tr>

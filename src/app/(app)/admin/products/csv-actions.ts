@@ -65,6 +65,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const skuIdx = header.indexOf("sku");
   const upcIdx = header.indexOf("upc");
   const descIdx = header.indexOf("description");
+  const productTypeIdx = header.indexOf("product_type");
   const costIdx = header.indexOf("case_cost");
   const salePriceIdx = header.indexOf("sale_price");
   const uomIdx = header.indexOf("unit_of_measure");
@@ -112,6 +113,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     }
 
     const upc = upcIdx !== -1 && cols[upcIdx]?.trim() ? cols[upcIdx].trim() : null;
+    // Only set on update when the column is actually present -- otherwise
+    // a re-upload without product_type (e.g. a routine cost refresh)
+    // would silently flip existing Consumables back to Sellable.
+    const productTypeRaw = productTypeIdx !== -1 ? cols[productTypeIdx]?.trim().toLowerCase() : undefined;
+    const productType = productTypeRaw === "consumable" ? "consumable" : productTypeRaw ? "sellable" : undefined;
     const caseCost = costIdx !== -1 && cols[costIdx]?.trim() ? Number(cols[costIdx]) : null;
     const salePrice = salePriceIdx !== -1 && cols[salePriceIdx]?.trim() ? Number(cols[salePriceIdx]) : null;
     const unitOfMeasure = uomIdx !== -1 && cols[uomIdx]?.trim() ? cols[uomIdx].trim() : "each";
@@ -131,6 +137,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         .update({
           description,
           upc,
+          ...(productType ? { product_type: productType } : {}),
           supplier_id: supplierId,
           case_cost: caseCost,
           sale_price: salePrice,
@@ -146,6 +153,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           sku,
           upc,
           description,
+          product_type: productType ?? "sellable",
           supplier_id: supplierId,
           case_cost: caseCost,
           sale_price: salePrice,
