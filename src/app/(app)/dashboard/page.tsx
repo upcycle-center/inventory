@@ -8,6 +8,7 @@ import { totalRecommendedStaff } from "@/lib/staffing";
 import { formatRelativeTime, formatTimestamp } from "@/lib/relativeTime";
 import { getDraftTypesForUser } from "@/lib/actionDrafts";
 import { getAllowedViewsForRole } from "@/lib/permissions";
+import { computeLocationVariance } from "@/lib/countVariance";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 import { LocationLabel } from "@/components/LocationLabel";
@@ -15,6 +16,19 @@ import { locationDisplayName } from "@/lib/locationLabel";
 
 function fmtCurrency(value: number) {
   return `$${Math.round(value).toLocaleString()}`;
+}
+
+// countVAR: signed so over/under reads at a glance -- target is zero.
+function fmtVar(value: number) {
+  const rounded = Math.round(value * 100) / 100;
+  if (Math.abs(rounded) < 0.005) return "$0.00";
+  const sign = rounded > 0 ? "+" : "−";
+  return `${sign}$${Math.abs(rounded).toFixed(2)}`;
+}
+
+function varColor(value: number | null) {
+  if (value == null || Math.abs(value) < 1) return "text-gray-500";
+  return value < 0 ? "text-red-600" : "text-amber-600";
 }
 
 export default async function DashboardPage() {
@@ -268,37 +282,81 @@ export default async function DashboardPage() {
   );
   const completedCount = readyRows.filter((r) => submittedKeys.has(`${r.event_id}:${r.location_id}`)).length;
 
-  // ---- Waste: month-to-date, by location and by product ----
+  // ---- Waste & Comps: month-to-date, by location and by product, plus
+  // countVAR -- the physical opening count vs. what the system expected
+  // (prior closing + net Transfer/Recovery movements since), by location.
   const wasteMonthStart = new Date();
   wasteMonthStart.setDate(1);
   wasteMonthStart.setHours(0, 0, 0, 0);
-  const { data: wasteRowsRaw } = await supabase
-    .from("waste_records")
-    .select("quantity, location:locations(id, name, yellow_dog_code), product:products(id, sku, description)")
-    .gte("created_at", wasteMonthStart.toISOString());
+  const [{ data: wasteRowsRaw }, { data: compRowsRaw }, varianceByLocation] = await Promise.all([
+    supabase
+      .from("waste_records")
+      .select("quantity, location:locations(id, name, yellow_dog_code), product:products(id, sku, description)")
+      .gte("created_at", wasteMonthStart.toISOString()),
+    supabase
+      .from("comp_records")
+      .select("quantity, location:locations(id, name, yellow_dog_code), product:products(id, sku, description)")
+      .gte("created_at", wasteMonthStart.toISOString()),
+    computeLocationVariance(supabase, activeLocationIds, wasteMonthStart),
+  ]);
 
-  const wasteByLocation = new Map<string, { name: string; yellow_dog_code: string | null; total: number }>();
-  const wasteByProduct = new Map<string, { name: string; total: number }>();
+  const byLocation = new Map<
+    string,
+    { name: string; yellow_dog_code: string | null; waste: number; comp: number }
+  >();
+  const byProduct = new Map<string, { name: string; waste: number; comp: number }>();
   let wasteTotal = 0;
+  let compTotal = 0;
   for (const row of (wasteRowsRaw as any[]) ?? []) {
     wasteTotal += Number(row.quantity);
     if (row.location) {
-      const entry = wasteByLocation.get(row.location.id) ?? {
+      const entry = byLocation.get(row.location.id) ?? {
         name: row.location.name,
         yellow_dog_code: row.location.yellow_dog_code,
-        total: 0,
+        waste: 0,
+        comp: 0,
       };
-      entry.total += Number(row.quantity);
-      wasteByLocation.set(row.location.id, entry);
+      entry.waste += Number(row.quantity);
+      byLocation.set(row.location.id, entry);
     }
     if (row.product) {
-      const entry = wasteByProduct.get(row.product.id) ?? { name: row.product.description, total: 0 };
-      entry.total += Number(row.quantity);
-      wasteByProduct.set(row.product.id, entry);
+      const entry = byProduct.get(row.product.id) ?? { name: row.product.description, waste: 0, comp: 0 };
+      entry.waste += Number(row.quantity);
+      byProduct.set(row.product.id, entry);
     }
   }
-  const wasteByLocationRows = Array.from(wasteByLocation.values()).sort((a, b) => b.total - a.total);
-  const wasteByProductRows = Array.from(wasteByProduct.values()).sort((a, b) => b.total - a.total);
+  for (const row of (compRowsRaw as any[]) ?? []) {
+    compTotal += Number(row.quantity);
+    if (row.location) {
+      const entry = byLocation.get(row.location.id) ?? {
+        name: row.location.name,
+        yellow_dog_code: row.location.yellow_dog_code,
+        waste: 0,
+        comp: 0,
+      };
+      entry.comp += Number(row.quantity);
+      byLocation.set(row.location.id, entry);
+    }
+    if (row.product) {
+      const entry = byProduct.get(row.product.id) ?? { name: row.product.description, waste: 0, comp: 0 };
+      entry.comp += Number(row.quantity);
+      byProduct.set(row.product.id, entry);
+    }
+  }
+  // A location can have a countVAR discrepancy with no waste/comp logged
+  // at all -- make sure it still gets a row.
+  const activeLocationById = new Map(activeLocations.map((l) => [l.id, l]));
+  for (const locationId of varianceByLocation.keys()) {
+    if (byLocation.has(locationId)) continue;
+    const loc = activeLocationById.get(locationId);
+    if (!loc) continue;
+    byLocation.set(locationId, { name: loc.name, yellow_dog_code: loc.yellow_dog_code, waste: 0, comp: 0 });
+  }
+
+  const byLocationRows = Array.from(byLocation.entries())
+    .map(([id, r]) => ({ ...r, varValue: varianceByLocation.get(id)?.varValue ?? null }))
+    .sort((a, b) => b.waste + b.comp - (a.waste + a.comp));
+  const byProductRows = Array.from(byProduct.values()).sort((a, b) => b.waste + b.comp - (a.waste + a.comp));
 
   // ---- Overview buttons: RequestQ lights up while requests are pending;
   // Request/Transfer/Return light up while this user has a saved draft ----
@@ -488,9 +546,10 @@ export default async function DashboardPage() {
         </div>
       </Section>
 
-      <Section title="Waste">
-        <div className="mb-4 max-w-xs">
-          <StatCard label="This month, all locations (EA)" value={String(wasteTotal)} />
+      <Section title="WASTE & COMPS by Location">
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:max-w-md sm:grid-cols-2">
+          <StatCard label="Waste this month, all locations (EA)" value={String(wasteTotal)} />
+          <StatCard label="Comps this month, all locations (EA)" value={String(compTotal)} />
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
@@ -499,21 +558,32 @@ export default async function DashboardPage() {
                 <tr>
                   <th className="px-4 py-2">Location</th>
                   <th className="px-4 py-2">Waste (EA)</th>
+                  <th className="px-4 py-2">Comps (EA)</th>
+                  <th
+                    className="px-4 py-2"
+                    title="Physical opening count vs. expected carry-over (prior closing count + net Transfer/Recovery movements since). Target zero."
+                  >
+                    countVAR
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {wasteByLocationRows.map((r) => (
+                {byLocationRows.map((r) => (
                   <tr key={r.name} className="border-t border-gray-100">
                     <td className="px-4 py-2">
                       <LocationLabel location={r} />
                     </td>
-                    <td className="px-4 py-2 text-gray-500">{r.total}</td>
+                    <td className="px-4 py-2 text-gray-500">{r.waste}</td>
+                    <td className="px-4 py-2 text-gray-500">{r.comp}</td>
+                    <td className={`px-4 py-2 font-medium ${varColor(r.varValue)}`}>
+                      {r.varValue == null ? "—" : fmtVar(r.varValue)}
+                    </td>
                   </tr>
                 ))}
-                {!wasteByLocationRows.length && (
+                {!byLocationRows.length && (
                   <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-gray-400">
-                      No waste logged this month.
+                    <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
+                      No waste, comps, or count variance this month.
                     </td>
                   </tr>
                 )}
@@ -526,19 +596,21 @@ export default async function DashboardPage() {
                 <tr>
                   <th className="px-4 py-2">Product</th>
                   <th className="px-4 py-2">Waste (EA)</th>
+                  <th className="px-4 py-2">Comps (EA)</th>
                 </tr>
               </thead>
               <tbody>
-                {wasteByProductRows.map((r) => (
+                {byProductRows.map((r) => (
                   <tr key={r.name} className="border-t border-gray-100">
                     <td className="px-4 py-2">{r.name}</td>
-                    <td className="px-4 py-2 text-gray-500">{r.total}</td>
+                    <td className="px-4 py-2 text-gray-500">{r.waste}</td>
+                    <td className="px-4 py-2 text-gray-500">{r.comp}</td>
                   </tr>
                 ))}
-                {!wasteByProductRows.length && (
+                {!byProductRows.length && (
                   <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-gray-400">
-                      No waste logged this month.
+                    <td colSpan={3} className="px-4 py-6 text-center text-gray-400">
+                      No waste or comps logged this month.
                     </td>
                   </tr>
                 )}
