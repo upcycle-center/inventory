@@ -18,7 +18,7 @@ export async function saveRecoveryDraft(
   toLocationId: string,
   lines: RecoveryLineInput[]
 ): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   if (!fromLocationId || !toLocationId) return { error: "Select a From and To warehouse first." };
   const supabase = createClient();
 
@@ -34,7 +34,7 @@ export async function saveRecoveryDraft(
 }
 
 export async function cancelRecoveryDraft(): Promise<void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   await clearDraft(supabase, profile.id, "recovery");
@@ -52,7 +52,7 @@ export async function submitRecovery(
   toLocationId: string,
   lines: RecoveryLineInput[]
 ): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   if (!fromLocationId || !toLocationId) {

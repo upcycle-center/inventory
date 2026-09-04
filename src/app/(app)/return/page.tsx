@@ -5,7 +5,7 @@ import { getDraft } from "@/lib/actionDrafts";
 import { ReturnForm } from "./ReturnForm";
 
 export default async function ReturnPage() {
-  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   const [{ data: products }, { data: locations }, { data: suppliers }, draft] = await Promise.all([

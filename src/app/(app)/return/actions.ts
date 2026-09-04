@@ -8,7 +8,7 @@ import { saveDraft, clearDraft } from "@/lib/actionDrafts";
 export const RETURN_REASONS = ["Wrong Item", "Broken/Damaged", "Expired", "Did Not Order", "Other"] as const;
 
 export async function saveReturnDraft(formData: FormData): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   const draft = {
@@ -28,7 +28,7 @@ export async function saveReturnDraft(formData: FormData): Promise<{ error: stri
 }
 
 export async function cancelReturnDraft(): Promise<void> {
-  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   await clearDraft(supabase, profile.id, "return");
@@ -38,7 +38,7 @@ export async function cancelReturnDraft(): Promise<void> {
 }
 
 export async function submitReturn(formData: FormData): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   const productId = String(formData.get("product_id") || "");

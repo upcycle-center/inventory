@@ -6,12 +6,12 @@ import { getLocationCountLines, latestByProductId } from "@/lib/onHand";
 import { lineValue } from "@/lib/inventoryValue";
 import { totalRecommendedStaff } from "@/lib/staffing";
 import { formatRelativeTime, formatTimestamp } from "@/lib/relativeTime";
-import { getDraftTypesForUser } from "@/lib/actionDrafts";
-import { getAllowedViewsForRole } from "@/lib/permissions";
+import { getRoleLandingData } from "@/lib/roleLandingData";
 import { computeLocationVariance } from "@/lib/countVariance";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 import { LocationLabel } from "@/components/LocationLabel";
+import { RoleActionButtons } from "@/components/RoleActionButtons";
 import { locationDisplayName } from "@/lib/locationLabel";
 
 function fmtCurrency(value: number) {
@@ -32,70 +32,11 @@ function varColor(value: number | null) {
 }
 
 export default async function DashboardPage() {
-  const profile = await requireProfile();
+  // The analytics overview: Admin and Ops only. Every other role has its
+  // own landing page (Warehouse, Catering, Kitchen, Stand) -- requireProfile
+  // bounces them there instead of rendering this.
+  const profile = await requireProfile(["admin", "ops"]);
   const supabase = createClient();
-
-  if (profile.role === "stand_lead") {
-    const { data: assignments } = await supabase
-      .from("event_location_assignments")
-      .select("id, event_id, location_id, event:events(id, name, event_date, status), location:locations(id, name, yellow_dog_code)")
-      .eq("location_lead_user_id", profile.id)
-      .order("created_at", { ascending: false });
-
-    const rows = (assignments as any[]) ?? [];
-    const eventIds = [...new Set(rows.map((a) => a.event_id))];
-    const { data: eventLocations } = eventIds.length
-      ? await supabase.from("event_locations").select("event_id, location_id, is_open, confirmed").in("event_id", eventIds)
-      : { data: [] as any[] };
-
-    const eventStatusById = new Map(rows.map((a) => [a.event_id, a.event?.status]));
-    const confirmedOpen = new Set(
-      ((eventLocations as any[]) ?? [])
-        .filter((el) => el.is_open && el.confirmed && eventStatusById.get(el.event_id) === "open")
-        .map((el) => `${el.event_id}:${el.location_id}`)
-    );
-
-    return (
-      <div>
-        <h1 className="mb-6 text-lg font-semibold">Your Assignments</h1>
-        {!rows.length ? (
-          <p className="text-sm text-gray-500">
-            You have no location assignments yet. Check with your event admin.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {rows.map((a: any) => {
-              const isOpen = confirmedOpen.has(`${a.event_id}:${a.location_id}`);
-              return (
-                <li
-                  key={a.id}
-                  className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-4"
-                >
-                  <div>
-                    <p className="font-medium">{a.location && <LocationLabel location={a.location} />}</p>
-                    <p className="text-sm text-gray-500">
-                      {a.event?.name} · {a.event?.event_date} ·{" "}
-                      <span className="uppercase">{a.event?.status}</span>
-                    </p>
-                  </div>
-                  {isOpen ? (
-                    <Link
-                      href={`/count?event=${a.event?.id}&location=${a.location?.id}`}
-                      className="rounded-md bg-brand px-3 py-1.5 text-sm text-white"
-                    >
-                      Open count
-                    </Link>
-                  ) : (
-                    <span className="text-xs text-gray-400">Not confirmed open yet</span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    );
-  }
 
   // ---- TOT Inventory: on-hand value per location, rolled up by type ----
   const { data: activeLocationsRaw } = await supabase
@@ -359,49 +300,12 @@ export default async function DashboardPage() {
   const byProductRows = Array.from(byProduct.values()).sort((a, b) => b.waste + b.comp - (a.waste + a.comp));
 
   // ---- Overview buttons: RequestQ lights up while requests are pending;
-  // Request/Transfer/Return light up while this user has a saved draft ----
-  const { count: pendingRequestCount } = await supabase
-    .from("inventory_thresholds")
-    .select("id", { count: "exact", head: true })
-    .not("requested_at", "is", null);
-  const draftTypes = await getDraftTypesForUser(supabase, profile.id);
-  const allowedViews = await getAllowedViewsForRole(supabase, profile.role);
-
-  const ACTIVE_BUTTON = "rounded-md px-4 py-2 text-sm font-medium text-white";
-  const IDLE_BUTTON = "rounded-md border border-gray-300 px-4 py-2 text-sm";
+  // Request/Transfer/Return/Recovery light up while this user has a saved draft ----
+  const { allowedViews, pendingRequestCount, draftTypes } = await getRoleLandingData(supabase, profile.role, profile.id);
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap gap-3">
-        {allowedViews.has("restock_requests") && (
-          <Link
-            href="/restock-requests"
-            className={pendingRequestCount ? `${ACTIVE_BUTTON} bg-orange-500` : IDLE_BUTTON}
-          >
-            RequestQ{pendingRequestCount ? ` (${pendingRequestCount})` : ""}
-          </Link>
-        )}
-        {allowedViews.has("request") && (
-          <Link href="/request" className={draftTypes.has("request") ? `${ACTIVE_BUTTON} bg-yellow-400` : IDLE_BUTTON}>
-            Request
-          </Link>
-        )}
-        {allowedViews.has("transfer") && (
-          <Link href="/transfer" className={draftTypes.has("transfer") ? `${ACTIVE_BUTTON} bg-purple-600` : IDLE_BUTTON}>
-            Transfer
-          </Link>
-        )}
-        {allowedViews.has("return") && (
-          <Link href="/return" className={draftTypes.has("return") ? `${ACTIVE_BUTTON} bg-fuchsia-600` : IDLE_BUTTON}>
-            Return
-          </Link>
-        )}
-        {allowedViews.has("recovery") && (
-          <Link href="/recovery" className={draftTypes.has("recovery") ? `${ACTIVE_BUTTON} bg-orange-600` : IDLE_BUTTON}>
-            Recovery
-          </Link>
-        )}
-      </div>
+      <RoleActionButtons allowedViews={allowedViews} pendingRequestCount={pendingRequestCount} draftTypes={draftTypes} />
 
       <Section
         title="TOT Inventory"

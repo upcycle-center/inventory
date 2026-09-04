@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { landingPathForRole } from "@/lib/permissions";
 import type { Profile, UserRole } from "@/lib/supabase/types";
 
 export async function getCurrentProfile(): Promise<Profile | null> {
@@ -21,6 +22,6 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 export async function requireProfile(allowedRoles?: UserRole[]): Promise<Profile> {
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login");
-  if (allowedRoles && !allowedRoles.includes(profile.role)) redirect("/dashboard");
+  if (allowedRoles && !allowedRoles.includes(profile.role)) redirect(landingPathForRole(profile.role));
   return profile;
 }

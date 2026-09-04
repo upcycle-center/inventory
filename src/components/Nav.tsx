@@ -3,22 +3,30 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Profile } from "@/lib/supabase/types";
-import type { ViewKey } from "@/lib/permissions";
+import type { Profile, UserRole } from "@/lib/supabase/types";
+import { landingPathForRole, type ViewKey } from "@/lib/permissions";
 
-// Dashboard has no viewKey (always visible -- it's the required landing
-// page). Admin is special-cased by role directly rather than through the
-// view matrix, same as in middleware.
-const LINKS: { href: string; label: string; viewKey?: ViewKey; adminOnly?: boolean }[] = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/count", label: "Count", viewKey: "count" },
-  { href: "/receive", label: "Receive", viewKey: "receive" },
-  { href: "/transfer", label: "Transfer", viewKey: "transfer" },
-  { href: "/recovery", label: "Recovery", viewKey: "recovery" },
-  { href: "/return", label: "Return", viewKey: "return" },
-  { href: "/request", label: "Request", viewKey: "request" },
-  { href: "/restock-requests", label: "RequestQ", viewKey: "restock_requests" },
-  { href: "/admin", label: "Admin", adminOnly: true },
+// The header is organized by USER TYPE, not individual pages: each role
+// has one section tab (its landing page, hosting whatever actions that
+// role is permitted), Admin can see every section for oversight, and
+// RequestQ stays its own top-level tab since Admin+Warehouse manage it
+// directly rather than through a role landing page. Dashboard/Operations
+// share the "ops" role since Ops's default landing is the analytics
+// Dashboard, but Ops also gets its own action-launcher at /operations.
+type NavLink =
+  | { kind: "roles"; href: string; label: string; roles: UserRole[] }
+  | { kind: "view"; href: string; label: string; viewKey: ViewKey }
+  | { kind: "adminOnly"; href: string; label: string };
+
+const LINKS: NavLink[] = [
+  { kind: "roles", href: "/dashboard", label: "Dashboard", roles: ["admin", "ops"] },
+  { kind: "view", href: "/restock-requests", label: "RequestQ", viewKey: "restock_requests" },
+  { kind: "roles", href: "/warehouse", label: "Warehouse", roles: ["admin", "warehouse"] },
+  { kind: "roles", href: "/stand", label: "Stand", roles: ["admin", "stand_lead"] },
+  { kind: "roles", href: "/catering", label: "Catering", roles: ["admin", "catering"] },
+  { kind: "roles", href: "/kitchen", label: "Kitchen", roles: ["admin", "kitchen"] },
+  { kind: "roles", href: "/operations", label: "Operations", roles: ["admin", "ops"] },
+  { kind: "adminOnly", href: "/admin", label: "Admin" },
 ];
 
 export function Nav({ profile, allowedViews }: { profile: Profile; allowedViews: ViewKey[] }) {
@@ -34,8 +42,8 @@ export function Nav({ profile, allowedViews }: { profile: Profile; allowedViews:
 
   const allowedSet = new Set(allowedViews);
   const visibleLinks = LINKS.filter((l) => {
-    if (l.adminOnly) return profile.role === "admin";
-    if (!l.viewKey) return true;
+    if (l.kind === "adminOnly") return profile.role === "admin";
+    if (l.kind === "roles") return l.roles.includes(profile.role);
     return profile.role === "admin" || allowedSet.has(l.viewKey);
   });
 
@@ -43,7 +51,9 @@ export function Nav({ profile, allowedViews }: { profile: Profile; allowedViews:
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
-          <span className="font-semibold">BWP Legends Operations</span>
+          <Link href={landingPathForRole(profile.role)} className="font-semibold">
+            BWP Legends Operations
+          </Link>
           <nav className="flex gap-4 text-sm">
             {visibleLinks.map((link) => (
               <Link

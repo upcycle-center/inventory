@@ -6,7 +6,7 @@ import { sortStorageAreas } from "@/lib/storageAreas";
 import { RecoveryForm, type StorageAreaGroup } from "./RecoveryForm";
 
 export default async function RecoveryPage({ searchParams }: { searchParams: { location?: string } }) {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   const [{ data: locations }, { data: warehouses }, { data: locationProducts }, draft] = await Promise.all([

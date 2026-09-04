@@ -19,6 +19,26 @@ export type ViewKey = (typeof VIEW_KEYS)[number]["key"];
 
 export const ROLES_IN_MATRIX: UserRole[] = ["warehouse", "kitchen", "catering", "ops", "stand_lead"];
 
+// Each non-admin role has exactly one landing page -- a per-role "launcher"
+// listing whatever actions role_view_permissions grants it. Ops/Admin are
+// the exception: their landing page is the analytics Dashboard, not a
+// launcher (Ops still gets a launcher too, at /operations, just not as
+// their default landing route -- see landingPathForRole).
+export const ROLE_SECTIONS: { role: UserRole; label: string; href: string }[] = [
+  { role: "ops", label: "Operations", href: "/operations" },
+  { role: "warehouse", label: "Warehouse", href: "/warehouse" },
+  { role: "catering", label: "Catering", href: "/catering" },
+  { role: "kitchen", label: "Kitchen", href: "/kitchen" },
+  { role: "stand_lead", label: "Stand", href: "/stand" },
+];
+
+// Where a role lands after login / at "/". Admin and Ops go to the
+// analytics Dashboard; every other role goes straight to its own launcher.
+export function landingPathForRole(role: UserRole): string {
+  if (role === "admin" || role === "ops") return "/dashboard";
+  return ROLE_SECTIONS.find((s) => s.role === role)?.href ?? "/dashboard";
+}
+
 export async function getAllowedViewsForRole(supabase: SupabaseClient, role: UserRole): Promise<Set<ViewKey>> {
   if (role === "admin") return new Set(VIEW_KEYS.map((v) => v.key));
 

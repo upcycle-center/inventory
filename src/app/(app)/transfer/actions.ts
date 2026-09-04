@@ -18,7 +18,7 @@ export async function saveTransferDraft(
   toLocationId: string,
   lines: TransferLineInput[]
 ): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   if (!fromLocationId || !toLocationId) return { error: "Select a From and To location first." };
   const supabase = createClient();
 
@@ -34,7 +34,7 @@ export async function saveTransferDraft(
 }
 
 export async function cancelTransferDraft(): Promise<void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   await clearDraft(supabase, profile.id, "transfer");
@@ -48,7 +48,7 @@ export async function submitTransfer(
   toLocationId: string,
   lines: TransferLineInput[]
 ): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   if (!fromLocationId || !toLocationId) {

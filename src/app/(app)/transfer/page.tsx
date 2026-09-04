@@ -6,7 +6,7 @@ import { sortStorageAreas } from "@/lib/storageAreas";
 import { TransferForm, type StorageAreaGroup } from "./TransferForm";
 
 export default async function TransferPage({ searchParams }: { searchParams: { location?: string } }) {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   const [{ data: locations }, { data: locationProducts }, draft] = await Promise.all([

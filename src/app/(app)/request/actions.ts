@@ -14,7 +14,7 @@ export interface RequestLineInput {
 }
 
 export async function saveRequestDraft(locationId: string, lines: RequestLineInput[]): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   if (!locationId) return { error: "Select a location first." };
   const supabase = createClient();
 
@@ -26,7 +26,7 @@ export async function saveRequestDraft(locationId: string, lines: RequestLineInp
 }
 
 export async function cancelRequestDraft(): Promise<void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   await clearDraft(supabase, profile.id, "request");
@@ -42,7 +42,7 @@ export async function cancelRequestDraft(): Promise<void> {
 // as an each-equivalent, same convention used everywhere else quantities
 // get compared (thresholds, low-stock report).
 export async function submitRequest(locationId: string, lines: RequestLineInput[]): Promise<{ error: string } | void> {
-  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering"]);
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
   const supabase = createClient();
 
   if (!locationId) {
