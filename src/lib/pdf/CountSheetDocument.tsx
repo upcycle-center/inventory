@@ -9,7 +9,10 @@ const styles = StyleSheet.create({
   eventLineMuted: { fontSize: 11, marginBottom: 4, color: "#555555" },
   attendanceLine: { fontSize: 10 },
   qrRow: { flexDirection: "row", alignItems: "flex-start" },
-  qrImage: { width: 60, height: 60, marginLeft: 8 },
+  // Matches the instructions box's rendered height (title + 4 fixed lines,
+  // one of which wraps -- always the same six lines of static text, so
+  // this height is deterministic, not just tuned to one example).
+  qrImage: { width: 80, height: 80, marginLeft: 8 },
   qrStepsBox: {
     width: 178,
     borderWidth: 1,
