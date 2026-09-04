@@ -49,14 +49,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     padding: 4,
   },
-  // alignSelf: flex-start keeps these rows sized to their actual columns
-  // (Product + however many count boxes) instead of stretching to the
-  // full page width by default -- without it, a row with fewer columns
-  // (no Empty) left a gap between its last box and the row's own right
-  // border.
   thHeadRow: {
     flexDirection: "row",
-    alignSelf: "flex-start",
     borderWidth: 1,
     borderColor: "#000000",
     borderBottomWidth: 0,
@@ -66,7 +60,6 @@ const styles = StyleSheet.create({
   },
   thRow: {
     flexDirection: "row",
-    alignSelf: "flex-start",
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
@@ -77,7 +70,6 @@ const styles = StyleSheet.create({
   },
   tr: {
     flexDirection: "row",
-    alignSelf: "flex-start",
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderBottomWidth: 1,
@@ -89,11 +81,14 @@ const styles = StyleSheet.create({
   // always start at the same X down the page instead of drifting per area.
   // Wide enough for the longest real descriptions on one line.
   colProduct: { width: 260, paddingLeft: 3, fontSize: 8.5 },
-  // OPEN/CLOSE header spans its two boxes below (80 = 40 + 40).
-  colGroupLabel: { width: 80, textAlign: "center", fontSize: 7, color: "#555555", borderLeftWidth: 1, borderLeftColor: "#000000" },
+  // Everything after Product is flex-proportioned (2 units for OPEN/CLOSE,
+  // 1 for each single-value box) rather than fixed pt widths, so the row
+  // always stretches to fill exactly the rest of the page width -- no gap
+  // after the last column -- whether an area has 6 boxes or 7 (Empty).
+  colGroupLabel: { flex: 2, textAlign: "center", fontSize: 7, color: "#555555", borderLeftWidth: 1, borderLeftColor: "#000000" },
   // Every count box (OPEN/CLOSE's EA+CS, and Waste/Comp/Empty) is this same
   // width -- big enough to actually hand-write a number into.
-  colBox: { width: 40, textAlign: "center", fontSize: 7.5, borderLeftWidth: 1, borderLeftColor: "#000000" },
+  colBox: { flex: 1, textAlign: "center", fontSize: 7.5, borderLeftWidth: 1, borderLeftColor: "#000000" },
   commentSection: { marginTop: 20 },
   commentLabel: { fontFamily: "Helvetica-Bold", fontSize: 9, color: "#555555", marginBottom: 6 },
   commentLine: { borderBottomWidth: 1, borderBottomColor: "#000000", height: 20 },
