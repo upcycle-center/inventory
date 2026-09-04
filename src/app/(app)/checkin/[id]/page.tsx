@@ -5,6 +5,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { LocationLabel } from "@/components/LocationLabel";
 import { locationDisplayName } from "@/lib/locationLabel";
 import { formatTimestamp } from "@/lib/relativeTime";
+import { getAllowedViewsForRole } from "@/lib/permissions";
 import type { CountType } from "@/lib/supabase/types";
 
 // The permanent landing page a stand's printed QR code always points to.
@@ -85,6 +86,7 @@ export default async function CheckinPage({ params }: { params: { id: string } }
   const rows = (existingCounts as { type: CountType; submitted_at: string; user: { name: string } | null }[] | null) ?? [];
   const doneTypes = new Set(rows.map((r) => r.type));
   const closingRow = rows.find((r) => r.type === "closing");
+  const allowedViews = await getAllowedViewsForRole(supabase, profile.role);
 
   return (
     <div>
@@ -107,24 +109,30 @@ export default async function CheckinPage({ params }: { params: { id: string } }
           </div>
           <p className="mb-3 text-sm text-gray-500">Need to move stock from this stand?</p>
           <div className="flex flex-wrap gap-2">
-            <Link
-              href={`/transfer?location=${locationId}`}
-              className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-            >
-              Transfer
-            </Link>
-            <Link
-              href={`/request?location=${locationId}`}
-              className="rounded-md bg-yellow-400 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-yellow-500"
-            >
-              Request
-            </Link>
-            <Link
-              href={`/recovery?location=${locationId}`}
-              className="rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
-            >
-              Recovery
-            </Link>
+            {allowedViews.has("transfer") && (
+              <Link
+                href={`/transfer?location=${locationId}`}
+                className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+              >
+                Transfer
+              </Link>
+            )}
+            {allowedViews.has("request") && (
+              <Link
+                href={`/request?location=${locationId}`}
+                className="rounded-md bg-yellow-400 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-yellow-500"
+              >
+                Request
+              </Link>
+            )}
+            {allowedViews.has("recovery") && (
+              <Link
+                href={`/recovery?location=${locationId}`}
+                className="rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+              >
+                Recovery
+              </Link>
+            )}
           </div>
         </div>
       ) : (

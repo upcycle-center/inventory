@@ -1,27 +1,28 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { UserRole } from "./types";
+import { getAllowedViewsForRole, viewKeyForPath } from "../permissions";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
+// /admin/* stays hardcoded admin-only -- not part of the configurable
+// matrix, since exposing it as a togglable checkbox risks an admin
+// locking themselves out of the panel that manages the matrix itself.
+// Everything else that's gated (Count, Request, Transfer, Recovery,
+// Return, Receive, RequestQ) is looked up per-role from
+// role_view_permissions, editable at /admin/permissions.
 const ADMIN_ONLY_PREFIXES = ["/admin"];
-const WAREHOUSE_PREFIXES = ["/receive", "/return"];
-// A stand lead reaches these from the checkin confirmation screen after
-// closing their own stand -- to Transfer/Request/Recover stock out of it.
-const STAND_ALLOWED_PREFIXES = ["/transfer", "/request", "/recovery"];
 
-function roleAllows(role: UserRole, pathname: string): boolean {
+async function roleAllows(supabase: SupabaseClient, role: UserRole, pathname: string): Promise<boolean> {
   if (role === "admin") return true;
-  if (WAREHOUSE_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return role === "warehouse" || role === "kitchen" || role === "catering";
-  }
-  if (STAND_ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return role === "warehouse" || role === "kitchen" || role === "catering" || role === "stand_lead";
-  }
-  if (ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return false;
-  }
-  return true;
+  if (ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p))) return false;
+
+  const viewKey = viewKeyForPath(pathname);
+  if (!viewKey) return true;
+
+  const allowed = await getAllowedViewsForRole(supabase, role);
+  return allowed.has(viewKey);
 }
 
 export async function updateSession(request: NextRequest) {
@@ -73,7 +74,7 @@ export async function updateSession(request: NextRequest) {
       .single();
 
     const role = (profile?.role ?? "stand_lead") as UserRole;
-    if (!roleAllows(role, pathname)) {
+    if (!(await roleAllows(supabase, role, pathname))) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }

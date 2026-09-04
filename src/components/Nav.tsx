@@ -4,18 +4,24 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/lib/supabase/types";
+import type { ViewKey } from "@/lib/permissions";
 
-const LINKS: { href: string; label: string; roles?: Profile["role"][] }[] = [
+// Dashboard has no viewKey (always visible -- it's the required landing
+// page). Admin is special-cased by role directly rather than through the
+// view matrix, same as in middleware.
+const LINKS: { href: string; label: string; viewKey?: ViewKey; adminOnly?: boolean }[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/count", label: "Count", roles: ["admin", "stand_lead"] },
-  { href: "/receive", label: "Receive", roles: ["admin", "warehouse", "kitchen", "catering"] },
-  { href: "/transfer", label: "Transfer", roles: ["admin", "warehouse", "kitchen", "catering"] },
-  { href: "/return", label: "Return", roles: ["admin", "warehouse", "kitchen", "catering"] },
-  { href: "/request", label: "Request", roles: ["admin", "warehouse", "kitchen", "catering"] },
-  { href: "/admin", label: "Admin", roles: ["admin"] },
+  { href: "/count", label: "Count", viewKey: "count" },
+  { href: "/receive", label: "Receive", viewKey: "receive" },
+  { href: "/transfer", label: "Transfer", viewKey: "transfer" },
+  { href: "/recovery", label: "Recovery", viewKey: "recovery" },
+  { href: "/return", label: "Return", viewKey: "return" },
+  { href: "/request", label: "Request", viewKey: "request" },
+  { href: "/restock-requests", label: "RequestQ", viewKey: "restock_requests" },
+  { href: "/admin", label: "Admin", adminOnly: true },
 ];
 
-export function Nav({ profile }: { profile: Profile }) {
+export function Nav({ profile, allowedViews }: { profile: Profile; allowedViews: ViewKey[] }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -26,7 +32,12 @@ export function Nav({ profile }: { profile: Profile }) {
     router.refresh();
   }
 
-  const visibleLinks = LINKS.filter((l) => !l.roles || l.roles.includes(profile.role));
+  const allowedSet = new Set(allowedViews);
+  const visibleLinks = LINKS.filter((l) => {
+    if (l.adminOnly) return profile.role === "admin";
+    if (!l.viewKey) return true;
+    return profile.role === "admin" || allowedSet.has(l.viewKey);
+  });
 
   return (
     <header className="border-b border-gray-200 bg-white">

@@ -7,6 +7,7 @@ import { lineValue } from "@/lib/inventoryValue";
 import { totalRecommendedStaff } from "@/lib/staffing";
 import { formatRelativeTime, formatTimestamp } from "@/lib/relativeTime";
 import { getDraftTypesForUser } from "@/lib/actionDrafts";
+import { getAllowedViewsForRole } from "@/lib/permissions";
 import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 import { LocationLabel } from "@/components/LocationLabel";
@@ -306,6 +307,7 @@ export default async function DashboardPage() {
     .select("id", { count: "exact", head: true })
     .not("requested_at", "is", null);
   const draftTypes = await getDraftTypesForUser(supabase, profile.id);
+  const allowedViews = await getAllowedViewsForRole(supabase, profile.role);
 
   const ACTIVE_BUTTON = "rounded-md px-4 py-2 text-sm font-medium text-white";
   const IDLE_BUTTON = "rounded-md border border-gray-300 px-4 py-2 text-sm";
@@ -313,24 +315,34 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap gap-3">
-        <Link
-          href="/restock-requests"
-          className={pendingRequestCount ? `${ACTIVE_BUTTON} bg-orange-500` : IDLE_BUTTON}
-        >
-          RequestQ{pendingRequestCount ? ` (${pendingRequestCount})` : ""}
-        </Link>
-        <Link href="/request" className={draftTypes.has("request") ? `${ACTIVE_BUTTON} bg-yellow-400` : IDLE_BUTTON}>
-          Request
-        </Link>
-        <Link href="/transfer" className={draftTypes.has("transfer") ? `${ACTIVE_BUTTON} bg-purple-600` : IDLE_BUTTON}>
-          Transfer
-        </Link>
-        <Link href="/return" className={draftTypes.has("return") ? `${ACTIVE_BUTTON} bg-fuchsia-600` : IDLE_BUTTON}>
-          Return
-        </Link>
-        <Link href="/recovery" className={draftTypes.has("recovery") ? `${ACTIVE_BUTTON} bg-orange-600` : IDLE_BUTTON}>
-          Recovery
-        </Link>
+        {allowedViews.has("restock_requests") && (
+          <Link
+            href="/restock-requests"
+            className={pendingRequestCount ? `${ACTIVE_BUTTON} bg-orange-500` : IDLE_BUTTON}
+          >
+            RequestQ{pendingRequestCount ? ` (${pendingRequestCount})` : ""}
+          </Link>
+        )}
+        {allowedViews.has("request") && (
+          <Link href="/request" className={draftTypes.has("request") ? `${ACTIVE_BUTTON} bg-yellow-400` : IDLE_BUTTON}>
+            Request
+          </Link>
+        )}
+        {allowedViews.has("transfer") && (
+          <Link href="/transfer" className={draftTypes.has("transfer") ? `${ACTIVE_BUTTON} bg-purple-600` : IDLE_BUTTON}>
+            Transfer
+          </Link>
+        )}
+        {allowedViews.has("return") && (
+          <Link href="/return" className={draftTypes.has("return") ? `${ACTIVE_BUTTON} bg-fuchsia-600` : IDLE_BUTTON}>
+            Return
+          </Link>
+        )}
+        {allowedViews.has("recovery") && (
+          <Link href="/recovery" className={draftTypes.has("recovery") ? `${ACTIVE_BUTTON} bg-orange-600` : IDLE_BUTTON}>
+            Recovery
+          </Link>
+        )}
       </div>
 
       <Section
