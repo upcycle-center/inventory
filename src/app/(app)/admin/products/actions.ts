@@ -14,10 +14,14 @@ export async function createProduct(formData: FormData) {
   const upc = String(formData.get("upc") || "").trim() || null;
   const productType = String(formData.get("product_type") || "sellable") === "consumable" ? "consumable" : "sellable";
   const supplierId = String(formData.get("supplier_id") || "") || null;
+  const categoryId = String(formData.get("category_id") || "") || null;
   const caseCostRaw = String(formData.get("case_cost") || "").trim();
   const salePriceRaw = String(formData.get("sale_price") || "").trim();
   const unitOfMeasure = String(formData.get("unit_of_measure") || "each").trim() || "each";
   const caseSizeRaw = String(formData.get("case_size") || "").trim();
+  const bottleSizeRaw = String(formData.get("bottle_size_oz") || "").trim();
+  const pourSizeRaw = String(formData.get("pour_size_oz") || "").trim();
+  const pourPriceRaw = String(formData.get("pour_price") || "").trim();
 
   let photoUrl: string | null = null;
   const photo = formData.get("photo");
@@ -46,10 +50,14 @@ export async function createProduct(formData: FormData) {
       description,
       product_type: productType,
       supplier_id: supplierId,
+      category_id: categoryId,
       case_cost: caseCostRaw ? Number(caseCostRaw) : null,
       sale_price: salePriceRaw ? Number(salePriceRaw) : null,
       unit_of_measure: unitOfMeasure,
       case_size: caseSizeRaw ? Number(caseSizeRaw) : null,
+      bottle_size_oz: bottleSizeRaw ? Number(bottleSizeRaw) : null,
+      pour_size_oz: pourSizeRaw ? Number(pourSizeRaw) : null,
+      pour_price: pourPriceRaw ? Number(pourPriceRaw) : null,
       photo_url: photoUrl,
       created_by: user?.id ?? null,
     })

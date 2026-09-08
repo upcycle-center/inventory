@@ -66,10 +66,14 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const upcIdx = header.indexOf("upc");
   const descIdx = header.indexOf("description");
   const productTypeIdx = header.indexOf("product_type");
+  const categoryIdx = header.indexOf("category");
   const costIdx = header.indexOf("case_cost");
   const salePriceIdx = header.indexOf("sale_price");
   const uomIdx = header.indexOf("unit_of_measure");
   const caseSizeIdx = header.indexOf("case_size");
+  const bottleSizeIdx = header.indexOf("bottle_size_oz");
+  const pourSizeIdx = header.indexOf("pour_size_oz");
+  const pourPriceIdx = header.indexOf("pour_price");
   const locationIdx = header.indexOf("location");
   const storageAreaIdx = header.indexOf("storage_area");
   const thresholdIdx = header.indexOf("reorder_threshold");
@@ -82,9 +86,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: locations }, { data: storageAreas }] = await Promise.all([
+  const [{ data: locations }, { data: storageAreas }, { data: categories }] = await Promise.all([
     supabase.from("locations").select("id, name, yellow_dog_code").eq("active", true),
     supabase.from("storage_areas").select("id, code, name").eq("active", true),
+    supabase.from("product_categories").select("id, name"),
   ]);
 
   const locationByKey = new Map<string, string>();
@@ -97,12 +102,17 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     storageAreaByKey.set(a.code.toLowerCase(), a.id);
     storageAreaByKey.set(a.name.toLowerCase(), a.id);
   }
+  const categoryByName = new Map<string, string>();
+  for (const c of (categories as { id: string; name: string }[] | null) ?? []) {
+    categoryByName.set(c.name.toLowerCase(), c.id);
+  }
 
   let created = 0;
   let updated = 0;
   let skipped = 0;
   let locationsAssigned = 0;
   let locationsUnmatched = 0;
+  let categoriesUnmatched = 0;
 
   for (const cols of rows.slice(1)) {
     const sku = cols[skuIdx]?.trim();
@@ -118,10 +128,25 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // would silently flip existing Consumables back to Sellable.
     const productTypeRaw = productTypeIdx !== -1 ? cols[productTypeIdx]?.trim().toLowerCase() : undefined;
     const productType = productTypeRaw === "consumable" ? "consumable" : productTypeRaw ? "sellable" : undefined;
+    // Same "only touch when the column is present" rule as product_type --
+    // a routine price refresh shouldn't silently wipe GL Code categorization.
+    const categoryRaw = categoryIdx !== -1 ? cols[categoryIdx]?.trim() : undefined;
+    let categoryId: string | null | undefined;
+    if (categoryRaw !== undefined) {
+      if (!categoryRaw) {
+        categoryId = null;
+      } else {
+        categoryId = categoryByName.get(categoryRaw.toLowerCase());
+        if (!categoryId) categoriesUnmatched++;
+      }
+    }
     const caseCost = costIdx !== -1 && cols[costIdx]?.trim() ? Number(cols[costIdx]) : null;
     const salePrice = salePriceIdx !== -1 && cols[salePriceIdx]?.trim() ? Number(cols[salePriceIdx]) : null;
     const unitOfMeasure = uomIdx !== -1 && cols[uomIdx]?.trim() ? cols[uomIdx].trim() : "each";
     const caseSize = caseSizeIdx !== -1 && cols[caseSizeIdx]?.trim() ? Number(cols[caseSizeIdx]) : null;
+    const bottleSizeOz = bottleSizeIdx !== -1 && cols[bottleSizeIdx]?.trim() ? Number(cols[bottleSizeIdx]) : null;
+    const pourSizeOz = pourSizeIdx !== -1 && cols[pourSizeIdx]?.trim() ? Number(cols[pourSizeIdx]) : null;
+    const pourPrice = pourPriceIdx !== -1 && cols[pourPriceIdx]?.trim() ? Number(cols[pourPriceIdx]) : null;
 
     const { data: existing } = await supabase
       .from("products")
@@ -138,11 +163,15 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           description,
           upc,
           ...(productType ? { product_type: productType } : {}),
+          ...(categoryId !== undefined ? { category_id: categoryId } : {}),
           supplier_id: supplierId,
           case_cost: caseCost,
           sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
           case_size: caseSize,
+          bottle_size_oz: bottleSizeOz,
+          pour_size_oz: pourSizeOz,
+          pour_price: pourPrice,
         })
         .eq("id", existing.id);
       updated++;
@@ -154,11 +183,15 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           upc,
           description,
           product_type: productType ?? "sellable",
+          category_id: categoryId ?? null,
           supplier_id: supplierId,
           case_cost: caseCost,
           sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
           case_size: caseSize,
+          bottle_size_oz: bottleSizeOz,
+          pour_size_oz: pourSizeOz,
+          pour_price: pourPrice,
           created_by: user?.id ?? null,
         })
         .select("id")
@@ -208,6 +241,6 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   return {
     message: `Done: ${created} created, ${updated} updated, ${skipped} skipped. Locations: ${locationsAssigned} assigned${
       locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
-    }.`,
+    }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}`,
   };
 }

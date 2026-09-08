@@ -3,7 +3,7 @@ import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { Location, LocationStaffRole, LocationStaffTier } from "@/lib/supabase/types";
 import { getLocationCountLines, latestByProductId } from "@/lib/onHand";
-import { lineValue } from "@/lib/inventoryValue";
+import { lineValue, lineRetailValue } from "@/lib/inventoryValue";
 import { totalRecommendedStaff } from "@/lib/staffing";
 import { formatRelativeTime, formatTimestamp } from "@/lib/relativeTime";
 import { getRoleLandingData } from "@/lib/roleLandingData";
@@ -58,13 +58,22 @@ export default async function DashboardPage() {
     : { data: null };
   const lastCountSubmittedAt = (lastCountRaw as { submitted_at: string } | null)?.submitted_at ?? null;
 
-  const { data: locationProductsRaw } = activeLocationIds.length
-    ? await supabase
-        .from("location_products")
-        .select("location_id, product_id, product:products(id, case_cost, case_size)")
-        .in("location_id", activeLocationIds)
-        .eq("active", true)
-    : { data: [] as any[] };
+  const [{ data: locationProductsRaw }, { data: categoriesRaw }] = await Promise.all([
+    activeLocationIds.length
+      ? supabase
+          .from("location_products")
+          .select(
+            "location_id, product_id, product:products(id, case_cost, sale_price, case_size, category_id, bottle_size_oz, pour_size_oz, pour_price)"
+          )
+          .in("location_id", activeLocationIds)
+          .eq("active", true)
+      : Promise.resolve({ data: [] as any[] }),
+    supabase.from("product_categories").select("id, is_pour_based"),
+  ]);
+
+  const categoryById = new Map(
+    ((categoriesRaw as { id: string; is_pour_based: boolean }[] | null) ?? []).map((c) => [c.id, c])
+  );
 
   const productsByLocationId = new Map<string, Map<string, any>>();
   for (const row of (locationProductsRaw as any[]) ?? []) {
@@ -79,24 +88,44 @@ export default async function DashboardPage() {
   let liquorRoomValue = 0;
   let kitchenValue = 0;
   const locationValues: { label: string; value: number }[] = [];
+  let standRetailValue = 0;
+  let mainWarehouseRetailValue = 0;
+  let liquorRoomRetailValue = 0;
+  let kitchenRetailValue = 0;
+  const locationRetailValues: { label: string; value: number }[] = [];
   for (const loc of activeLocations) {
     const lines = await getLocationCountLines(supabase, loc.id);
     const onHand = latestByProductId(lines);
     const products = productsByLocationId.get(loc.id);
     let total = 0;
+    let retailTotal = 0;
     if (products) {
       for (const [productId, entry] of onHand) {
         const product = products.get(productId);
-        if (product) total += lineValue(entry.qty_each, entry.qty_cases, product);
+        if (!product) continue;
+        total += lineValue(entry.qty_each, entry.qty_cases, product);
+        const category = product.category_id ? categoryById.get(product.category_id) : null;
+        retailTotal += lineRetailValue(entry.qty_each, entry.qty_cases, product, category);
       }
     }
     if (total > 0) locationValues.push({ label: locationDisplayName(loc), value: total });
-    if (loc.type === "stand") standValue += total;
-    else if (loc.type === "warehouse") {
+    if (retailTotal > 0) locationRetailValues.push({ label: locationDisplayName(loc), value: retailTotal });
+    if (loc.type === "stand") {
+      standValue += total;
+      standRetailValue += retailTotal;
+    } else if (loc.type === "warehouse") {
       // Same alcohol-warehouse heuristic as src/lib/restockUnit.ts.
-      if (/liquor|alcohol/i.test(loc.name)) liquorRoomValue += total;
-      else mainWarehouseValue += total;
-    } else if (loc.type === "kitchen") kitchenValue += total;
+      if (/liquor|alcohol/i.test(loc.name)) {
+        liquorRoomValue += total;
+        liquorRoomRetailValue += retailTotal;
+      } else {
+        mainWarehouseValue += total;
+        mainWarehouseRetailValue += retailTotal;
+      }
+    } else if (loc.type === "kitchen") {
+      kitchenValue += total;
+      kitchenRetailValue += retailTotal;
+    }
   }
 
   // ---- Shared: upcoming/open events + their location open/confirm state ----
@@ -340,6 +369,29 @@ export default async function DashboardPage() {
         <div className="rounded-md border border-gray-200 bg-white p-4">
           <p className="mb-3 text-xs font-medium text-gray-500">By location</p>
           <DonutChart slices={locationValues} centerLabel="on hand" emptyLabel="No inventory value on record yet." />
+        </div>
+      </Section>
+
+      <Section
+        title="TOT Retail"
+        actions={
+          <span
+            className="text-xs text-gray-400"
+            title="Sale price for whole-unit items. Pour-based categories (liquor/wine) instead project pours-per-bottle x price/pour, less a site-wide waste allowance."
+          >
+            Projected, not actual sales
+          </span>
+        }
+      >
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="TOT $Warehouse" value={fmtCurrency(mainWarehouseRetailValue)} />
+          <StatCard label="TOT $Liquor Room" value={fmtCurrency(liquorRoomRetailValue)} />
+          <StatCard label="TOT $Kitchen" value={fmtCurrency(kitchenRetailValue)} />
+          <StatCard label="TOT $Stands" value={fmtCurrency(standRetailValue)} />
+        </div>
+        <div className="rounded-md border border-gray-200 bg-white p-4">
+          <p className="mb-3 text-xs font-medium text-gray-500">By location</p>
+          <DonutChart slices={locationRetailValues} centerLabel="retail" emptyLabel="No retail value on record yet." />
         </div>
       </Section>
 

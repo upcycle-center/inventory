@@ -138,13 +138,25 @@ export interface Product {
   description: string;
   product_type: ProductType;
   supplier_id: string | null;
+  category_id: string | null;
   case_cost: number | null;
   sale_price: number | null;
   unit_of_measure: string;
   case_size: number | null;
+  bottle_size_oz: number | null;
+  pour_size_oz: number | null;
+  pour_price: number | null;
   photo_url: string | null;
   active: boolean;
   created_by: string | null;
+  created_at: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  gl_code: string | null;
+  is_pour_based: boolean;
   created_at: string;
 }
 

@@ -24,11 +24,20 @@ export async function buildInventoryReport(supabase: SupabaseClient): Promise<In
   if (!locations.length) return [];
 
   const locationIds = locations.map((l) => l.id);
-  const { data: locationProductsRaw } = await supabase
-    .from("location_products")
-    .select("location_id, product_id, product:products(id, sku, description, case_cost, sale_price, case_size)")
-    .in("location_id", locationIds)
-    .eq("active", true);
+  const [{ data: locationProductsRaw }, { data: categoriesRaw }] = await Promise.all([
+    supabase
+      .from("location_products")
+      .select(
+        "location_id, product_id, product:products(id, sku, description, category_id, case_cost, sale_price, case_size, bottle_size_oz, pour_size_oz, pour_price)"
+      )
+      .in("location_id", locationIds)
+      .eq("active", true),
+    supabase.from("product_categories").select("id, is_pour_based"),
+  ]);
+
+  const categoryById = new Map(
+    ((categoriesRaw as { id: string; is_pour_based: boolean }[] | null) ?? []).map((c) => [c.id, c])
+  );
 
   const productsByLocationId = new Map<string, Map<string, any>>();
   for (const row of (locationProductsRaw as any[]) ?? []) {
@@ -48,8 +57,9 @@ export async function buildInventoryReport(supabase: SupabaseClient): Promise<In
     for (const [productId, entry] of onHand) {
       const product = products.get(productId);
       if (!product) continue;
+      const category = product.category_id ? categoryById.get(product.category_id) : null;
       const { perEach: eachCost, perCase: caseCost } = unitCosts(product);
-      const { perEach: salePriceEach } = retailUnitPrices(product);
+      const { perEach: salePriceEach } = retailUnitPrices(product, category);
       rows.push({
         location: loc.name,
         sku: product.sku,
@@ -60,7 +70,7 @@ export async function buildInventoryReport(supabase: SupabaseClient): Promise<In
         eachCost,
         costValue: lineValue(entry.qty_each, entry.qty_cases, product),
         salePriceEach,
-        retailValue: lineRetailValue(entry.qty_each, entry.qty_cases, product),
+        retailValue: lineRetailValue(entry.qty_each, entry.qty_cases, product, category),
       });
     }
   }

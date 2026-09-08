@@ -7,6 +7,7 @@ const SECTIONS = [
   { href: "/admin/events", label: "Events" },
   { href: "/admin/suppliers", label: "Suppliers" },
   { href: "/admin/products", label: "Products" },
+  { href: "/admin/categories", label: "Categories" },
   { href: "/restock-requests", label: "RequestQ" },
   { href: "/comps", label: "Comps" },
   { href: "/recoveries", label: "Recoveries" },

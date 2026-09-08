@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Location, StorageArea, Supplier } from "@/lib/supabase/types";
+import type { Location, ProductCategory, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { LocationLabel } from "@/components/LocationLabel";
@@ -14,12 +14,13 @@ import { DeleteProductButton } from "./DeleteProductButton";
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: product }, { data: suppliers }, { data: locations }, { data: storageAreas }, { data: locationProducts }] =
+  const [{ data: product }, { data: suppliers }, { data: locations }, { data: storageAreas }, { data: categories }, { data: locationProducts }] =
     await Promise.all([
       supabase.from("products").select("*").eq("id", params.id).single(),
       supabase.from("suppliers").select("*").order("name"),
       supabase.from("locations").select("*").eq("active", true).order("name"),
       supabase.from("storage_areas").select("*").eq("active", true),
+      supabase.from("product_categories").select("*").order("name"),
       supabase
         .from("location_products")
         .select("location_id, storage_area_id")
@@ -97,6 +98,18 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             ))}
           </select>
         </label>
+        <label className="text-sm text-gray-600">
+          Category (drives GL Code)
+          <select name="category_id" defaultValue={product.category_id ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="">No category</option>
+            {(categories as ProductCategory[] | null)?.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+                {c.gl_code ? ` (${c.gl_code})` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm text-gray-600">
             Case cost
@@ -120,6 +133,28 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             </select>
           </label>
         </div>
+
+        <div>
+          <p className="mb-1 text-sm font-medium">Pour details (Pour-based categories only)</p>
+          <p className="mb-3 text-sm text-gray-500">
+            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Sale price.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <label className="text-sm text-gray-600">
+              Bottle size (oz)
+              <input name="bottle_size_oz" type="number" step="0.01" min={0} defaultValue={product.bottle_size_oz ?? ""} placeholder="e.g. 25.4" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-sm text-gray-600">
+              Pour size (oz)
+              <input name="pour_size_oz" type="number" step="0.01" min={0} defaultValue={product.pour_size_oz ?? ""} placeholder="e.g. 1.5" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-sm text-gray-600">
+              Price per pour
+              <input name="pour_price" type="number" step="0.01" min={0} defaultValue={product.pour_price ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+          </div>
+        </div>
+
         <label className="text-sm text-gray-600">
           Replace photo
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
