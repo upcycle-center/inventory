@@ -13,11 +13,11 @@ export default async function RestockRequestsPage() {
   const isAdmin = profile.role === "admin";
   const supabase = createClient();
 
-  const [{ data: requests }, unitByProductId, { data: denials }] = await Promise.all([
+  const [{ data: requests }, unitByProductId, { data: denials }, { data: fulfillments }] = await Promise.all([
     supabase
       .from("inventory_thresholds")
       .select(
-        "id, product_id, reorder_threshold, requested_at, product:products(id, sku, description), location:locations(id, name, yellow_dog_code), requested_by_profile:profiles(id, name)"
+        "id, product_id, reorder_threshold, reorder_qty, requested_at, product:products(id, sku, description), location:locations(id, name, yellow_dog_code), requested_by_profile:profiles(id, name)"
       )
       .not("requested_at", "is", null)
       .order("requested_at", { ascending: true }),
@@ -31,10 +31,20 @@ export default async function RestockRequestsPage() {
           .order("denied_at", { ascending: false })
           .limit(20)
       : Promise.resolve({ data: [] as any[] }),
+    isManager
+      ? supabase
+          .from("request_fulfillments")
+          .select(
+            "id, requested_qty, fulfilled_qty, fulfillment_pct, fulfilled_at, product:products(id, sku, description), location:locations(id, name, yellow_dog_code), fulfilled_by_profile:profiles(id, name)"
+          )
+          .order("fulfilled_at", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [] as any[] }),
   ]);
 
   const rows = (requests as any[]) ?? [];
   const denialRows = (denials as any[]) ?? [];
+  const fulfillmentRows = (fulfillments as any[]) ?? [];
   const reasonLabel = Object.fromEntries(DENIAL_REASONS.map((r) => [r.code, r.label]));
 
   return (
@@ -53,7 +63,7 @@ export default async function RestockRequestsPage() {
       </div>
       <p className="mb-6 text-sm text-gray-500">
         {isManager
-          ? "Items requested via the Request form or a location's Assigned Items table. Mark a request fulfilled once it's been restocked, or deny it with a reason."
+          ? "Items requested via the Request form or a location's Assigned Items table. Fulfill a request once it's been restocked — the qty field defaults to the full requested amount, edit it to post a partial drop — or deny it with a reason."
           : "Live view of everything currently queued for restock — Warehouse and Admin manage fulfillment."}
       </p>
 
@@ -65,6 +75,7 @@ export default async function RestockRequestsPage() {
               <th className="px-4 py-2">Product</th>
               <th className="px-4 py-2">Unit</th>
               <th className="px-4 py-2">Threshold</th>
+              <th className="px-4 py-2">Requested Qty</th>
               <th className="px-4 py-2">Requested by</th>
               <th className="px-4 py-2">Requested</th>
               {isManager && <th className="px-4 py-2"></th>}
@@ -81,15 +92,25 @@ export default async function RestockRequestsPage() {
                 <td className="px-4 py-2">{r.product?.description}</td>
                 <td className="px-4 py-2 text-gray-500 capitalize">{unitByProductId.get(r.product_id) ?? "case"}</td>
                 <td className="px-4 py-2 text-gray-500">{r.reorder_threshold}</td>
+                <td className="px-4 py-2 text-gray-500">{r.reorder_qty || "—"}</td>
                 <td className="px-4 py-2 text-gray-500">{r.requested_by_profile?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-gray-500">{new Date(r.requested_at).toLocaleDateString()}</td>
                 {isManager && (
                   <td className="px-4 py-2 text-right">
                     <div className="flex justify-end items-center gap-2">
-                      <form action={fulfillRestockRequest}>
+                      <form action={fulfillRestockRequest} className="flex items-center gap-1">
                         <input type="hidden" name="id" value={r.id} />
+                        <input
+                          type="number"
+                          name="fulfilled_qty"
+                          step="0.01"
+                          min={0}
+                          defaultValue={r.reorder_qty || ""}
+                          title="Actual qty delivered in the drop -- defaults to the full requested amount, edit to post a partial adjustment"
+                          className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-600"
+                        />
                         <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                          Mark fulfilled
+                          Fulfill
                         </button>
                       </form>
                       <form action={denyRestockRequest} className="flex items-center gap-1">
@@ -134,7 +155,7 @@ export default async function RestockRequestsPage() {
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={isManager ? 7 : 6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={isManager ? 8 : 7} className="px-4 py-6 text-center text-gray-400">
                   No open restock requests.
                 </td>
               </tr>
@@ -145,6 +166,51 @@ export default async function RestockRequestsPage() {
 
       {isManager && (
         <>
+          <p className="mb-3 mt-8 text-sm font-medium">Recently fulfilled</p>
+          <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+            <table className="w-full whitespace-nowrap text-left text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="px-4 py-2">Location</th>
+                  <th className="px-4 py-2">Product</th>
+                  <th className="px-4 py-2">Requested Qty</th>
+                  <th className="px-4 py-2">Fulfilled Qty</th>
+                  <th className="px-4 py-2">Fulfillment</th>
+                  <th className="px-4 py-2">Fulfilled by</th>
+                  <th className="px-4 py-2">Fulfilled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fulfillmentRows.map((f) => (
+                  <tr key={f.id} className="border-t border-gray-100">
+                    <td className="px-4 py-2">{f.location && <LocationLabel location={f.location} />}</td>
+                    <td className="px-4 py-2">{f.product?.description}</td>
+                    <td className="px-4 py-2 text-gray-500">{f.requested_qty ?? "—"}</td>
+                    <td className="px-4 py-2 text-gray-500">{f.fulfilled_qty}</td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          f.fulfillment_pct >= 100 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {f.fulfillment_pct}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 text-gray-500">{f.fulfilled_by_profile?.name ?? "—"}</td>
+                    <td className="px-4 py-2 text-gray-500">{new Date(f.fulfilled_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+                {!fulfillmentRows.length && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                      No fulfilled requests yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
           <p className="mb-3 mt-8 text-sm font-medium">Recently denied</p>
           <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
             <table className="w-full whitespace-nowrap text-left text-sm">

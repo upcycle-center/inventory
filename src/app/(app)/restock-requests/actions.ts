@@ -5,11 +5,39 @@ import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { DENIAL_REASONS } from "@/lib/denialReasons";
 
-export async function fulfillRestockRequest(formData: FormData) {
-  await requireProfile(["admin", "warehouse"]);
+// Fulfilling logs the drop (request_fulfillments) with who/when and how
+// much actually went out -- fulfilled_qty defaults to the full requested
+// reorder_qty (a plain "Confirm"), or the fulfiller can post an adjusted
+// number for a partial drop. fulfillment_pct is fixed at fulfillment time.
+export async function fulfillRestockRequest(formData: FormData): Promise<void> {
+  const profile = await requireProfile(["admin", "warehouse"]);
   const supabase = createClient();
   const id = String(formData.get("id"));
   if (!id) return;
+
+  const { data: threshold } = await supabase
+    .from("inventory_thresholds")
+    .select("product_id, location_id, reorder_qty, requested_by, requested_at")
+    .eq("id", id)
+    .single();
+  if (!threshold) return;
+
+  const requestedQty = threshold.reorder_qty ?? 0;
+  const adjustedRaw = String(formData.get("fulfilled_qty") || "").trim();
+  const fulfilledQty = adjustedRaw ? Number(adjustedRaw) : requestedQty;
+  if (!Number.isFinite(fulfilledQty) || fulfilledQty < 0) return;
+  const fulfillmentPct = requestedQty > 0 ? Math.round((fulfilledQty / requestedQty) * 10000) / 100 : 100;
+
+  await supabase.from("request_fulfillments").insert({
+    product_id: threshold.product_id,
+    location_id: threshold.location_id,
+    requested_qty: requestedQty,
+    fulfilled_qty: fulfilledQty,
+    fulfillment_pct: fulfillmentPct,
+    requested_by: threshold.requested_by,
+    requested_at: threshold.requested_at,
+    fulfilled_by: profile.id,
+  });
 
   await supabase.from("inventory_thresholds").update({ requested_at: null, requested_by: null }).eq("id", id);
 
