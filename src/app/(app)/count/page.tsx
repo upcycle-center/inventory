@@ -1,10 +1,12 @@
 import Link from "next/link";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { sortStorageAreas } from "@/lib/storageAreas";
-import { getOnHandByProductId } from "@/lib/onHand";
+import { getOnHandByProductId, eachEquivalent } from "@/lib/onHand";
 import { CountForm } from "./CountForm";
 import { EventsAccordion, type EventLocationStatus } from "./EventsAccordion";
+import { CompletedCountsAccordion, type CompletedEventRow, type CompletedCountRecord } from "./CompletedCountsAccordion";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { LocationLabel } from "@/components/LocationLabel";
 import { locationDisplayName } from "@/lib/locationLabel";
@@ -203,11 +205,17 @@ export default async function CountPage({
 async function EventsPicker({ userId, isWarehouseOrAdmin }: { userId: string; isWarehouseOrAdmin: boolean }) {
   const supabase = createClient();
 
-  let query = supabase
-    .from("events")
-    .select("id, name, event_date, status, tot_tickets")
-    .in("status", ["upcoming", "open"])
-    .order("event_date", { ascending: true });
+  // Managers see recent events regardless of status (open events still
+  // missing sheets land in "Open Events"; fully counted ones -- closed or
+  // not -- land in "Completed Counts" below) capped to a reasonable
+  // window. Stand leads only ever need their own upcoming/open work.
+  let query = isWarehouseOrAdmin
+    ? supabase.from("events").select("id, name, event_date, status, tot_tickets").order("event_date", { ascending: false }).limit(60)
+    : supabase
+        .from("events")
+        .select("id, name, event_date, status, tot_tickets")
+        .in("status", ["upcoming", "open"])
+        .order("event_date", { ascending: true });
 
   if (!isWarehouseOrAdmin) {
     const [{ data: assignments }, { data: backupLocations }] = await Promise.all([
@@ -288,12 +296,112 @@ async function EventsPicker({ userId, isWarehouseOrAdmin }: { userId: string; is
     return { ...e, standsOpened, pctCompletion, locations };
   });
 
+  // Events still missing at least one closing count stay in "Open Events";
+  // events every stand has fully closed out move to "Completed Counts"
+  // below instead of just disappearing once the event auto-closes.
+  const openRows = rows.filter((r) => r.standsOpened === 0 || r.pctCompletion < 100);
+  const fullyCompletedRows = rows.filter((r) => r.standsOpened > 0 && r.pctCompletion === 100);
+
+  const completedEventRows = isWarehouseOrAdmin
+    ? await buildCompletedCountRows(supabase, fullyCompletedRows)
+    : [];
+
   return (
     <div>
       <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Count" }]} />
-      <EventsAccordion title={isWarehouseOrAdmin ? "Open Events" : "Your assignments"} rows={rows} isManager={isWarehouseOrAdmin} />
+      <EventsAccordion
+        title={isWarehouseOrAdmin ? "Open Events" : "Your assignments"}
+        rows={openRows}
+        isManager={isWarehouseOrAdmin}
+      />
+      {isWarehouseOrAdmin && (
+        <div className="mt-10">
+          <CompletedCountsAccordion rows={completedEventRows} />
+        </div>
+      )}
     </div>
   );
+}
+
+// Every individual count record (opening + closing, one row per stand per
+// type) for a set of fully-completed events, oldest submitted first --
+// "completed FIRST to completed LAST" within each event. Threshold Flag is
+// derived, not stored: true when any line in that count is at or below the
+// (location, product) reorder_threshold on file.
+async function buildCompletedCountRows(
+  supabase: SupabaseClient,
+  fullyCompletedRows: { id: string; name: string; event_date: string }[]
+): Promise<CompletedEventRow[]> {
+  const eventIds = fullyCompletedRows.map((r) => r.id);
+  if (!eventIds.length) return [];
+
+  const { data: countsRaw } = await supabase
+    .from("location_counts")
+    .select("id, event_id, location_id, type, submitted_at, user_id, location:locations(name, yellow_dog_code)")
+    .in("event_id", eventIds)
+    .order("submitted_at", { ascending: true });
+  const counts = (countsRaw as any[]) ?? [];
+  if (!counts.length) return [];
+
+  const countIds = counts.map((c) => c.id);
+  const locationIds = [...new Set(counts.map((c) => c.location_id))];
+  const userIds = [...new Set(counts.map((c) => c.user_id).filter(Boolean))];
+
+  const [{ data: linesRaw }, { data: thresholdsRaw }, { data: productsRaw }, { data: usersRaw }] = await Promise.all([
+    supabase.from("location_count_lines").select("location_count_id, product_id, qty_each, qty_cases").in("location_count_id", countIds),
+    locationIds.length
+      ? supabase
+          .from("inventory_thresholds")
+          .select("product_id, location_id, reorder_threshold")
+          .in("location_id", locationIds)
+          .gt("reorder_threshold", 0)
+      : Promise.resolve({ data: [] as any[] }),
+    supabase.from("products").select("id, case_size"),
+    userIds.length ? supabase.from("profiles").select("id, name").in("id", userIds) : Promise.resolve({ data: [] as any[] }),
+  ]);
+
+  const linesByCountId = new Map<string, { product_id: string; qty_each: number | null; qty_cases: number | null }[]>();
+  for (const l of (linesRaw as any[]) ?? []) {
+    const list = linesByCountId.get(l.location_count_id) ?? [];
+    list.push(l);
+    linesByCountId.set(l.location_count_id, list);
+  }
+  const thresholdByKey = new Map(
+    ((thresholdsRaw as { product_id: string; location_id: string; reorder_threshold: number }[] | null) ?? []).map((t) => [
+      `${t.location_id}:${t.product_id}`,
+      t.reorder_threshold,
+    ])
+  );
+  const caseSizeByProductId = new Map(
+    ((productsRaw as { id: string; case_size: number | null }[] | null) ?? []).map((p) => [p.id, p.case_size])
+  );
+  const nameByUserId = new Map(((usersRaw as { id: string; name: string }[] | null) ?? []).map((u) => [u.id, u.name]));
+
+  const recordsByEvent = new Map<string, CompletedCountRecord[]>();
+  for (const c of counts) {
+    const lines = linesByCountId.get(c.id) ?? [];
+    const thresholdFlag = lines.some((l) => {
+      const threshold = thresholdByKey.get(`${c.location_id}:${l.product_id}`);
+      if (threshold == null) return false;
+      return eachEquivalent(l.qty_each, l.qty_cases, caseSizeByProductId.get(l.product_id)) <= threshold;
+    });
+    const record: CompletedCountRecord = {
+      id: c.id,
+      locationName: c.location?.name ?? "",
+      yellowDogCode: c.location?.yellow_dog_code ?? null,
+      type: c.type,
+      submittedAt: c.submitted_at,
+      postedByName: nameByUserId.get(c.user_id) ?? "—",
+      thresholdFlag,
+    };
+    const list = recordsByEvent.get(c.event_id) ?? [];
+    list.push(record);
+    recordsByEvent.set(c.event_id, list);
+  }
+
+  return fullyCompletedRows
+    .map((r) => ({ id: r.id, name: r.name, event_date: r.event_date, records: recordsByEvent.get(r.id) ?? [] }))
+    .filter((r) => r.records.length > 0);
 }
 
 async function LocationsForEvent({
