@@ -10,8 +10,8 @@ import type { ActionDraftType } from "@/lib/actionDrafts";
 // Mobile: an even 2-column grid, full-width buttons, bold labels for a
 // bigger, easier-to-tap target. Desktop (sm+): back to the original
 // auto-width row, wrapping as needed.
-const ACTIVE_BUTTON = "w-full rounded-md px-4 py-3 text-center text-sm font-semibold text-white sm:w-auto sm:py-2";
-const IDLE_BUTTON = "w-full rounded-md border border-gray-300 px-4 py-3 text-center text-sm font-semibold sm:w-auto sm:py-2";
+const ACTIVE_BUTTON = "w-full rounded-md px-2 py-2.5 text-center text-sm font-semibold text-white sm:w-auto sm:px-4 sm:py-2";
+const IDLE_BUTTON = "w-full rounded-md border border-gray-300 px-2 py-2.5 text-center text-sm font-semibold sm:w-auto sm:px-4 sm:py-2";
 
 const BUTTONS: { viewKey: ViewKey; label: string; href: string; draftType?: ActionDraftType; activeColor?: string }[] = [
   { viewKey: "count", label: "Count", href: "/count" },

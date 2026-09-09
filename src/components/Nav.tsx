@@ -61,11 +61,16 @@ export function Nav({ profile, allowedViews }: { profile: Profile; allowedViews:
 
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-3 text-sm text-gray-500">
-            <span>
+            <span className="hidden sm:inline">
               {profile.name} <span className="text-gray-400">({profile.role})</span>
             </span>
-            <button onClick={handleSignOut} className="text-brand hover:underline">
-              Sign out
+            <button
+              onClick={handleSignOut}
+              aria-label="Sign out"
+              title="Sign out"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-lg font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+            >
+              ✕
             </button>
           </div>
 
