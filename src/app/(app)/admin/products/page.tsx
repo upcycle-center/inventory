@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
+import { PRODUCT_TYPE_OPTIONS, isProductTypeValue } from "@/lib/productType";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -11,7 +12,7 @@ export default async function AdminProductsPage({
 }) {
   const supabase = createClient();
   const { q, supplier, unit } = searchParams;
-  const type = searchParams.type === "consumable" ? "consumable" : "sellable";
+  const type = searchParams.type && isProductTypeValue(searchParams.type) ? searchParams.type : "chargeable";
 
   let query = supabase
     .from("products")
@@ -52,23 +53,18 @@ export default async function AdminProductsPage({
         </div>
       </div>
 
-      <div className="mb-4 flex gap-1 border-b border-gray-200">
-        <Link
-          href="/admin/products?type=sellable"
-          className={`border-b-2 px-3 py-2 text-sm font-medium ${
-            type === "sellable" ? "border-brand text-brand" : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          Sellable
-        </Link>
-        <Link
-          href="/admin/products?type=consumable"
-          className={`border-b-2 px-3 py-2 text-sm font-medium ${
-            type === "consumable" ? "border-brand text-brand" : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          Consumables
-        </Link>
+      <div className="mb-4 flex flex-wrap gap-1 border-b border-gray-200">
+        {PRODUCT_TYPE_OPTIONS.map((opt) => (
+          <Link
+            key={opt.value}
+            href={`/admin/products?type=${opt.value}`}
+            className={`border-b-2 px-3 py-2 text-sm font-medium ${
+              type === opt.value ? "border-brand text-brand" : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            {opt.shortLabel}
+          </Link>
+        ))}
       </div>
 
       <form className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4">

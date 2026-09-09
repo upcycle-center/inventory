@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Location, ProductCategory, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
+import { PRODUCT_TYPE_OPTIONS, isProductTypeValue } from "@/lib/productType";
 import { LocationLabel } from "@/components/LocationLabel";
 import { createProduct } from "../actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -33,7 +34,8 @@ export default async function NewProductPage({
     (fromLocationProductsResult.data ?? []).map((lp) => [lp.location_id, lp.storage_area_id])
   );
   const defaultAreaId = areas.find((a) => a.code === "OTH")?.id ?? areas[0]?.id ?? "";
-  const defaultProductType = from?.product_type ?? (searchParams.type === "consumable" ? "consumable" : "sellable");
+  const defaultProductType =
+    from?.product_type ?? (searchParams.type && isProductTypeValue(searchParams.type) ? searchParams.type : "chargeable");
 
   return (
     <div>
@@ -72,8 +74,11 @@ export default async function NewProductPage({
         <label className="text-sm text-gray-600">
           Type
           <select name="product_type" defaultValue={defaultProductType} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="sellable">Sellable</option>
-            <option value="consumable">Consumable (cups, napkins, koozies, etc.)</option>
+            {PRODUCT_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </label>
         <label className="text-sm text-gray-600">
@@ -105,7 +110,7 @@ export default async function NewProductPage({
             <input name="case_cost" type="number" step="0.01" defaultValue={from?.case_cost ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm text-gray-600">
-            Sale price (each)
+            Retail Value (each)
             <input name="sale_price" type="number" step="0.01" defaultValue={from?.sale_price ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </label>
         </div>
@@ -124,9 +129,9 @@ export default async function NewProductPage({
         </div>
 
         <div>
-          <p className="mb-1 text-sm font-medium">Pour details (Pour-based categories only)</p>
+          <p className="mb-1 text-sm font-medium">Pour details (Type: Non-Chargeable – Bottles only)</p>
           <p className="mb-3 text-sm text-gray-500">
-            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Sale price.
+            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Retail Value.
           </p>
           <div className="grid grid-cols-3 gap-3">
             <label className="text-sm text-gray-600">

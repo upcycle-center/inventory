@@ -58,22 +58,15 @@ export default async function DashboardPage() {
     : { data: null };
   const lastCountSubmittedAt = (lastCountRaw as { submitted_at: string } | null)?.submitted_at ?? null;
 
-  const [{ data: locationProductsRaw }, { data: categoriesRaw }] = await Promise.all([
-    activeLocationIds.length
-      ? supabase
-          .from("location_products")
-          .select(
-            "location_id, product_id, product:products(id, case_cost, sale_price, case_size, category_id, bottle_size_ml, pour_size_oz, pour_price)"
-          )
-          .in("location_id", activeLocationIds)
-          .eq("active", true)
-      : Promise.resolve({ data: [] as any[] }),
-    supabase.from("product_categories").select("id, is_pour_based"),
-  ]);
-
-  const categoryById = new Map(
-    ((categoriesRaw as { id: string; is_pour_based: boolean }[] | null) ?? []).map((c) => [c.id, c])
-  );
+  const { data: locationProductsRaw } = activeLocationIds.length
+    ? await supabase
+        .from("location_products")
+        .select(
+          "location_id, product_id, product:products(id, case_cost, sale_price, case_size, product_type, bottle_size_ml, pour_size_oz, pour_price)"
+        )
+        .in("location_id", activeLocationIds)
+        .eq("active", true)
+    : { data: [] as any[] };
 
   const productsByLocationId = new Map<string, Map<string, any>>();
   for (const row of (locationProductsRaw as any[]) ?? []) {
@@ -104,8 +97,7 @@ export default async function DashboardPage() {
         const product = products.get(productId);
         if (!product) continue;
         total += lineValue(entry.qty_each, entry.qty_cases, product);
-        const category = product.category_id ? categoryById.get(product.category_id) : null;
-        retailTotal += lineRetailValue(entry.qty_each, entry.qty_cases, product, category);
+        retailTotal += lineRetailValue(entry.qty_each, entry.qty_cases, product);
       }
     }
     if (total > 0) locationValues.push({ label: locationDisplayName(loc), value: total });
@@ -377,7 +369,7 @@ export default async function DashboardPage() {
         actions={
           <span
             className="text-xs text-gray-400"
-            title="Sale price for whole-unit items. Pour-based categories (liquor/wine) instead project pours-per-bottle x price/pour, less a site-wide waste allowance."
+            title="Chargeable items use Retail Value. Non-Chargeable – Bottles (liquor/wine) instead project pours-per-bottle x price/pour, less a site-wide waste allowance. Non-Chargeable – Mixers and Disposables/Cleaning carry no retail value."
           >
             Projected, not actual sales
           </span>

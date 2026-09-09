@@ -30,10 +30,6 @@ export default async function CategoryDetailPage({ params }: { params: { id: str
           GL Code
           <input name="gl_code" defaultValue={category.gl_code ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          <input type="checkbox" name="is_pour_based" defaultChecked={category.is_pour_based} className="h-4 w-4" />
-          Pour-based (liquor/wine — TOT Retail projects value off pours per bottle)
-        </label>
       </ActionForm>
 
       <div className="mt-3 flex items-center gap-3">

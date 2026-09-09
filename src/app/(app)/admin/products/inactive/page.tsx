@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { productTypeLabel } from "@/lib/productType";
 import { toggleProductActive } from "../actions";
 
 export default async function InactiveProductsPage() {
@@ -62,7 +63,7 @@ export default async function InactiveProductsPage() {
                     {p.description}
                   </Link>
                 </td>
-                <td className="px-4 py-2 text-gray-500 capitalize">{p.product_type}</td>
+                <td className="px-4 py-2 text-gray-500">{productTypeLabel(p.product_type)}</td>
                 <td className="px-4 py-2 text-gray-500">
                   {p.unit_of_measure === "case" && p.case_size
                     ? `Case of ${p.case_size}`

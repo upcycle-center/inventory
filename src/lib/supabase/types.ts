@@ -5,7 +5,7 @@ export type LocationType = "warehouse" | "stand" | "kitchen" | "catering";
 export type MovementType = "receiving" | "return" | "transfer" | "adjustment" | "recovery";
 export type PoStatus = "placed" | "received" | "canceled";
 export type RequestStatus = "pending" | "fulfilled" | "canceled";
-export type ProductType = "sellable" | "consumable";
+export type ProductType = "chargeable" | "non_chargeable_bottle" | "non_chargeable_mixer" | "disposable";
 export type WasteReason =
   | "spoiled"
   | "broken"
@@ -172,7 +172,6 @@ export interface ProductCategory {
   id: string;
   name: string;
   gl_code: string | null;
-  is_pour_based: boolean;
   created_at: string;
 }
 

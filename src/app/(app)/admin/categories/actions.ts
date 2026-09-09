@@ -12,9 +12,8 @@ export async function createCategory(formData: FormData) {
   if (!name) return;
 
   const glCode = String(formData.get("gl_code") || "").trim() || null;
-  const isPourBased = formData.get("is_pour_based") === "on";
 
-  await supabase.from("product_categories").insert({ name, gl_code: glCode, is_pour_based: isPourBased });
+  await supabase.from("product_categories").insert({ name, gl_code: glCode });
   revalidatePath("/admin/categories");
 }
 
@@ -26,9 +25,8 @@ export async function updateCategory(formData: FormData) {
   if (!id || !name) return;
 
   const glCode = String(formData.get("gl_code") || "").trim() || null;
-  const isPourBased = formData.get("is_pour_based") === "on";
 
-  await supabase.from("product_categories").update({ name, gl_code: glCode, is_pour_based: isPourBased }).eq("id", id);
+  await supabase.from("product_categories").update({ name, gl_code: glCode }).eq("id", id);
   revalidatePath("/admin/categories");
   revalidatePath(`/admin/categories/${id}`);
 }

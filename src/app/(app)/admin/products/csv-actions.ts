@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isProductTypeValue } from "@/lib/productType";
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -125,9 +126,9 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     const upc = upcIdx !== -1 && cols[upcIdx]?.trim() ? cols[upcIdx].trim() : null;
     // Only set on update when the column is actually present -- otherwise
     // a re-upload without product_type (e.g. a routine cost refresh)
-    // would silently flip existing Consumables back to Sellable.
+    // would silently flip an existing product back to Chargeable.
     const productTypeRaw = productTypeIdx !== -1 ? cols[productTypeIdx]?.trim().toLowerCase() : undefined;
-    const productType = productTypeRaw === "consumable" ? "consumable" : productTypeRaw ? "sellable" : undefined;
+    const productType = productTypeRaw && isProductTypeValue(productTypeRaw) ? productTypeRaw : undefined;
     // Same "only touch when the column is present" rule as product_type --
     // a routine price refresh shouldn't silently wipe GL Code categorization.
     const categoryRaw = categoryIdx !== -1 ? cols[categoryIdx]?.trim() : undefined;
@@ -182,7 +183,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           sku,
           upc,
           description,
-          product_type: productType ?? "sellable",
+          product_type: productType ?? "chargeable",
           category_id: categoryId ?? null,
           supplier_id: supplierId,
           case_cost: caseCost,

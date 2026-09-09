@@ -21,8 +21,9 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
       <p className="text-sm font-medium">Bulk upload from a supplier CSV</p>
       <p className="text-xs text-gray-500">
         Columns required: <code>sku</code>, <code>description</code>. Optional:{" "}
-        <code>upc</code>, <code>product_type</code> (<code>sellable</code> or{" "}
-        <code>consumable</code> — defaults to sellable, and is left alone on an update if omitted),{" "}
+        <code>upc</code>, <code>product_type</code> (<code>chargeable</code>,{" "}
+        <code>non_chargeable_bottle</code>, <code>non_chargeable_mixer</code>, or{" "}
+        <code>disposable</code> — defaults to chargeable, and is left alone on an update if omitted),{" "}
         <code>category</code> (matched by name against Admin → Categories — also left alone on an
         update if omitted), <code>case_cost</code>, <code>sale_price</code>,{" "}
         <code>unit_of_measure</code>, <code>case_size</code>. Existing SKUs are updated; new ones
@@ -31,7 +32,7 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
       <p className="text-xs text-gray-500">
         For a Pour-based category (liquor/wine), add <code>bottle_size_ml</code>,{" "}
         <code>pour_size_oz</code>, and <code>pour_price</code> — TOT Retail projects that
-        product&apos;s value off pours per bottle instead of Sale price.
+        product&apos;s value off pours per bottle instead of Retail Value.
       </p>
       <p className="text-xs text-gray-500">
         To also assign a location (and skip doing it by hand under Admin → Locations), add{" "}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Location, ProductCategory, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
+import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { LocationLabel } from "@/components/LocationLabel";
 import { ActionForm } from "@/components/ActionForm";
@@ -83,8 +84,11 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         <label className="text-sm text-gray-600">
           Type
           <select name="product_type" defaultValue={product.product_type} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="sellable">Sellable</option>
-            <option value="consumable">Consumable (cups, napkins, koozies, etc.)</option>
+            {PRODUCT_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </label>
         <label className="text-sm text-gray-600">
@@ -116,7 +120,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             <input name="case_cost" type="number" step="0.01" defaultValue={product.case_cost ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm text-gray-600">
-            Sale price (each)
+            Retail Value (each)
             <input name="sale_price" type="number" step="0.01" defaultValue={product.sale_price ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </label>
         </div>
@@ -135,9 +139,9 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         </div>
 
         <div>
-          <p className="mb-1 text-sm font-medium">Pour details (Pour-based categories only)</p>
+          <p className="mb-1 text-sm font-medium">Pour details (Type: Non-Chargeable – Bottles only)</p>
           <p className="mb-3 text-sm text-gray-500">
-            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Sale price.
+            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Retail Value.
           </p>
           <div className="grid grid-cols-3 gap-3">
             <label className="text-sm text-gray-600">

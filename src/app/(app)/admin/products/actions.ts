@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isProductTypeValue } from "@/lib/productType";
 
 export async function createProduct(formData: FormData) {
   const supabase = createClient();
@@ -12,7 +13,8 @@ export async function createProduct(formData: FormData) {
   if (!sku || !description) return;
 
   const upc = String(formData.get("upc") || "").trim() || null;
-  const productType = String(formData.get("product_type") || "sellable") === "consumable" ? "consumable" : "sellable";
+  const productTypeRaw = String(formData.get("product_type") || "");
+  const productType = isProductTypeValue(productTypeRaw) ? productTypeRaw : "chargeable";
   const supplierId = String(formData.get("supplier_id") || "") || null;
   const categoryId = String(formData.get("category_id") || "") || null;
   const caseCostRaw = String(formData.get("case_cost") || "").trim();

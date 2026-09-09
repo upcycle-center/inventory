@@ -36,7 +36,7 @@ export default async function MonthEndReportsPage() {
   return (
     <div>
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Month-End Reports" }]} />
-      <h1 className="mb-2 text-lg font-semibold">Month-End: New Item Reports</h1>
+      <h1 className="mb-2 text-lg font-semibold">New Items List</h1>
       <p className="mb-6 text-sm text-gray-500">
         Items staff hand-typed on a Month-End Count Sheet because they weren&apos;t in the catalog
         yet. Add each as a real Product (with the reported case count as its starting on-hand),
