@@ -15,5 +15,5 @@ export async function resolveMonthEndReport(formData: FormData) {
     .update({ resolved_at: new Date().toISOString(), resolved_by: profile.id })
     .eq("id", id);
 
-  revalidatePath("/admin/month-end-reports");
+  revalidatePath("/admin/month-end-reports/new-items");
 }
