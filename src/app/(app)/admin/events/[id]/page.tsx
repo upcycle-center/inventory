@@ -315,7 +315,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                             <input type="hidden" name="staff_count" value={recommended} />
                             <button
                               type="submit"
-                              disabled={!leadUserIdByLocationId.get(location.id)}
+                              disabled={isOpen && !leadUserIdByLocationId.get(location.id)}
                               className="rounded-md bg-brand px-3 py-1 text-xs text-white disabled:opacity-40"
                             >
                               Confirm
