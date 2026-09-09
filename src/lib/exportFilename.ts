@@ -39,3 +39,23 @@ export function countSheetFilename(
   const eventPrefix = safeEventName ? `(${safeEventName}) ` : "";
   return `${eventPrefix}BWP-Count-Sheet-${safeLocation} (${easternHHMM(date)}).pdf`;
 }
+
+// Month-End Count Sheet PDFs: BWP-Month-End-Count-YD Code-Location-Name (Month Year).pdf
+export function monthEndCountSheetFilename({
+  yellowDogCode,
+  locationName,
+  year,
+  month,
+}: {
+  yellowDogCode: string | null;
+  locationName: string;
+  year: number;
+  month: number;
+}): string {
+  const safeLocation = [yellowDogCode, locationName]
+    .filter((part): part is string => !!part)
+    .join("-")
+    .replace(/[^a-zA-Z0-9-]+/g, "-");
+  const monthLabel = new Date(Date.UTC(year, month - 1, 1)).toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+  return `BWP-Month-End-Count-${safeLocation} (${monthLabel} ${year}).pdf`;
+}

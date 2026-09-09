@@ -12,6 +12,7 @@ const IDLE_BUTTON = "rounded-md border border-gray-300 px-4 py-2 text-sm";
 
 const BUTTONS: { viewKey: ViewKey; label: string; href: string; draftType?: ActionDraftType; activeColor?: string }[] = [
   { viewKey: "count", label: "Count", href: "/count" },
+  { viewKey: "month_end", label: "Month-End", href: "/month-end" },
   { viewKey: "receive", label: "Receive", href: "/receive" },
   { viewKey: "restock_requests", label: "RequestQ", href: "/restock-requests" },
   { viewKey: "request", label: "Request", href: "/request", draftType: "request", activeColor: "bg-yellow-400" },

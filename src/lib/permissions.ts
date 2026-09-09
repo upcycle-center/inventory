@@ -7,6 +7,7 @@ import type { UserRole } from "./supabase/types";
 // admin panel that manages it.
 export const VIEW_KEYS = [
   { key: "count", label: "Count", href: "/count" },
+  { key: "month_end", label: "Month-End", href: "/month-end" },
   { key: "request", label: "Request", href: "/request" },
   { key: "transfer", label: "Transfer", href: "/transfer" },
   { key: "recovery", label: "Recovery", href: "/recovery" },

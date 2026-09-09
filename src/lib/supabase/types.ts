@@ -57,6 +57,22 @@ export interface LocationProductMonthEnd {
   counted_at: string;
 }
 
+export interface MonthEndNewItemReport {
+  id: string;
+  location_id: string;
+  year: number;
+  month: number;
+  barcode: string | null;
+  brand: string | null;
+  product_name: string;
+  case_count: number | null;
+  size_each: string | null;
+  reported_by: string;
+  reported_at: string;
+  resolved_at: string | null;
+  resolved_by: string | null;
+}
+
 export interface LocationStaffRole {
   id: string;
   location_id: string;
