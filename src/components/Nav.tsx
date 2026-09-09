@@ -50,8 +50,8 @@ export function Nav({ profile, allowedViews }: { profile: Profile; allowedViews:
               href="/restock-requests"
               className={
                 pathname.startsWith("/restock-requests")
-                  ? "text-sm font-medium text-brand"
-                  : "text-sm text-gray-500 hover:text-gray-900"
+                  ? "hidden text-sm font-medium text-brand sm:inline"
+                  : "hidden text-sm text-gray-500 hover:text-gray-900 sm:inline"
               }
             >
               RequestQ
