@@ -121,6 +121,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let locationsUnmatched = 0;
   let categoriesUnmatched = 0;
   let suppliersUnmatched = 0;
+  let productTypesUnmatched = 0;
 
   for (const cols of rows.slice(1)) {
     const sku = cols[skuIdx]?.trim();
@@ -135,7 +136,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // a re-upload without product_type (e.g. a routine cost refresh)
     // would silently flip an existing product back to Chargeable.
     const productTypeRaw = productTypeIdx !== -1 ? cols[productTypeIdx]?.trim().toLowerCase() : undefined;
-    const productType = productTypeRaw && isProductTypeValue(productTypeRaw) ? productTypeRaw : undefined;
+    let productType: string | undefined;
+    if (productTypeRaw) {
+      productType = isProductTypeValue(productTypeRaw) ? productTypeRaw : undefined;
+      if (!productType) productTypesUnmatched++;
+    }
     // Same "only touch when the column is present" rule as product_type --
     // a routine price refresh shouldn't silently wipe GL Code categorization.
     const categoryRaw = categoryIdx !== -1 ? cols[categoryIdx]?.trim() : undefined;
@@ -265,6 +270,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
       locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
     }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}${
       suppliersUnmatched ? ` ${suppliersUnmatched} supplier name(s) didn't match — check Admin → Suppliers.` : ""
+    }${
+      productTypesUnmatched
+        ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
+        : ""
     }`,
   };
 }
