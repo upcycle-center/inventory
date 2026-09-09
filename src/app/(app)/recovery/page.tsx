@@ -10,7 +10,10 @@ export default async function RecoveryPage({ searchParams }: { searchParams: { l
   const supabase = createClient();
 
   const [{ data: locations }, { data: warehouses }, { data: locationProducts }, draft] = await Promise.all([
-    supabase.from("locations").select("*").eq("active", true).order("name"),
+    // Recovery is stand (or kitchen) -> warehouse only -- a warehouse
+    // recovering stock from another warehouse doesn't happen, so warehouses
+    // are excluded from the From list (they're the To list, below).
+    supabase.from("locations").select("*").eq("active", true).neq("type", "warehouse").order("name"),
     supabase.from("locations").select("*").eq("active", true).eq("type", "warehouse").order("name"),
     supabase
       .from("location_products")
