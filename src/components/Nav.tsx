@@ -28,6 +28,7 @@ export function Nav({ profile, allowedViews }: { profile: Profile; allowedViews:
   const [open, setOpen] = useState(false);
 
   async function handleSignOut() {
+    if (!confirm("Sign out?")) return;
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
