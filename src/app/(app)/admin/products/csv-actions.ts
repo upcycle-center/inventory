@@ -117,6 +117,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let created = 0;
   let updated = 0;
   let skipped = 0;
+  let failed = 0;
+  let firstError: string | null = null;
   let locationsAssigned = 0;
   let locationsUnmatched = 0;
   let categoriesUnmatched = 0;
@@ -184,7 +186,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     let productId = existing?.id as string | undefined;
 
     if (existing) {
-      await supabase
+      const { error } = await supabase
         .from("products")
         .update({
           description,
@@ -201,9 +203,15 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           pour_price: pourPrice,
         })
         .eq("id", existing.id);
+      if (error) {
+        failed++;
+        firstError ??= `${sku}: ${error.message}`;
+        continue;
+      }
+      productId = existing.id;
       updated++;
     } else {
-      const { data: product } = await supabase
+      const { data: product, error } = await supabase
         .from("products")
         .insert({
           sku,
@@ -224,12 +232,15 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         .select("id")
         .single();
 
-      if (product) {
-        productId = product.id;
-        const barcodes = [{ product_id: product.id, barcode: sku }];
-        if (upc) barcodes.push({ product_id: product.id, barcode: upc });
-        await supabase.from("product_barcodes").insert(barcodes);
+      if (error || !product) {
+        failed++;
+        firstError ??= `${sku}: ${error?.message ?? "insert failed"}`;
+        continue;
       }
+      productId = product.id;
+      const barcodes = [{ product_id: product.id, barcode: sku }];
+      if (upc) barcodes.push({ product_id: product.id, barcode: upc });
+      await supabase.from("product_barcodes").insert(barcodes);
       created++;
     }
 
@@ -266,7 +277,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   revalidatePath("/admin/products");
   revalidatePath("/admin/locations");
   return {
-    message: `Done: ${created} created, ${updated} updated, ${skipped} skipped. Locations: ${locationsAssigned} assigned${
+    message: `Done: ${created} created, ${updated} updated, ${skipped} skipped${failed ? `, ${failed} failed` : ""}. Locations: ${locationsAssigned} assigned${
       locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
     }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}${
       suppliersUnmatched ? ` ${suppliersUnmatched} supplier name(s) didn't match — check Admin → Suppliers.` : ""
@@ -274,6 +285,6 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
       productTypesUnmatched
         ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
         : ""
-    }`,
+    }${failed ? ` First error: ${firstError}` : ""}`,
   };
 }
