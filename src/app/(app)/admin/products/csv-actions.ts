@@ -68,6 +68,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const descIdx = header.indexOf("description");
   const productTypeIdx = header.indexOf("product_type");
   const categoryIdx = header.indexOf("category");
+  const supplierIdx = header.indexOf("supplier");
   const costIdx = header.indexOf("case_cost");
   const salePriceIdx = header.indexOf("sale_price");
   const uomIdx = header.indexOf("unit_of_measure");
@@ -87,10 +88,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: locations }, { data: storageAreas }, { data: categories }] = await Promise.all([
+  const [{ data: locations }, { data: storageAreas }, { data: categories }, { data: suppliers }] = await Promise.all([
     supabase.from("locations").select("id, name, yellow_dog_code").eq("active", true),
     supabase.from("storage_areas").select("id, code, name").eq("active", true),
     supabase.from("product_categories").select("id, name"),
+    supabase.from("suppliers").select("id, name"),
   ]);
 
   const locationByKey = new Map<string, string>();
@@ -107,6 +109,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   for (const c of (categories as { id: string; name: string }[] | null) ?? []) {
     categoryByName.set(c.name.toLowerCase(), c.id);
   }
+  const supplierByName = new Map<string, string>();
+  for (const s of (suppliers as { id: string; name: string }[] | null) ?? []) {
+    supplierByName.set(s.name.toLowerCase(), s.id);
+  }
 
   let created = 0;
   let updated = 0;
@@ -114,6 +120,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let locationsAssigned = 0;
   let locationsUnmatched = 0;
   let categoriesUnmatched = 0;
+  let suppliersUnmatched = 0;
 
   for (const cols of rows.slice(1)) {
     const sku = cols[skuIdx]?.trim();
@@ -141,6 +148,20 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         if (!categoryId) categoriesUnmatched++;
       }
     }
+    // Per-row supplier (matched by name) takes over from the single
+    // form-wide dropdown when a "supplier" column is present -- otherwise
+    // that one dropdown value would get stamped onto every row, clobbering
+    // whatever supplier each product already had on file.
+    const supplierRaw = supplierIdx !== -1 ? cols[supplierIdx]?.trim() : undefined;
+    let rowSupplierId: string | null | undefined;
+    if (supplierRaw !== undefined) {
+      if (!supplierRaw) {
+        rowSupplierId = null;
+      } else {
+        rowSupplierId = supplierByName.get(supplierRaw.toLowerCase());
+        if (!rowSupplierId) suppliersUnmatched++;
+      }
+    }
     const caseCost = costIdx !== -1 && cols[costIdx]?.trim() ? Number(cols[costIdx]) : null;
     const salePrice = salePriceIdx !== -1 && cols[salePriceIdx]?.trim() ? Number(cols[salePriceIdx]) : null;
     const unitOfMeasure = uomIdx !== -1 && cols[uomIdx]?.trim() ? cols[uomIdx].trim() : "each";
@@ -165,7 +186,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           upc,
           ...(productType ? { product_type: productType } : {}),
           ...(categoryId !== undefined ? { category_id: categoryId } : {}),
-          supplier_id: supplierId,
+          ...(supplierRaw !== undefined ? (rowSupplierId !== undefined ? { supplier_id: rowSupplierId } : {}) : { supplier_id: supplierId }),
           case_cost: caseCost,
           sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
@@ -185,7 +206,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           description,
           product_type: productType ?? "chargeable",
           category_id: categoryId ?? null,
-          supplier_id: supplierId,
+          supplier_id: supplierRaw !== undefined ? rowSupplierId ?? null : supplierId,
           case_cost: caseCost,
           sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
@@ -242,6 +263,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   return {
     message: `Done: ${created} created, ${updated} updated, ${skipped} skipped. Locations: ${locationsAssigned} assigned${
       locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
-    }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}`,
+    }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}${
+      suppliersUnmatched ? ` ${suppliersUnmatched} supplier name(s) didn't match — check Admin → Suppliers.` : ""
+    }`,
   };
 }

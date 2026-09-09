@@ -25,12 +25,19 @@ export default async function BulkUploadProductsPage() {
       </div>
 
       <div className="max-w-md">
-        <Link
-          href="/api/products/csv-template"
-          className="mb-4 inline-block text-sm text-brand hover:underline"
-        >
-          Download CSV template
-        </Link>
+        <div className="mb-4 flex gap-4">
+          <Link href="/api/products/csv-template" className="inline-block text-sm text-brand hover:underline">
+            Download CSV template
+          </Link>
+          <Link href="/api/products/csv-export" className="inline-block text-sm text-brand hover:underline">
+            Download current products
+          </Link>
+        </div>
+        <p className="mb-4 text-xs text-gray-500">
+          &ldquo;Download current products&rdquo; exports every product&apos;s real values in this
+          same layout — edit only what needs to change and re-upload it. Untouched cells re-apply
+          the same value they already had, so nothing else gets overwritten.
+        </p>
         <CsvUploadForm suppliers={(suppliers as Supplier[] | null) ?? []} />
       </div>
     </div>

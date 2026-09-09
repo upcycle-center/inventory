@@ -25,9 +25,11 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         <code>non_chargeable_bottle</code>, <code>non_chargeable_mixer</code>, or{" "}
         <code>disposable</code> — defaults to chargeable, and is left alone on an update if omitted),{" "}
         <code>category</code> (matched by name against Admin → Categories — also left alone on an
-        update if omitted), <code>case_cost</code>, <code>sale_price</code>,{" "}
-        <code>unit_of_measure</code>, <code>case_size</code>. Existing SKUs are updated; new ones
-        are created (with an auto-generated internal barcode).
+        update if omitted), <code>supplier</code> (matched by name against Admin → Suppliers — also
+        left alone on an update if omitted; overrides the dropdown below, which only applies when
+        no <code>supplier</code> column exists at all), <code>case_cost</code>,{" "}
+        <code>sale_price</code>, <code>unit_of_measure</code>, <code>case_size</code>. Existing
+        SKUs are updated; new ones are created (with an auto-generated internal barcode).
       </p>
       <p className="text-xs text-gray-500">
         For a Pour-based category (liquor/wine), add <code>bottle_size_ml</code>,{" "}
@@ -41,14 +43,17 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         going to more than one location needs one row per location — repeat the sku/description on
         each, just changing <code>location</code>/<code>storage_area</code>/<code>reorder_threshold</code>.
       </p>
-      <select name="supplier_id" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-        <option value="">No supplier</option>
-        {suppliers.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name}
-          </option>
-        ))}
-      </select>
+      <label className="text-xs text-gray-500">
+        Supplier for every row (only used if the CSV has no <code>supplier</code> column)
+        <select name="supplier_id" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+          <option value="">No supplier</option>
+          {suppliers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <input name="csv" type="file" accept=".csv,text/csv" required className="text-sm" />
       <button
         type="submit"
