@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Location, ProductCategory, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
-import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { LocationLabel } from "@/components/LocationLabel";
+import { ProductCoreFields } from "@/components/ProductCoreFields";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { syncProductLocations, updateProduct } from "./actions";
@@ -81,83 +81,20 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           Description
           <input name="description" defaultValue={product.description} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
         </label>
-        <label className="text-sm text-gray-600">
-          Type
-          <select name="product_type" defaultValue={product.product_type} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {PRODUCT_TYPE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm text-gray-600">
-          Supplier
-          <select name="supplier_id" defaultValue={product.supplier_id ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">No supplier</option>
-            {(suppliers as Supplier[] | null)?.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm text-gray-600">
-          Category (drives GL Code)
-          <select name="category_id" defaultValue={product.category_id ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">No category</option>
-            {(categories as ProductCategory[] | null)?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.gl_code ? ` (${c.gl_code})` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="text-sm text-gray-600">
-            Case cost
-            <input name="case_cost" type="number" step="0.01" defaultValue={product.case_cost ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          </label>
-          <label className="text-sm text-gray-600">
-            Retail Value (each)
-            <input name="sale_price" type="number" step="0.01" defaultValue={product.sale_price ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          </label>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="text-sm text-gray-600">
-            Case size (units per case)
-            <input name="case_size" type="number" step="1" min={0} defaultValue={product.case_size ?? ""} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          </label>
-          <label className="text-sm text-gray-600">
-            Unit of measure
-            <select name="unit_of_measure" defaultValue={product.unit_of_measure} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-              <option value="each">Each</option>
-              <option value="case">Case</option>
-            </select>
-          </label>
-        </div>
-
-        <div>
-          <p className="mb-1 text-sm font-medium">Pour details (Type: Non-Chargeable – Bottles only)</p>
-          <p className="mb-3 text-sm text-gray-500">
-            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Retail Value.
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            <label className="text-sm text-gray-600">
-              Bottle size (mL)
-              <input name="bottle_size_ml" type="number" step="0.01" min={0} defaultValue={product.bottle_size_ml ?? ""} placeholder="e.g. 750" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </label>
-            <label className="text-sm text-gray-600">
-              Pour size (oz)
-              <input name="pour_size_oz" type="number" step="0.01" min={0} defaultValue={product.pour_size_oz ?? ""} placeholder="e.g. 1.5" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </label>
-            <label className="text-sm text-gray-600">
-              Price per pour
-              <input name="pour_price" type="number" step="0.01" min={0} defaultValue={product.pour_price ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </label>
-          </div>
-        </div>
+        <ProductCoreFields
+          suppliers={(suppliers as Supplier[] | null) ?? []}
+          categories={(categories as ProductCategory[] | null) ?? []}
+          defaultProductType={product.product_type}
+          defaultSupplierId={product.supplier_id}
+          defaultCategoryId={product.category_id}
+          defaultCaseCost={product.case_cost}
+          defaultSalePrice={product.sale_price}
+          defaultCaseSize={product.case_size}
+          defaultUnitOfMeasure={product.unit_of_measure}
+          defaultBottleSizeMl={product.bottle_size_ml}
+          defaultPourSizeOz={product.pour_size_oz}
+          defaultPourPrice={product.pour_price}
+        />
 
         <label className="text-sm text-gray-600">
           Replace photo
