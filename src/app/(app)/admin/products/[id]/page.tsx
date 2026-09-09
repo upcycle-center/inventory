@@ -141,8 +141,8 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           </p>
           <div className="grid grid-cols-3 gap-3">
             <label className="text-sm text-gray-600">
-              Bottle size (oz)
-              <input name="bottle_size_oz" type="number" step="0.01" min={0} defaultValue={product.bottle_size_oz ?? ""} placeholder="e.g. 25.4" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              Bottle size (mL)
+              <input name="bottle_size_ml" type="number" step="0.01" min={0} defaultValue={product.bottle_size_ml ?? ""} placeholder="e.g. 750" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
             </label>
             <label className="text-sm text-gray-600">
               Pour size (oz)

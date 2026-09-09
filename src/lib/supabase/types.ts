@@ -159,7 +159,7 @@ export interface Product {
   sale_price: number | null;
   unit_of_measure: string;
   case_size: number | null;
-  bottle_size_oz: number | null;
+  bottle_size_ml: number | null;
   pour_size_oz: number | null;
   pour_price: number | null;
   photo_url: string | null;

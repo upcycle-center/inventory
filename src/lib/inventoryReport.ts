@@ -28,7 +28,7 @@ export async function buildInventoryReport(supabase: SupabaseClient): Promise<In
     supabase
       .from("location_products")
       .select(
-        "location_id, product_id, product:products(id, sku, description, category_id, case_cost, sale_price, case_size, bottle_size_oz, pour_size_oz, pour_price)"
+        "location_id, product_id, product:products(id, sku, description, category_id, case_cost, sale_price, case_size, bottle_size_ml, pour_size_oz, pour_price)"
       )
       .in("location_id", locationIds)
       .eq("active", true),

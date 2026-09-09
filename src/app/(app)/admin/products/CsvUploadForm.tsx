@@ -29,7 +29,7 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         are created (with an auto-generated internal barcode).
       </p>
       <p className="text-xs text-gray-500">
-        For a Pour-based category (liquor/wine), add <code>bottle_size_oz</code>,{" "}
+        For a Pour-based category (liquor/wine), add <code>bottle_size_ml</code>,{" "}
         <code>pour_size_oz</code>, and <code>pour_price</code> — TOT Retail projects that
         product&apos;s value off pours per bottle instead of Sale price.
       </p>

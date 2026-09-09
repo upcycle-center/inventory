@@ -21,10 +21,15 @@ export function lineValue(
 // editable setting later if it needs to vary.
 export const POUR_WASTE_PCT = 0.1;
 
+// Bottle size is entered in mL (how liquor is actually sold — 1L, 750ml,
+// 375ml), but a pour is conventionally specified in oz — convert before
+// dividing.
+const ML_PER_OZ = 29.5735;
+
 type PourProduct = {
   sale_price: number | null;
   case_size: number | null;
-  bottle_size_oz?: number | null;
+  bottle_size_ml?: number | null;
   pour_size_oz?: number | null;
   pour_price?: number | null;
 };
@@ -38,8 +43,9 @@ type PourCategory = { is_pour_based: boolean } | null | undefined;
 export function retailUnitPrices(product: PourProduct, category?: PourCategory) {
   const caseSize = product.case_size ? Number(product.case_size) : null;
 
-  if (category?.is_pour_based && product.bottle_size_oz && product.pour_size_oz && product.pour_price) {
-    const poursPerBottle = Math.floor((product.bottle_size_oz / product.pour_size_oz) * (1 - POUR_WASTE_PCT));
+  if (category?.is_pour_based && product.bottle_size_ml && product.pour_size_oz && product.pour_price) {
+    const bottleSizeOz = product.bottle_size_ml / ML_PER_OZ;
+    const poursPerBottle = Math.floor((bottleSizeOz / product.pour_size_oz) * (1 - POUR_WASTE_PCT));
     const perEach = poursPerBottle * product.pour_price;
     return { perEach, perCase: caseSize ? perEach * caseSize : 0 };
   }

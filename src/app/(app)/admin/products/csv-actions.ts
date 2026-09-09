@@ -71,7 +71,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const salePriceIdx = header.indexOf("sale_price");
   const uomIdx = header.indexOf("unit_of_measure");
   const caseSizeIdx = header.indexOf("case_size");
-  const bottleSizeIdx = header.indexOf("bottle_size_oz");
+  const bottleSizeIdx = header.indexOf("bottle_size_ml");
   const pourSizeIdx = header.indexOf("pour_size_oz");
   const pourPriceIdx = header.indexOf("pour_price");
   const locationIdx = header.indexOf("location");
@@ -144,7 +144,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     const salePrice = salePriceIdx !== -1 && cols[salePriceIdx]?.trim() ? Number(cols[salePriceIdx]) : null;
     const unitOfMeasure = uomIdx !== -1 && cols[uomIdx]?.trim() ? cols[uomIdx].trim() : "each";
     const caseSize = caseSizeIdx !== -1 && cols[caseSizeIdx]?.trim() ? Number(cols[caseSizeIdx]) : null;
-    const bottleSizeOz = bottleSizeIdx !== -1 && cols[bottleSizeIdx]?.trim() ? Number(cols[bottleSizeIdx]) : null;
+    const bottleSizeMl = bottleSizeIdx !== -1 && cols[bottleSizeIdx]?.trim() ? Number(cols[bottleSizeIdx]) : null;
     const pourSizeOz = pourSizeIdx !== -1 && cols[pourSizeIdx]?.trim() ? Number(cols[pourSizeIdx]) : null;
     const pourPrice = pourPriceIdx !== -1 && cols[pourPriceIdx]?.trim() ? Number(cols[pourPriceIdx]) : null;
 
@@ -169,7 +169,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
           case_size: caseSize,
-          bottle_size_oz: bottleSizeOz,
+          bottle_size_ml: bottleSizeMl,
           pour_size_oz: pourSizeOz,
           pour_price: pourPrice,
         })
@@ -189,7 +189,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           sale_price: salePrice,
           unit_of_measure: unitOfMeasure,
           case_size: caseSize,
-          bottle_size_oz: bottleSizeOz,
+          bottle_size_ml: bottleSizeMl,
           pour_size_oz: pourSizeOz,
           pour_price: pourPrice,
           created_by: user?.id ?? null,
