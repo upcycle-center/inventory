@@ -7,8 +7,11 @@ import type { ActionDraftType } from "@/lib/actionDrafts";
 // buttons for whichever actions that role is actually allowed, lit up when
 // there's something waiting on the user (a pending RequestQ item, a saved
 // draft).
-const ACTIVE_BUTTON = "rounded-md px-4 py-2 text-sm font-medium text-white";
-const IDLE_BUTTON = "rounded-md border border-gray-300 px-4 py-2 text-sm";
+// Mobile: an even 2-column grid, full-width buttons, bold labels for a
+// bigger, easier-to-tap target. Desktop (sm+): back to the original
+// auto-width row, wrapping as needed.
+const ACTIVE_BUTTON = "w-full rounded-md px-4 py-3 text-center text-sm font-semibold text-white sm:w-auto sm:py-2";
+const IDLE_BUTTON = "w-full rounded-md border border-gray-300 px-4 py-3 text-center text-sm font-semibold sm:w-auto sm:py-2";
 
 const BUTTONS: { viewKey: ViewKey; label: string; href: string; draftType?: ActionDraftType; activeColor?: string }[] = [
   { viewKey: "count", label: "Count", href: "/count" },
@@ -34,7 +37,7 @@ export function RoleActionButtons({
   if (!visible.length) return null;
 
   return (
-    <div className="mb-6 flex flex-wrap gap-3">
+    <div className="mb-6 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
       {visible.map((b) => {
         const isRequestQ = b.viewKey === "restock_requests";
         const isActive = isRequestQ ? pendingRequestCount > 0 : b.draftType ? draftTypes.has(b.draftType) : false;
