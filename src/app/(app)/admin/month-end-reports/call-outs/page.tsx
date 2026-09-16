@@ -60,30 +60,30 @@ export default async function MonthEndCallOutsPage({
 
         <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
           {entries.length > 0 ? (
-            <table className="w-full text-left text-sm">
+            <table className="w-full whitespace-nowrap text-left text-xs">
               <thead className="text-gray-500">
                 <tr>
-                  <th className="px-4 py-2">Role</th>
-                  <th className="px-4 py-2">Reason</th>
-                  <th className="px-4 py-2">Note</th>
-                  <th className="px-4 py-2">Event</th>
-                  <th className="px-4 py-2">Reported</th>
+                  <th className="px-3 py-1.5">Role</th>
+                  <th className="px-3 py-1.5">Reason</th>
+                  <th className="px-3 py-1.5">Note</th>
+                  <th className="px-3 py-1.5">Event</th>
+                  <th className="px-3 py-1.5">Reported</th>
                 </tr>
               </thead>
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id} className="border-t border-gray-100">
-                    <td className="px-4 py-2">{e.roleName}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-1.5">{e.roleName}</td>
+                    <td className="px-3 py-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${REASON_BADGE_CLASS[e.callOutType]}`}>
                         {REASON_LABELS[e.callOutType]}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-gray-500">{e.note ?? "—"}</td>
-                    <td className="px-4 py-2 text-gray-500">
+                    <td className="px-3 py-1.5 text-gray-500">{e.note ?? "—"}</td>
+                    <td className="px-3 py-1.5 text-gray-500">
                       {e.eventName} · {e.eventDate}
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-400">
+                    <td className="px-3 py-1.5 text-gray-400">
                       {e.reportedByName ?? "—"} · {easternDateTimeString(new Date(e.createdAt))}
                     </td>
                   </tr>
