@@ -145,9 +145,9 @@ function CountSheetPage({
           ) : (
             <Text style={styles.eventLineMuted}>Blank template — not tied to a specific event</Text>
           )}
+          <Text style={styles.attendanceLine}>ATTENDANCE: {totTickets != null ? totTickets : "____________"}</Text>
           <Text style={styles.attendanceLine}>
-            ATTENDANCE: {totTickets != null ? totTickets : "____________"}
-            {"   ·   "}GRN ROOM: {grnRoomAttendance != null ? grnRoomAttendance : "______"}
+            GRN ROOM: {grnRoomAttendance != null ? grnRoomAttendance : "______"}
             {"   ·   "}VIP LOUNGE: {vipLoungeAttendance != null ? vipLoungeAttendance : "______"}
           </Text>
         </View>
