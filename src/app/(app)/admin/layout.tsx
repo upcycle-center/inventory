@@ -17,7 +17,6 @@ const SECTION_GROUPS = [
       { href: "/admin/events", label: "Events" },
       { href: "/admin/locations", label: "Locations" },
       { href: "/admin/storage-areas", label: "Storage Areas" },
-      { href: "/warehouse", label: "Warehouse" },
     ],
   },
   {
