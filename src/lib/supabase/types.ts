@@ -137,6 +137,8 @@ export interface EventLocation {
   is_open: boolean;
   confirmed: boolean;
   confirmed_staff_count: number | null;
+  confirmed_role_counts: Record<string, number> | null;
+  pending_unlock_reason: "call_out" | "no_show" | "other" | null;
   confirmed_at: string | null;
   confirmed_by: string | null;
   updated_at: string;

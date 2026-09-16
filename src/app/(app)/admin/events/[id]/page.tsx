@@ -9,7 +9,6 @@ import { updateEventStatus } from "../actions";
 import {
   confirmLocationStaffing,
   deleteShiftCallOut,
-  logShiftCallOut,
   toggleLocationOpen,
   unlockLocationStaffing,
   updateEventAttendance,
@@ -87,13 +86,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const estRecommended = totalRecommendedStaff(event.est_tickets);
   const totRecommended = event.tot_tickets_posted_at ? totalRecommendedStaff(event.tot_tickets) : null;
 
-  // Call-outs are logged against a specific stand's confirmed team, so the
-  // log form only offers locations that are actually open and confirmed.
-  const confirmedOpenLocations = ((locations as Location[] | null) ?? []).filter((l) => {
-    const el = eventLocationByLocationId.get(l.id);
-    return (openByLocationId.get(l.id) ?? true) && (el?.confirmed ?? false);
-  });
-  const shiftRoleOptions = ["Stand Lead", ...STAFF_ROLES];
   const locationNameById = new Map(((locations as Location[] | null) ?? []).map((l) => [l.id, l.name]));
   const callOutList = ((callOuts as any[] | null) ?? []) as (ShiftCallOut & { reported_by_profile: Profile | null })[];
 
@@ -224,7 +216,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
       )}
 
       <div className="mb-8 overflow-x-auto rounded-md border border-gray-200 bg-white p-4">
-        <p className="mb-3 text-sm font-medium">WFM Shifts</p>
+        <p className="mb-1 text-sm font-medium">WFM Shifts</p>
+        <p className="mb-3 text-sm text-gray-500">
+          Role counts are pre-filled with the suggested headcount — adjust before confirming if needed. Once
+          confirmed, Unlock to make changes; picking Call-Out or No-Show as the reason logs it automatically for
+          whichever role you reduce.
+        </p>
         <table className="w-full text-left text-sm">
           <thead className="text-gray-500">
             <tr>
@@ -286,6 +283,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   {rows.map(({ location, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff }) => (
                     <tr key={location.id} className="border-t border-gray-100">
                       <td className="whitespace-nowrap py-2 pr-3">
+                        {!confirmed && (
+                          <form id={`confirm-form-${location.id}`} action={confirmLocationStaffing}>
+                            <input type="hidden" name="event_id" value={event.id} />
+                            <input type="hidden" name="location_id" value={location.id} />
+                          </form>
+                        )}
                         <div className="flex flex-col items-start gap-1.5">
                           <div className="flex items-center gap-2">
                             <form action={toggleLocationOpen} className="shrink-0">
@@ -323,11 +326,31 @@ export default async function EventDetailPage({ params }: { params: { id: string
                       <td className="py-2 pr-3 text-center">
                         {isOpen ? 1 : <span className="text-gray-300">—</span>}
                       </td>
-                      {roleCounts.map(({ roleName, count, note }) => (
-                        <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
-                          {count == null ? <span className="text-gray-300">—</span> : count}
-                        </td>
-                      ))}
+                      {roleCounts.map(({ roleName, count, note }) => {
+                        const previousConfirmed = (eventLocation?.confirmed_role_counts as Record<string, number> | null)?.[roleName];
+                        const editable = isOpen && !confirmed && count != null;
+                        return (
+                          <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
+                            {editable ? (
+                              <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                form={`confirm-form-${location.id}`}
+                                name={`role_count_${roleName}`}
+                                defaultValue={previousConfirmed ?? count ?? 0}
+                                className="w-12 rounded-md border border-gray-300 px-1 py-0.5 text-center text-xs"
+                              />
+                            ) : count == null ? (
+                              <span className="text-gray-300">—</span>
+                            ) : confirmed ? (
+                              previousConfirmed ?? count
+                            ) : (
+                              count
+                            )}
+                          </td>
+                        );
+                      })}
                       <td className="py-2 pr-3 font-medium">
                         {displayedStaff}
                         {confirmed && recommended !== displayedStaff && (
@@ -349,50 +372,26 @@ export default async function EventDetailPage({ params }: { params: { id: string
                             <select
                               name="reason"
                               defaultValue=""
-                              title="Reason for unlocking — Call-Out/No-Show also logs it below, by role"
+                              title="Reason for unlocking — Call-Out/No-Show auto-logs any role you then reduce, once you save the change"
                               className="rounded-md border border-gray-300 px-1 py-1 text-xs"
                             >
                               <option value="">Adjust (other)</option>
                               <option value="call_out">Call-Out</option>
                               <option value="no_show">No-Show</option>
                             </select>
-                            <select
-                              name="role_name"
-                              defaultValue={shiftRoleOptions[0]}
-                              title="Role — only used when the reason above is Call-Out or No-Show"
-                              className="rounded-md border border-gray-300 px-1 py-1 text-xs"
-                            >
-                              {shiftRoleOptions.map((r) => (
-                                <option key={r} value={r}>
-                                  {r}
-                                </option>
-                              ))}
-                            </select>
                             <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
                               Unlock
                             </button>
                           </form>
                         ) : (
-                          <form action={confirmLocationStaffing} className="flex items-center gap-1.5">
-                            <input type="hidden" name="event_id" value={event.id} />
-                            <input type="hidden" name="location_id" value={location.id} />
-                            <input
-                              name="staff_count"
-                              type="number"
-                              min={0}
-                              step={1}
-                              defaultValue={recommended}
-                              title="Recommended headcount — adjust before confirming if needed"
-                              className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
-                            />
-                            <button
-                              type="submit"
-                              disabled={isOpen && !leadUserIdByLocationId.get(location.id)}
-                              className="rounded-md bg-brand px-3 py-1 text-xs text-white disabled:opacity-40"
-                            >
-                              Confirm
-                            </button>
-                          </form>
+                          <button
+                            type="submit"
+                            form={`confirm-form-${location.id}`}
+                            disabled={isOpen && !leadUserIdByLocationId.get(location.id)}
+                            className="rounded-md bg-brand px-3 py-1 text-xs text-white disabled:opacity-40"
+                          >
+                            Confirm
+                          </button>
                         )}
                       </td>
                     </tr>
@@ -427,55 +426,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
         <p className="mb-1 text-sm font-medium">Call-Outs / No-Shows</p>
         <p className="mb-3 text-sm text-gray-500">
-          Log who&apos;s short day-of, by role, once a stand&apos;s team is confirmed — tracks trends and helps
-          bridge staffing gaps.
+          Logged automatically when a confirmed shift is unlocked for a Call-Out or No-Show and a role&apos;s count
+          is reduced. Tracks trends and helps spot staffing gaps.
         </p>
-
-        {confirmedOpenLocations.length > 0 ? (
-          <ActionForm action={logShiftCallOut} savedLabel="Logged" className="mb-4 flex flex-wrap items-end gap-2">
-            <input type="hidden" name="event_id" value={event.id} />
-            <label className="text-xs text-gray-500">
-              Location
-              <select name="location_id" required className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm">
-                {confirmedOpenLocations.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs text-gray-500">
-              Role
-              <select name="role_name" required className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm">
-                {shiftRoleOptions.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-xs text-gray-500">
-              Type
-              <select name="call_out_type" required className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm">
-                <option value="call_out">Call-Out</option>
-                <option value="no_show">No-Show</option>
-              </select>
-            </label>
-            <label className="min-w-[160px] flex-1 text-xs text-gray-500">
-              Note (optional)
-              <input
-                name="note"
-                placeholder="e.g. covered by X"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-              />
-            </label>
-            <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs text-white">
-              Log
-            </button>
-          </ActionForm>
-        ) : (
-          <p className="mb-4 text-sm text-gray-400">Confirm a stand&apos;s team above before logging a call-out.</p>
-        )}
 
         {callOutList.length > 0 ? (
           <div className="overflow-x-auto">
