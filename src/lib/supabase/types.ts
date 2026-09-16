@@ -149,7 +149,7 @@ export interface ShiftCallOut {
   event_id: string;
   location_id: string;
   role_name: string;
-  call_out_type: "call_out" | "no_show";
+  call_out_type: "call_out" | "no_show" | "other";
   note: string | null;
   reported_by: string | null;
   created_at: string;

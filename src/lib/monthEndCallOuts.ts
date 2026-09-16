@@ -91,8 +91,15 @@ export async function buildMonthEndCallOutsReport(
           .eq("confirmed", true)
           .not("confirmed_staff_count", "is", null)
       : Promise.resolve({ data: [] as any[] }),
+    // Plain Adjustments are excluded here -- this trend is specifically
+    // about real absences, not every staffing correction.
     eventIds.length
-      ? supabase.from("shift_call_outs").select("role_name, call_out_type").in("event_id", eventIds).in("location_id", standLocationIds)
+      ? supabase
+          .from("shift_call_outs")
+          .select("role_name, call_out_type")
+          .in("event_id", eventIds)
+          .in("location_id", standLocationIds)
+          .in("call_out_type", ["call_out", "no_show"])
       : Promise.resolve({ data: [] as any[] }),
   ]);
 

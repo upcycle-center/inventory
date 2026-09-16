@@ -8,13 +8,13 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
 import {
   confirmLocationStaffing,
-  deleteShiftCallOut,
   toggleLocationOpen,
   unlockLocationStaffing,
   updateEventAttendance,
 } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
 import { WfmEditableCells } from "./WfmEditableCells";
+import { CallOutsLog } from "./CallOutsLog";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { effectiveCount, totalRecommendedStaff as totalRecommendedStaffAcross } from "@/lib/staffing";
 import { easternDateTimeString } from "@/lib/easternTime";
@@ -353,11 +353,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
                               </div>
                               <select
                                 name="reason"
-                                defaultValue=""
-                                title="Reason for unlocking — Call-Out/No-Show auto-logs any role you then reduce, once you save the change"
+                                defaultValue="other"
+                                title="Reason for unlocking — auto-logs any role you then reduce, once you save the change"
                                 className="rounded-md border border-gray-300 px-1 py-1 text-xs"
                               >
-                                <option value="">Adjust (other)</option>
+                                <option value="other">Adjustment</option>
                                 <option value="call_out">Call-Out</option>
                                 <option value="no_show">No-Show</option>
                               </select>
@@ -407,60 +407,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
       </div>
 
       <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
-        <p className="mb-1 text-sm font-medium">Call-Outs / No-Shows</p>
+        <p className="mb-1 text-sm font-medium">Staffing Changes Log</p>
         <p className="mb-3 text-sm text-gray-500">
-          Logged automatically when a confirmed shift is unlocked for a Call-Out or No-Show and a role&apos;s count
-          is reduced. Tracks trends and helps spot staffing gaps.
+          Logged automatically whenever a confirmed shift is unlocked and a role&apos;s count is reduced — Call-Out,
+          No-Show, or a plain Adjustment. Tracks trends and helps spot staffing gaps.
         </p>
-
-        {callOutList.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-gray-500">
-                <tr>
-                  <th className="pb-2 pr-3">Location</th>
-                  <th className="pb-2 pr-3">Role</th>
-                  <th className="pb-2 pr-3">Type</th>
-                  <th className="pb-2 pr-3">Note</th>
-                  <th className="pb-2 pr-3">Reported</th>
-                  <th className="pb-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {callOutList.map((c) => (
-                  <tr key={c.id} className="border-t border-gray-100">
-                    <td className="py-2 pr-3">{locationNameById.get(c.location_id) ?? "—"}</td>
-                    <td className="py-2 pr-3">{c.role_name}</td>
-                    <td className="py-2 pr-3">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          c.call_out_type === "no_show" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                        }`}
-                      >
-                        {c.call_out_type === "no_show" ? "No-Show" : "Call-Out"}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-3 text-gray-500">{c.note ?? "—"}</td>
-                    <td className="py-2 pr-3 text-xs text-gray-400">
-                      {c.reported_by_profile?.name ?? "—"} · {easternDateTimeString(new Date(c.created_at))}
-                    </td>
-                    <td className="py-2">
-                      <form action={deleteShiftCallOut}>
-                        <input type="hidden" name="id" value={c.id} />
-                        <input type="hidden" name="event_id" value={event.id} />
-                        <button type="submit" className="text-xs text-gray-400 hover:text-red-600">
-                          Remove
-                        </button>
-                      </form>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400">No call-outs or no-shows logged for this event yet.</p>
-        )}
+        <CallOutsLog eventId={event.id} callOuts={callOutList} locationNameById={locationNameById} />
       </div>
     </div>
   );

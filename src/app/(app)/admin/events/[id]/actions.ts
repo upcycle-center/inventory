@@ -120,14 +120,15 @@ export async function confirmLocationStaffing(formData: FormData) {
     .eq("location_id", locationId)
     .maybeSingle();
 
-  // A pending Call-Out/No-Show reason (set when this was last unlocked)
-  // means: log it now, for whichever role(s) came down from the baseline
-  // each field started from (submitted as role_baseline_<role> -- the
-  // last confirmed count, or the suggested count on a first-ever confirm,
-  // whichever the manager actually saw and edited from). The edit itself
-  // is the record of what happened -- no separate "which role" picker.
+  // A pending reason (set when this was last unlocked -- Call-Out,
+  // No-Show, or a plain Adjustment) means: log it now, for whichever
+  // role(s) came down from the baseline each field started from
+  // (submitted as role_baseline_<role> -- the last confirmed count, or
+  // the suggested count on a first-ever confirm, whichever the manager
+  // actually saw and edited from). The edit itself is the record of what
+  // happened -- no separate "which role" picker.
   const reason = existing?.pending_unlock_reason;
-  if (reason === "call_out" || reason === "no_show") {
+  if (reason === "call_out" || reason === "no_show" || reason === "other") {
     const callOutRows = STAFF_ROLES.filter((roleName) => roleCounts[roleName] < roleBaselines[roleName]).map((roleName) => ({
       event_id: eventId,
       location_id: locationId,
