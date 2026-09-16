@@ -8,6 +8,7 @@ import { ProductCoreFields } from "@/components/ProductCoreFields";
 import { ProductPosFields } from "@/components/ProductPosFields";
 import { createProduct } from "../actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ActionForm } from "@/components/ActionForm";
 
 export default async function NewProductPage({
   searchParams,
@@ -56,8 +57,9 @@ export default async function NewProductPage({
         </p>
       )}
 
-      <form
+      <ActionForm
         action={createProduct}
+        savedLabel="Saved"
         encType="multipart/form-data"
         className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
@@ -161,7 +163,7 @@ export default async function NewProductPage({
             Cancel
           </Link>
         </div>
-      </form>
+      </ActionForm>
     </div>
   );
 }

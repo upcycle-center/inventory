@@ -5,12 +5,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isProductTypeValue } from "@/lib/productType";
 
-export async function createProduct(formData: FormData) {
+export async function createProduct(formData: FormData): Promise<{ error: string } | void> {
   const supabase = createClient();
 
   const sku = String(formData.get("sku") || "").trim();
   const description = String(formData.get("description") || "").trim();
-  if (!sku || !description) return;
+  if (!sku || !description) return { error: "IC and Description are required." };
 
   const upc = String(formData.get("upc") || "").trim() || null;
   const productTypeRaw = String(formData.get("product_type") || "");
@@ -69,9 +69,10 @@ export async function createProduct(formData: FormData) {
     .single();
 
   if (error || !product) {
-    // Most likely a duplicate IC or UPC — stay put rather than redirecting
-    // away as if it succeeded.
-    return;
+    // Surface the real reason (duplicate IC/UPC, a missing column after a
+    // migration hasn't been run yet, etc.) instead of silently staying put
+    // with no explanation of what happened.
+    return { error: error?.message ?? "Couldn't save this product." };
   }
 
   // Auto-generated internal barcode: the SKU itself, Code128-printable on
