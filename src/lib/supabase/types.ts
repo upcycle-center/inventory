@@ -158,6 +158,7 @@ export interface Product {
   description: string;
   product_type: ProductType;
   supplier_id: string | null;
+  brand: string | null;
   category_id: string | null;
   case_cost: number | null;
   sale_price: number | null;

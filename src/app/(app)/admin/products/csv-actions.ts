@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isProductTypeValue } from "@/lib/productType";
+import { SUB_UNIT_OPTIONS } from "@/lib/subUnit";
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -66,6 +67,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const skuIdx = header.indexOf("sku");
   const upcIdx = header.indexOf("upc");
   const descIdx = header.indexOf("description");
+  const brandIdx = header.indexOf("brand");
   const productTypeIdx = header.indexOf("product_type");
   const categoryIdx = header.indexOf("category");
   const supplierIdx = header.indexOf("supplier");
@@ -128,6 +130,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let categoriesUnmatched = 0;
   let suppliersUnmatched = 0;
   let productTypesUnmatched = 0;
+  let subUnitsUnmatched = 0;
 
   for (const cols of rows.slice(1)) {
     const sku = cols[skuIdx]?.trim();
@@ -138,6 +141,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     }
 
     const upc = upcIdx !== -1 && cols[upcIdx]?.trim() ? cols[upcIdx].trim() : null;
+    // Same "only touch when present" rule as category/supplier -- a routine
+    // price refresh shouldn't silently wipe an existing Brand.
+    const brandRaw = brandIdx !== -1 ? cols[brandIdx]?.trim() : undefined;
+    const brand = brandRaw !== undefined ? brandRaw || null : undefined;
     // Only set on update when the column is actually present -- otherwise
     // a re-upload without product_type (e.g. a routine cost refresh)
     // would silently flip an existing product back to Chargeable.
@@ -187,8 +194,20 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     const posSquare = posSquareRaw !== undefined ? posSquareRaw === "yes" || posSquareRaw === "true" || posSquareRaw === "1" : undefined;
     // Same "only touch when present" rule -- omitting these on a routine
     // refresh shouldn't silently drop a product's Sleeve/Pack counting tier.
+    // middle_unit_label is constrained to the same fixed Pack/Sleeve
+    // vocabulary as the product form's dropdown -- an unrecognized value is
+    // treated as "column not usable" and leaves the row's Sub-Unit alone,
+    // same as an unrecognized product_type.
     const middleUnitLabelRaw = middleUnitLabelIdx !== -1 ? cols[middleUnitLabelIdx]?.trim() : undefined;
-    const middleUnitLabel = middleUnitLabelRaw !== undefined ? middleUnitLabelRaw || null : undefined;
+    let middleUnitLabel: string | null | undefined;
+    if (middleUnitLabelRaw !== undefined) {
+      if (!middleUnitLabelRaw) {
+        middleUnitLabel = null;
+      } else {
+        middleUnitLabel = SUB_UNIT_OPTIONS.find((o) => o.value.toLowerCase() === middleUnitLabelRaw.toLowerCase())?.value;
+        if (!middleUnitLabel) subUnitsUnmatched++;
+      }
+    }
     const middleUnitSizeRaw = middleUnitSizeIdx !== -1 ? cols[middleUnitSizeIdx]?.trim() : undefined;
     const middleUnitSize = middleUnitSizeRaw !== undefined ? (middleUnitSizeRaw ? Number(middleUnitSizeRaw) : null) : undefined;
     const eachCountableRaw = eachCountableIdx !== -1 ? cols[eachCountableIdx]?.trim().toLowerCase() : undefined;
@@ -209,6 +228,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         .update({
           description,
           upc,
+          ...(brand !== undefined ? { brand } : {}),
           ...(productType ? { product_type: productType } : {}),
           ...(categoryId !== undefined ? { category_id: categoryId } : {}),
           ...(supplierRaw !== undefined ? (rowSupplierId !== undefined ? { supplier_id: rowSupplierId } : {}) : { supplier_id: supplierId }),
@@ -239,6 +259,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           sku,
           upc,
           description,
+          brand: brand ?? null,
           product_type: productType ?? "chargeable",
           category_id: categoryId ?? null,
           supplier_id: supplierRaw !== undefined ? rowSupplierId ?? null : supplierId,
@@ -310,6 +331,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     }${
       productTypesUnmatched
         ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
+        : ""
+    }${
+      subUnitsUnmatched
+        ? ` ${subUnitsUnmatched} middle_unit_label value(s) weren't recognized (must be exactly Pack or Sleeve) — those rows' Sub-Unit was left unchanged.`
         : ""
     }${failed ? ` First error: ${firstError}` : ""}`,
   };

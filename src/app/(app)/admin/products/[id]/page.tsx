@@ -87,6 +87,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           categories={(categories as ProductCategory[] | null) ?? []}
           defaultProductType={product.product_type}
           defaultSupplierId={product.supplier_id}
+          defaultBrand={product.brand}
           defaultCategoryId={product.category_id}
           defaultCaseCost={product.case_cost}
           defaultSalePrice={product.sale_price}

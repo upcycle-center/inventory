@@ -21,7 +21,8 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
       <p className="text-sm font-medium">Bulk upload from a supplier CSV</p>
       <p className="text-xs text-gray-500">
         Columns required: <code>sku</code>, <code>description</code>. Optional:{" "}
-        <code>upc</code>, <code>product_type</code> (<code>chargeable</code>,{" "}
+        <code>brand</code> (also left alone on an update if omitted), <code>upc</code>,{" "}
+        <code>product_type</code> (<code>chargeable</code>,{" "}
         <code>non_chargeable_bottle</code>, <code>non_chargeable_mixer</code>, or{" "}
         <code>disposable</code> — defaults to chargeable, and is left alone on an update if omitted),{" "}
         <code>category</code> (matched by name against Admin → Categories — also left alone on an
@@ -37,12 +38,12 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         product&apos;s value off pours per bottle instead of Retail Value.
       </p>
       <p className="text-xs text-gray-500">
-        For a product with a packaging tier between Case and Each (a Sleeve of cups, a Pack of
-        napkins), add <code>middle_unit_label</code> (e.g. <code>Sleeve</code>), <code>middle_unit_size</code>{" "}
-        (each per middle unit), and <code>each_countable</code> (<code>yes</code>/<code>no</code> —{" "}
-        <code>no</code> for products only ever counted by Case/middle unit, like napkins or
+        For a product with a Sub-Unit tier between Case and Each, add <code>middle_unit_label</code>{" "}
+        (must be exactly <code>Pack</code> or <code>Sleeve</code>), <code>middle_unit_size</code>{" "}
+        (each per Sub-Unit), and <code>each_countable</code> (<code>yes</code>/<code>no</code> —{" "}
+        <code>no</code> for products only ever counted by Case/Sub-Unit, like napkins or
         flatware). All three are also left alone on an update if omitted. Once{" "}
-        <code>middle_unit_label</code> is set, <code>case_size</code> means middle units per case
+        <code>middle_unit_label</code> is set, <code>case_size</code> means Sub-Units per case
         (e.g. 20 sleeves/case), not each per case.
       </p>
       <p className="text-xs text-gray-500">

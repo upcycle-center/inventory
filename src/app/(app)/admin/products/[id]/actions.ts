@@ -16,6 +16,7 @@ export async function updateProduct(formData: FormData) {
   const productTypeRaw = String(formData.get("product_type") || "");
   const productType = isProductTypeValue(productTypeRaw) ? productTypeRaw : "chargeable";
   const supplierId = String(formData.get("supplier_id") || "") || null;
+  const brand = String(formData.get("brand") || "").trim() || null;
   const categoryId = String(formData.get("category_id") || "") || null;
   const caseCostRaw = String(formData.get("case_cost") || "").trim();
   const salePriceRaw = String(formData.get("sale_price") || "").trim();
@@ -52,6 +53,7 @@ export async function updateProduct(formData: FormData) {
       description,
       product_type: productType,
       supplier_id: supplierId,
+      brand,
       category_id: categoryId,
       case_cost: caseCostRaw ? Number(caseCostRaw) : null,
       sale_price: salePriceRaw ? Number(salePriceRaw) : null,

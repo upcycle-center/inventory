@@ -44,6 +44,7 @@ export async function buildProductExportRows(
   const header = [
     "sku",
     "description",
+    "brand",
     "product_type",
     "category",
     "supplier",
@@ -69,6 +70,7 @@ export async function buildProductExportRows(
     const baseRow = [
       p.sku,
       p.description,
+      p.brand ?? "",
       p.product_type,
       p.category_id ? categoryNameById.get(p.category_id) ?? "" : "",
       p.supplier_id ? supplierNameById.get(p.supplier_id) ?? "" : "",

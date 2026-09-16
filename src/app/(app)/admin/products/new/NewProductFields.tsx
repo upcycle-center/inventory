@@ -13,6 +13,7 @@ export function NewProductFields({
   defaultProductType,
   defaultDescription,
   defaultSupplierId,
+  defaultBrand,
   defaultCategoryId,
   defaultCaseCost,
   defaultSalePrice,
@@ -30,6 +31,7 @@ export function NewProductFields({
   defaultProductType: string;
   defaultDescription?: string;
   defaultSupplierId?: string | null;
+  defaultBrand?: string | null;
   defaultCategoryId?: string | null;
   defaultCaseCost?: number | string | null;
   defaultSalePrice?: number | string | null;
@@ -104,6 +106,7 @@ export function NewProductFields({
         categories={categories}
         defaultProductType={defaultProductType}
         defaultSupplierId={defaultSupplierId}
+        defaultBrand={defaultBrand}
         defaultCategoryId={defaultCategoryId}
         defaultCaseCost={defaultCaseCost}
         defaultSalePrice={defaultSalePrice}

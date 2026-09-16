@@ -69,6 +69,7 @@ export default async function NewProductPage({
           defaultProductType={defaultProductType}
           defaultDescription={from?.description}
           defaultSupplierId={from?.supplier_id}
+          defaultBrand={from?.brand}
           defaultCategoryId={from?.category_id}
           defaultCaseCost={from?.case_cost}
           defaultSalePrice={from?.sale_price}

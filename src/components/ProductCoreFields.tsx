@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { PRODUCT_TYPE_OPTIONS, type ProductTypeValue } from "@/lib/productType";
+import { SUB_UNIT_OPTIONS } from "@/lib/subUnit";
+import { caseSizeInEach } from "@/lib/onHand";
 import type { ProductCategory, Supplier } from "@/lib/supabase/types";
 
 // Retail Value isn't factored in at all for these types (Non-Chargeable --
@@ -53,6 +55,7 @@ export function ProductCoreFields({
   categories,
   defaultProductType,
   defaultSupplierId,
+  defaultBrand,
   defaultCategoryId,
   defaultCaseCost,
   defaultSalePrice,
@@ -70,6 +73,7 @@ export function ProductCoreFields({
   categories: ProductCategory[];
   defaultProductType: string;
   defaultSupplierId: string | null | undefined;
+  defaultBrand?: string | null;
   defaultCategoryId: string | null | undefined;
   defaultCaseCost: number | string | null | undefined;
   defaultSalePrice: number | string | null | undefined;
@@ -88,8 +92,17 @@ export function ProductCoreFields({
   const [middleUnitLabel, setMiddleUnitLabel] = useState(defaultMiddleUnitLabel ?? "");
   const [eachCountable, setEachCountable] = useState(defaultEachCountable ?? true);
   const [unitOfMeasure, setUnitOfMeasure] = useState(defaultUnitOfMeasure ?? "each");
+  const [caseCost, setCaseCost] = useState(String(defaultCaseCost ?? ""));
+  const [caseSize, setCaseSize] = useState(String(defaultCaseSize ?? ""));
+  const [subUnitCount, setSubUnitCount] = useState(String(defaultMiddleUnitSize ?? ""));
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
   const pourFieldsActive = productType === POUR_FIELDS_ACTIVE_TYPE;
+
+  // Cost (EA) is a live preview of the same math unitCosts() does
+  // server-side -- Cost (CS) divided by the effective each-per-case, which
+  // compounds through the Sub-Unit once one is set.
+  const eachPerCase = caseSizeInEach(caseSize ? Number(caseSize) : null, middleUnitLabel.trim() ? Number(subUnitCount) || null : null);
+  const costPerEach = eachPerCase ? (Number(caseCost) || 0) / eachPerCase : 0;
 
   // Unit of measure is just "which of this product's own counting units is
   // primary" -- offer only the ones that actually apply: Each (unless
@@ -132,7 +145,16 @@ export function ProductCoreFields({
         </select>
       </label>
       <label className="text-sm text-gray-600">
-        Category (drives GL Code)
+        Brand
+        <input
+          name="brand"
+          defaultValue={defaultBrand ?? ""}
+          placeholder="e.g. Coca-Cola"
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+      </label>
+      <label className="text-sm text-gray-600">
+        Category
         <select
           name="category_id"
           value={categoryId}
@@ -153,18 +175,36 @@ export function ProductCoreFields({
       </label>
       <div className="grid grid-cols-2 gap-3">
         <label className="text-sm text-gray-600">
-          Case cost
-          <input name="case_cost" type="number" step="0.01" defaultValue={defaultCaseCost ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          Cost (CS)
+          <input
+            name="case_cost"
+            type="number"
+            step="0.01"
+            value={caseCost}
+            onChange={(e) => setCaseCost(e.target.value)}
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
         </label>
+        <label className="text-sm text-gray-600">
+          Cost (EA)
+          <input
+            type="text"
+            disabled
+            readOnly
+            value={costPerEach ? `$${costPerEach.toFixed(2)}` : "—"}
+            title="Calculated from Cost (CS) divided by the effective each-per-case."
+            className="mt-1 w-full rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-400"
+          />
+        </label>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
         <DisableableNumberField
-          label="Retail Value (each)"
+          label="Retail (EA)"
           name="sale_price"
           defaultValue={defaultSalePrice}
           disabled={retailValueDisabled}
           disabledTitle="Not used for this Type -- Non-Chargeable and Disposable items don't factor into TOT Retail directly."
         />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
         <label className="text-sm text-gray-600">
           {middleUnitLabel.trim() ? `Case size (${middleUnitLabel.trim()}s per case)` : "Case size (each per case)"}
           <input
@@ -172,58 +212,66 @@ export function ProductCoreFields({
             type="number"
             step="1"
             min={0}
-            defaultValue={defaultCaseSize ?? ""}
+            value={caseSize}
+            onChange={(e) => setCaseSize(e.target.value)}
             placeholder={middleUnitLabel.trim() ? "e.g. 20" : "e.g. 24"}
             title={
               middleUnitLabel.trim()
-                ? `With a middle unit set, Case size means ${middleUnitLabel.trim().toLowerCase()}s per case, not each per case.`
+                ? `With a Sub-Unit set, Case size means ${middleUnitLabel.trim().toLowerCase()}s per case, not each per case.`
                 : undefined
             }
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </label>
-        <label className="text-sm text-gray-600">
-          Unit of measure
-          <select
-            name="unit_of_measure"
-            value={safeUnitOfMeasure}
-            onChange={(e) => setUnitOfMeasure(e.target.value)}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          >
-            {unitOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
+      <label className="text-sm text-gray-600">
+        Unit of measure
+        <select
+          name="unit_of_measure"
+          value={safeUnitOfMeasure}
+          onChange={(e) => setUnitOfMeasure(e.target.value)}
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          {unitOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <div>
         <p className="mb-1 text-sm font-medium">Counting units</p>
         <p className="mb-3 text-sm text-gray-500">
           For an extra packaging tier between Case and Each — a Sleeve of cups, a Pack of napkins.
-          Leave the name blank for the standard Case/Each setup.
+          Leave Sub-Unit unset for the standard Case/Each setup.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm text-gray-600">
-            Middle unit name
-            <input
+            Sub-Unit
+            <select
               name="middle_unit_label"
               value={middleUnitLabel}
               onChange={(e) => setMiddleUnitLabel(e.target.value)}
-              placeholder="e.g. Sleeve, Pack"
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
+            >
+              <option value="">— None —</option>
+              {SUB_UNIT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="text-sm text-gray-600">
-            Each per middle unit
+            Sub-Unit Count
             <input
               name="middle_unit_size"
               type="number"
               step="1"
               min={0}
-              defaultValue={defaultMiddleUnitSize ?? ""}
+              value={subUnitCount}
+              onChange={(e) => setSubUnitCount(e.target.value)}
               placeholder="e.g. 50"
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
@@ -237,7 +285,7 @@ export function ProductCoreFields({
             onChange={(e) => setEachCountable(e.target.checked)}
             className="h-4 w-4"
           />
-          Counted in Each (uncheck for products only counted by Case/middle unit — e.g. napkins, flatware)
+          Include EACH count
         </label>
       </div>
 
