@@ -85,8 +85,23 @@ export function ProductCoreFields({
 }) {
   const [productType, setProductType] = useState(defaultProductType);
   const [categoryId, setCategoryId] = useState(defaultCategoryId ?? "");
+  const [middleUnitLabel, setMiddleUnitLabel] = useState(defaultMiddleUnitLabel ?? "");
+  const [eachCountable, setEachCountable] = useState(defaultEachCountable ?? true);
+  const [unitOfMeasure, setUnitOfMeasure] = useState(defaultUnitOfMeasure ?? "each");
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
   const pourFieldsActive = productType === POUR_FIELDS_ACTIVE_TYPE;
+
+  // Unit of measure is just "which of this product's own counting units is
+  // primary" -- offer only the ones that actually apply: Each (unless
+  // turned off below), Case (always), and the product's own middle unit
+  // (Sleeve, Pack, ...) once it has a name. If a prior selection no longer
+  // applies (e.g. Each got unchecked), fall back to the first option that does.
+  const unitOptions = [
+    ...(eachCountable ? [{ value: "each", label: "Each" }] : []),
+    { value: "case", label: "Case" },
+    ...(middleUnitLabel.trim() ? [{ value: middleUnitLabel.trim(), label: middleUnitLabel.trim() }] : []),
+  ];
+  const safeUnitOfMeasure = unitOptions.some((o) => o.value === unitOfMeasure) ? unitOfMeasure : unitOptions[0]?.value ?? "case";
 
   return (
     <>
@@ -156,9 +171,17 @@ export function ProductCoreFields({
         </label>
         <label className="text-sm text-gray-600">
           Unit of measure
-          <select name="unit_of_measure" defaultValue={defaultUnitOfMeasure ?? "each"} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="each">Each</option>
-            <option value="case">Case</option>
+          <select
+            name="unit_of_measure"
+            value={safeUnitOfMeasure}
+            onChange={(e) => setUnitOfMeasure(e.target.value)}
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            {unitOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -174,7 +197,8 @@ export function ProductCoreFields({
             Middle unit name
             <input
               name="middle_unit_label"
-              defaultValue={defaultMiddleUnitLabel ?? ""}
+              value={middleUnitLabel}
+              onChange={(e) => setMiddleUnitLabel(e.target.value)}
               placeholder="e.g. Sleeve, Pack"
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
@@ -193,7 +217,13 @@ export function ProductCoreFields({
           </label>
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-          <input type="checkbox" name="each_countable" defaultChecked={defaultEachCountable ?? true} className="h-4 w-4" />
+          <input
+            type="checkbox"
+            name="each_countable"
+            checked={eachCountable}
+            onChange={(e) => setEachCountable(e.target.checked)}
+            className="h-4 w-4"
+          />
           Counted in Each (uncheck for products only counted by Case/middle unit — e.g. napkins, flatware)
         </label>
       </div>
