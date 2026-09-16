@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { PRODUCT_TYPE_OPTIONS, isProductTypeValue } from "@/lib/productType";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { CaseSizeLabel } from "@/components/CaseSizeLabel";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminProductsPage({
@@ -140,7 +141,9 @@ export default async function AdminProductsPage({
                     {p.description}
                   </Link>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/CS` : "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">
+                  <CaseSizeLabel product={p} />
+                </td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   <Link
                     href={`/admin/products/new?from=${p.id}`}

@@ -166,8 +166,21 @@ export function ProductCoreFields({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <label className="text-sm text-gray-600">
-          Case size (units per case)
-          <input name="case_size" type="number" step="1" min={0} defaultValue={defaultCaseSize ?? ""} placeholder="e.g. 24" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          {middleUnitLabel.trim() ? `Case size (${middleUnitLabel.trim()}s per case)` : "Case size (each per case)"}
+          <input
+            name="case_size"
+            type="number"
+            step="1"
+            min={0}
+            defaultValue={defaultCaseSize ?? ""}
+            placeholder={middleUnitLabel.trim() ? "e.g. 20" : "e.g. 24"}
+            title={
+              middleUnitLabel.trim()
+                ? `With a middle unit set, Case size means ${middleUnitLabel.trim().toLowerCase()}s per case, not each per case.`
+                : undefined
+            }
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
         </label>
         <label className="text-sm text-gray-600">
           Unit of measure

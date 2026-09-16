@@ -41,7 +41,9 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         napkins), add <code>middle_unit_label</code> (e.g. <code>Sleeve</code>), <code>middle_unit_size</code>{" "}
         (each per middle unit), and <code>each_countable</code> (<code>yes</code>/<code>no</code> —{" "}
         <code>no</code> for products only ever counted by Case/middle unit, like napkins or
-        flatware). All three are also left alone on an update if omitted.
+        flatware). All three are also left alone on an update if omitted. Once{" "}
+        <code>middle_unit_label</code> is set, <code>case_size</code> means middle units per case
+        (e.g. 20 sleeves/case), not each per case.
       </p>
       <p className="text-xs text-gray-500">
         <code>pos_square</code> (<code>yes</code>/<code>no</code> — also left alone on an update if

@@ -1,9 +1,13 @@
+import { caseSizeInEach } from "./onHand";
+
 // Cost is always entered per CASE; per-EACH cost is always derived from
-// the product's case_size — no branching on unit_of_measure.
-export function unitCosts(product: { case_cost: number | null; case_size: number | null }) {
+// the product's case_size — no branching on unit_of_measure. Once a
+// product has a middle unit, case_size is "middle units per case", so
+// caseSizeInEach multiplies through to the real each-per-case first.
+export function unitCosts(product: { case_cost: number | null; case_size: number | null; middle_unit_size?: number | null }) {
   const perCase = Number(product.case_cost ?? 0);
-  const caseSize = product.case_size ? Number(product.case_size) : null;
-  return { perEach: caseSize ? perCase / caseSize : 0, perCase };
+  const eachPerCase = caseSizeInEach(product.case_size, product.middle_unit_size);
+  return { perEach: eachPerCase ? perCase / eachPerCase : 0, perCase };
 }
 
 export function lineValue(
@@ -46,7 +50,7 @@ type PourProduct = {
 // - non_chargeable_mixer / disposable: cocktail ingredients and supplies,
 //   never billed on their own -- no retail value
 export function retailUnitPrices(product: PourProduct) {
-  const caseSize = product.case_size ? Number(product.case_size) : null;
+  const eachPerCase = caseSizeInEach(product.case_size, product.middle_unit_size);
 
   if (product.product_type === "non_chargeable_mixer" || product.product_type === "disposable") {
     return { perEach: 0, perCase: 0 };
@@ -56,11 +60,11 @@ export function retailUnitPrices(product: PourProduct) {
     const bottleSizeOz = product.bottle_size_ml / ML_PER_OZ;
     const poursPerBottle = Math.floor((bottleSizeOz / product.pour_size_oz) * (1 - POUR_WASTE_PCT));
     const perEach = poursPerBottle * product.pour_price;
-    return { perEach, perCase: caseSize ? perEach * caseSize : 0 };
+    return { perEach, perCase: eachPerCase ? perEach * eachPerCase : 0 };
   }
 
   const perEach = Number(product.sale_price ?? 0);
-  return { perEach, perCase: caseSize ? perEach * caseSize : 0 };
+  return { perEach, perCase: eachPerCase ? perEach * eachPerCase : 0 };
 }
 
 export function lineRetailValue(

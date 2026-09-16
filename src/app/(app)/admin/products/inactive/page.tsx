@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { CaseSizeLabel } from "@/components/CaseSizeLabel";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { productTypeLabel } from "@/lib/productType";
 import { toggleProductActive } from "../actions";
@@ -64,7 +65,9 @@ export default async function InactiveProductsPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{productTypeLabel(p.product_type)}</td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/CS` : "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">
+                  <CaseSizeLabel product={p} />
+                </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.supplier?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-right">
                   <form action={toggleProductActive}>

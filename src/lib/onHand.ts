@@ -1,11 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Total quantity in "each" units, converting cases via the product's case
-// size (defaulting to 1 if the product has no case size on file) and,
-// where a product has one, a middle unit (a Sleeve, a Pack) via its own
-// size in each — the single comparable number used to check on-hand
-// against a threshold. middle/middleUnitSize are optional so every
-// existing call site (products with no middle tier) is unaffected.
+// case_size means "each per case" for a normal Case/Each product -- but
+// once a product has a middle unit (a Sleeve, a Pack), what's entered in
+// Case size is "middle units per case" instead (e.g. 20 packs/case of 50
+// each = 1,000 each/case), so it has to multiply through the middle unit
+// size to get the real each-per-case. No middle unit -> case_size already
+// IS each-per-case, unchanged from before. Returns null (not a guessed
+// fallback) when case_size itself isn't set -- callers decide what an
+// unknown case size should default to.
+export function caseSizeInEach(caseSize: number | null | undefined, middleUnitSize: number | null | undefined): number | null {
+  if (caseSize == null) return null;
+  return middleUnitSize ? caseSize * middleUnitSize : caseSize;
+}
+
+// Total quantity in "each" units — the single comparable number used to
+// check on-hand against a threshold. middle/middleUnitSize are optional so
+// every existing call site (products with no middle tier) is unaffected.
+// An unset case_size defaults to 1 each/case here so a "case" quantity
+// still counts as something rather than vanishing to zero.
 export function eachEquivalent(
   each: number | null | undefined,
   cases: number | null | undefined,
@@ -13,7 +25,7 @@ export function eachEquivalent(
   middle?: number | null,
   middleUnitSize?: number | null
 ): number {
-  return (each ?? 0) + (cases ?? 0) * (caseSize ?? 1) + (middle ?? 0) * (middleUnitSize ?? 0);
+  return (each ?? 0) + (middle ?? 0) * (middleUnitSize ?? 0) + (cases ?? 0) * (caseSizeInEach(caseSize, middleUnitSize) ?? 1);
 }
 
 export type CountLine = {
