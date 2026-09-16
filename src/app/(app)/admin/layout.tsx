@@ -42,17 +42,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireProfile(["admin"]);
 
   return (
-    <div className="flex gap-8">
-      <nav className="w-48 shrink-0 space-y-4 text-sm">
+    <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
+      <nav className="space-y-4 text-sm sm:w-48 sm:shrink-0">
         {SECTION_GROUPS.map((group) => (
           <div key={group.label}>
             <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{group.label}</p>
-            <div className="space-y-1">
+            <div className="flex flex-wrap gap-1 sm:block sm:space-y-1">
               {group.items.map((s) => (
                 <Link
                   key={s.href}
                   href={s.href}
-                  className="block rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100"
+                  className="rounded-md px-3 py-2 text-gray-600 hover:bg-gray-100 sm:block"
                 >
                   {s.label}
                 </Link>
@@ -61,7 +61,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         ))}
       </nav>
-      <div className="flex-1">{children}</div>
+      <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
 }
