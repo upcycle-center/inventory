@@ -203,27 +203,15 @@ export default async function DashboardPage() {
   }
   const unconfirmedShifts = wfmShifts - confirmedShifts;
 
-  // ---- Avg staff variance: confirmed_staff_count vs recommended, across
-  // confirmed stand locations that have actually reported a headcount ----
-  const eventById = new Map(activeEvents.map((e) => [e.id, e]));
-  const standLocationIdSet = new Set(standLocationIds);
-  let staffVarianceSum = 0;
-  let staffVarianceCount = 0;
-  for (const r of eventLocationRows) {
-    if (!r.confirmed || r.confirmed_staff_count == null || !standLocationIdSet.has(r.location_id)) continue;
-    const ev = eventById.get(r.event_id);
-    if (!ev) continue;
-    const recommended = totalRecommendedStaff(
-      [r.location_id],
-      new Map([[r.location_id, true]]),
-      rolesByLocationId,
-      staffTiers,
-      ev.est_tickets
-    );
-    staffVarianceSum += r.confirmed_staff_count - recommended;
-    staffVarianceCount += 1;
-  }
-  const avgStaffVariance = staffVarianceCount ? staffVarianceSum / staffVarianceCount : 0;
+  // ---- Call-Outs / No-Shows / Adjustments logged so far on those same
+  // upcoming/open events ----
+  const { data: callOutRowsRaw } = activeEventIds.length
+    ? await supabase.from("shift_call_outs").select("call_out_type").in("event_id", activeEventIds)
+    : { data: [] as { call_out_type: string }[] };
+  const callOutRows = (callOutRowsRaw as { call_out_type: string }[] | null) ?? [];
+  const callOutCount = callOutRows.filter((r) => r.call_out_type === "call_out").length;
+  const noShowCount = callOutRows.filter((r) => r.call_out_type === "no_show").length;
+  const otherCount = callOutRows.filter((r) => r.call_out_type === "other").length;
 
   // ---- Count: PDF Printer Ready / By Location / %Completion — OPEN events only ----
   const { data: readyRowsRaw } = openEventIds.length
@@ -391,9 +379,9 @@ export default async function DashboardPage() {
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <WfmShiftsCard shifts={wfmShifts} confirmed={confirmedShifts} pending={unconfirmedShifts} />
           <ConfirmedSplitBar confirmed={confirmedShifts} total={wfmShifts} />
-          <StatCard
-            label="Avg staff variance (confirmed vs recommended)"
-            value={avgStaffVariance > 0 ? `+${avgStaffVariance.toFixed(1)}` : avgStaffVariance.toFixed(1)}
+          <ThreeStatCard
+            values={[callOutCount, noShowCount, otherCount]}
+            labels={["Call-Outs", "No-Shows", "Other"]}
           />
         </div>
         <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
@@ -635,6 +623,26 @@ function WfmShiftsCard({ shifts, confirmed, pending }: { shifts: number; confirm
           <p className="text-2xl font-bold">{pending}</p>
           <p className="text-xs text-gray-500">pending</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Same "N : N : N" layout as WfmShiftsCard, generalized to any set of
+// labeled counts -- used for the Call-Outs/No-Shows/Other breakdown.
+function ThreeStatCard({ values, labels }: { values: [number, number, number]; labels: [string, string, string] }) {
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-5">
+      <div className="flex items-start justify-center gap-3">
+        {values.map((value, i) => (
+          <div key={labels[i]} className="flex items-center gap-3">
+            {i > 0 && <p className="text-2xl font-bold text-gray-300">:</p>}
+            <div className="text-center">
+              <p className="text-2xl font-bold">{value}</p>
+              <p className="text-xs text-gray-500">{labels[i]}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
