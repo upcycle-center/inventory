@@ -25,6 +25,7 @@ export function NewProductFields({
   defaultMiddleUnitLabel,
   defaultMiddleUnitSize,
   defaultEachCountable,
+  defaultPosSquare,
 }: {
   suppliers: Supplier[];
   categories: ProductCategory[];
@@ -43,6 +44,7 @@ export function NewProductFields({
   defaultMiddleUnitLabel?: string | null;
   defaultMiddleUnitSize?: number | string | null;
   defaultEachCountable?: boolean;
+  defaultPosSquare?: boolean;
 }) {
   const [sku, setSku] = useState("");
   const [skuTouched, setSkuTouched] = useState(false);
@@ -118,6 +120,7 @@ export function NewProductFields({
         defaultMiddleUnitLabel={defaultMiddleUnitLabel}
         defaultMiddleUnitSize={defaultMiddleUnitSize}
         defaultEachCountable={defaultEachCountable}
+        defaultPosSquare={defaultPosSquare}
         onCategoryChange={(nextGlCode) => {
           setGlCode(nextGlCode);
           maybeAutoFillSku(nextGlCode, upc);

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { PRODUCT_TYPE_OPTIONS, type ProductTypeValue } from "@/lib/productType";
 import { SUB_UNIT_LABEL } from "@/lib/subUnit";
 import { caseSizeInEach } from "@/lib/onHand";
+import { ProductPosFields } from "@/components/ProductPosFields";
 import type { ProductCategory, Supplier } from "@/lib/supabase/types";
 
 // Retail Value isn't factored in at all for these types (Non-Chargeable --
@@ -72,6 +73,7 @@ export function ProductCoreFields({
   defaultMiddleUnitLabel,
   defaultMiddleUnitSize,
   defaultEachCountable,
+  defaultPosSquare,
   onCategoryChange,
 }: {
   suppliers: Supplier[];
@@ -90,6 +92,7 @@ export function ProductCoreFields({
   defaultMiddleUnitLabel?: string | null;
   defaultMiddleUnitSize?: number | string | null;
   defaultEachCountable?: boolean;
+  defaultPosSquare?: boolean;
   onCategoryChange?: (glCode: string | null) => void;
 }) {
   const [productType, setProductType] = useState(defaultProductType);
@@ -308,6 +311,15 @@ export function ProductCoreFields({
             <DisableableNumberField label="Price per pour" name="pour_price" defaultValue={defaultPourPrice} />
           </div>
         </div>
+      )}
+
+      {productType === "chargeable" ? (
+        <ProductPosFields defaultPosSquare={defaultPosSquare ?? false} />
+      ) : (
+        // Not sold as a single unit, so the Square data-map checkbox isn't
+        // shown -- a hidden input preserves whatever it was already set to
+        // instead of silently clearing it on save.
+        defaultPosSquare && <input type="hidden" name="pos_square" value="on" />
       )}
     </>
   );

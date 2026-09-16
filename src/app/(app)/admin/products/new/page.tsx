@@ -4,7 +4,6 @@ import type { Location, ProductCategory, StorageArea, Supplier } from "@/lib/sup
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { isProductTypeValue } from "@/lib/productType";
 import { LocationLabel } from "@/components/LocationLabel";
-import { ProductPosFields } from "@/components/ProductPosFields";
 import { createProduct } from "../actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ActionForm } from "@/components/ActionForm";
@@ -81,9 +80,8 @@ export default async function NewProductPage({
           defaultMiddleUnitLabel={from?.middle_unit_label}
           defaultMiddleUnitSize={from?.middle_unit_size}
           defaultEachCountable={from?.each_countable ?? true}
+          defaultPosSquare={from?.pos_square ?? false}
         />
-
-        <ProductPosFields defaultPosSquare={from?.pos_square ?? false} />
 
         <label className="text-sm text-gray-600">
           Photo (for the count screen&apos;s photo grid)
