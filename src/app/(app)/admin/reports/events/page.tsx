@@ -51,39 +51,37 @@ export default async function EventsReportPage({ searchParams }: { searchParams:
       )}
 
       <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <table className="w-full whitespace-nowrap text-left text-sm">
+        <table className="w-full text-left text-sm">
           <thead className="text-gray-500">
             <tr>
-              <th className="px-4 py-2">Event Date</th>
+              <th className="px-4 py-2 whitespace-nowrap">Event Date</th>
               <th className="px-4 py-2">Event Name</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">TOT Tickets</th>
-              <th className="px-4 py-2">GRN Room</th>
-              <th className="px-4 py-2">VIP Lounge</th>
-              <th className="px-4 py-2">#Stands</th>
-              <th className="px-4 py-2">WFM Shifts</th>
+              <th className="px-4 py-2 whitespace-nowrap">TOT Tickets</th>
+              <th className="px-4 py-2 whitespace-nowrap">GRN Room</th>
+              <th className="px-4 py-2 whitespace-nowrap">VIP Lounge</th>
+              <th className="px-4 py-2 whitespace-nowrap">#Stands</th>
+              <th className="px-4 py-2 whitespace-nowrap">WFM Shifts</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-gray-100">
-                <td className="px-4 py-2 text-gray-500">{r.eventDate}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{r.eventDate}</td>
+                <td className="px-4 py-2 whitespace-nowrap">
                   <Link href={`/admin/events/${r.id}`} className="text-brand hover:underline">
                     {r.name}
                   </Link>
                 </td>
-                <td className="px-4 py-2 uppercase text-gray-500">{r.status}</td>
-                <td className="px-4 py-2 text-gray-500">{r.totTicketsPosted ? r.totTickets : "—"}</td>
-                <td className="px-4 py-2 text-gray-500">{r.grnRoomAttendance ?? "—"}</td>
-                <td className="px-4 py-2 text-gray-500">{r.vipLoungeAttendance ?? "—"}</td>
-                <td className="px-4 py-2 text-gray-500">{r.standsOpen}</td>
-                <td className="px-4 py-2 text-gray-500">{r.wfmShifts}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{r.totTicketsPosted ? r.totTickets : "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{r.grnRoomAttendance ?? "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{r.vipLoungeAttendance ?? "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{r.standsOpen}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{r.wfmShifts}</td>
               </tr>
             ))}
             {!rows.length && !error && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                   No events {statusFilter === "all" ? "on record yet" : `with status "${statusFilter}"`}.
                 </td>
               </tr>
