@@ -20,8 +20,8 @@ const REPORTS = [
   },
   {
     href: "/admin/month-end-reports/call-outs",
-    label: "moEND Workforce Call-Outs",
-    description: "Confirmed staffing vs. recommended, across the month's events. Drill down by Location.",
+    label: "moEND Workforce Attendance",
+    description: "Call-Outs and No-Shows logged by role on each event's page, across the month.",
   },
   {
     href: "/admin/month-end-reports/new-items",

@@ -379,10 +379,13 @@ export default async function DashboardPage() {
         <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <WfmShiftsCard shifts={wfmShifts} confirmed={confirmedShifts} pending={unconfirmedShifts} />
           <ConfirmedSplitBar confirmed={confirmedShifts} total={wfmShifts} />
-          <ThreeStatCard
-            values={[callOutCount, noShowCount, otherCount]}
-            labels={["Call-Outs", "No-Shows", "Other"]}
-          />
+          <Link href="/admin/month-end-reports/call-outs" className="group block">
+            <ThreeStatCard
+              values={[callOutCount, noShowCount, otherCount]}
+              labels={["Call-Outs", "No-Shows", "Other"]}
+              className="group-hover:border-brand"
+            />
+          </Link>
         </div>
         <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
           <table className="w-full whitespace-nowrap text-left text-sm">
@@ -630,9 +633,17 @@ function WfmShiftsCard({ shifts, confirmed, pending }: { shifts: number; confirm
 
 // Same "N : N : N" layout as WfmShiftsCard, generalized to any set of
 // labeled counts -- used for the Call-Outs/No-Shows/Other breakdown.
-function ThreeStatCard({ values, labels }: { values: [number, number, number]; labels: [string, string, string] }) {
+function ThreeStatCard({
+  values,
+  labels,
+  className = "",
+}: {
+  values: [number, number, number];
+  labels: [string, string, string];
+  className?: string;
+}) {
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-5">
+    <div className={`rounded-md border border-gray-200 bg-white p-5 ${className}`}>
       <div className="flex items-start justify-center gap-3">
         {values.map((value, i) => (
           <div key={labels[i]} className="flex items-center gap-3">

@@ -1,24 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { LocationStaffRole, LocationStaffTier } from "./supabase/types";
-import { totalRecommendedStaff } from "./staffing";
-
-export interface CallOutEventRow {
-  eventId: string;
-  eventName: string;
-  eventDate: string;
-  recommended: number;
-  confirmed: number;
-  variance: number;
-}
-
-export interface CallOutLocationGroup {
-  id: string;
-  name: string;
-  yellow_dog_code: string | null;
-  events: CallOutEventRow[];
-  avgVariance: number;
-  shortStaffedCount: number;
-}
 
 export interface RoleCallOutBreakdown {
   roleName: string;
@@ -27,142 +7,128 @@ export interface RoleCallOutBreakdown {
   total: number;
 }
 
-// There's no real attendance/call-out record in the schema -- only an
-// admin-entered confirmed_staff_count per (event, location) vs. the
-// location_staff_roles/tiers-derived recommendation, the same "Avg staff
-// variance" figure the Dashboard already shows. This proxies "call-outs"
-// as events where confirmed staffing came in under recommended. There's no
-// per-role breakdown of confirmed_staff_count, so the drill-down here is
-// Location -> event, not Location -> Stand Role.
-export async function buildMonthEndCallOutsReport(
-  supabase: SupabaseClient,
-  year: number,
-  month: number
-): Promise<{
-  locations: CallOutLocationGroup[];
-  avgVariance: number;
-  shortStaffedCount: number;
-  roleBreakdown: RoleCallOutBreakdown[];
-}> {
+export interface LocationCallOutBreakdown {
+  locationId: string;
+  name: string;
+  yellow_dog_code: string | null;
+  callOuts: number;
+  noShows: number;
+  total: number;
+}
+
+function monthRange(year: number, month: number) {
   const monthStartStr = `${year}-${String(month).padStart(2, "0")}-01`;
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextMonthYear = month === 12 ? year + 1 : year;
   const monthEndStr = `${nextMonthYear}-${String(nextMonth).padStart(2, "0")}-01`;
+  return { monthStartStr, monthEndStr };
+}
 
+async function eventIdsForMonth(supabase: SupabaseClient, year: number, month: number): Promise<string[]> {
+  const { monthStartStr, monthEndStr } = monthRange(year, month);
+  const { data } = await supabase.from("events").select("id").gte("event_date", monthStartStr).lt("event_date", monthEndStr);
+  return ((data as { id: string }[] | null) ?? []).map((e) => e.id);
+}
+
+// Real per-role and per-location Call-Out/No-Show trend, logged directly
+// on each event's page (not inferred from confirmed headcount vs.
+// recommendation -- that proxy is gone now that there's an actual logged
+// record). Plain Adjustments are excluded from both breakdowns -- this is
+// specifically about real absences.
+export async function buildMonthEndCallOutsReport(
+  supabase: SupabaseClient,
+  year: number,
+  month: number
+): Promise<{ roleBreakdown: RoleCallOutBreakdown[]; locationBreakdown: LocationCallOutBreakdown[] }> {
   const { data: standLocationsRaw } = await supabase
     .from("locations")
     .select("id, name, yellow_dog_code")
     .eq("active", true)
-    .eq("type", "stand")
-    .order("name");
+    .eq("type", "stand");
   const standLocations = (standLocationsRaw as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? [];
   const standLocationIds = standLocations.map((l) => l.id);
-  if (!standLocationIds.length) return { locations: [], avgVariance: 0, shortStaffedCount: 0, roleBreakdown: [] };
+  if (!standLocationIds.length) return { roleBreakdown: [], locationBreakdown: [] };
 
-  const [{ data: eventsRaw }, { data: staffRolesRaw }, { data: staffTiersRaw }] = await Promise.all([
-    supabase
-      .from("events")
-      .select("id, name, event_date, est_tickets")
-      .gte("event_date", monthStartStr)
-      .lt("event_date", monthEndStr)
-      .order("event_date"),
-    supabase.from("location_staff_roles").select("*").in("location_id", standLocationIds),
-    supabase.from("location_staff_tiers").select("*").in("location_id", standLocationIds),
-  ]);
+  const eventIds = await eventIdsForMonth(supabase, year, month);
+  if (!eventIds.length) return { roleBreakdown: [], locationBreakdown: [] };
 
-  const events = (eventsRaw as { id: string; name: string; event_date: string; est_tickets: number | null }[] | null) ?? [];
-  const eventIds = events.map((e) => e.id);
+  const { data: callOutsRaw } = await supabase
+    .from("shift_call_outs")
+    .select("location_id, role_name, call_out_type")
+    .in("event_id", eventIds)
+    .in("location_id", standLocationIds)
+    .in("call_out_type", ["call_out", "no_show"]);
+  const callOuts = (callOutsRaw as { location_id: string; role_name: string; call_out_type: string }[] | null) ?? [];
 
-  const rolesByLocationId = new Map<string, LocationStaffRole[]>();
-  for (const role of (staffRolesRaw as LocationStaffRole[] | null) ?? []) {
-    const list = rolesByLocationId.get(role.location_id) ?? [];
-    list.push(role);
-    rolesByLocationId.set(role.location_id, list);
-  }
-  const staffTiers = (staffTiersRaw as LocationStaffTier[] | null) ?? [];
-
-  const [{ data: eventLocationsRaw }, { data: callOutsRaw }] = await Promise.all([
-    eventIds.length
-      ? supabase
-          .from("event_locations")
-          .select("event_id, location_id, confirmed_staff_count")
-          .in("event_id", eventIds)
-          .in("location_id", standLocationIds)
-          .eq("confirmed", true)
-          .not("confirmed_staff_count", "is", null)
-      : Promise.resolve({ data: [] as any[] }),
-    // Plain Adjustments are excluded here -- this trend is specifically
-    // about real absences, not every staffing correction.
-    eventIds.length
-      ? supabase
-          .from("shift_call_outs")
-          .select("role_name, call_out_type")
-          .in("event_id", eventIds)
-          .in("location_id", standLocationIds)
-          .in("call_out_type", ["call_out", "no_show"])
-      : Promise.resolve({ data: [] as any[] }),
-  ]);
-
-  const eventById = new Map(events.map((e) => [e.id, e]));
-  const rowsByLocationId = new Map<string, CallOutEventRow[]>();
-  let varianceSum = 0;
-  let varianceCount = 0;
-  let shortStaffedCount = 0;
-
-  for (const r of (eventLocationsRaw as { event_id: string; location_id: string; confirmed_staff_count: number | null }[] | null) ?? []) {
-    const ev = eventById.get(r.event_id);
-    if (!ev || r.confirmed_staff_count == null) continue;
-    const recommended = totalRecommendedStaff(
-      [r.location_id],
-      new Map([[r.location_id, true]]),
-      rolesByLocationId,
-      staffTiers,
-      ev.est_tickets
-    );
-    const variance = r.confirmed_staff_count - recommended;
-    varianceSum += variance;
-    varianceCount += 1;
-    if (variance < 0) shortStaffedCount += 1;
-    const list = rowsByLocationId.get(r.location_id) ?? [];
-    list.push({ eventId: ev.id, eventName: ev.name, eventDate: ev.event_date, recommended, confirmed: r.confirmed_staff_count, variance });
-    rowsByLocationId.set(r.location_id, list);
-  }
-
-  const locationGroups: CallOutLocationGroup[] = [];
-  for (const loc of standLocations) {
-    const events = rowsByLocationId.get(loc.id);
-    if (!events || !events.length) continue;
-    events.sort((a, b) => a.eventDate.localeCompare(b.eventDate));
-    const sum = events.reduce((s, e) => s + e.variance, 0);
-    const shortCount = events.filter((e) => e.variance < 0).length;
-    locationGroups.push({
-      id: loc.id,
-      name: loc.name,
-      yellow_dog_code: loc.yellow_dog_code,
-      events,
-      avgVariance: sum / events.length,
-      shortStaffedCount: shortCount,
-    });
-  }
-
-  // Real per-role trend, straight from shift_call_outs -- unlike the
-  // variance-based numbers above (a proxy inferred from headcount alone),
-  // this is an actual logged record of who was short and which role.
   const roleBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
-  for (const c of (callOutsRaw as { role_name: string; call_out_type: string }[] | null) ?? []) {
-    const entry = roleBreakdownMap.get(c.role_name) ?? { callOuts: 0, noShows: 0 };
-    if (c.call_out_type === "no_show") entry.noShows += 1;
-    else entry.callOuts += 1;
-    roleBreakdownMap.set(c.role_name, entry);
+  const locationBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
+  for (const c of callOuts) {
+    const roleEntry = roleBreakdownMap.get(c.role_name) ?? { callOuts: 0, noShows: 0 };
+    const locationEntry = locationBreakdownMap.get(c.location_id) ?? { callOuts: 0, noShows: 0 };
+    if (c.call_out_type === "no_show") {
+      roleEntry.noShows += 1;
+      locationEntry.noShows += 1;
+    } else {
+      roleEntry.callOuts += 1;
+      locationEntry.callOuts += 1;
+    }
+    roleBreakdownMap.set(c.role_name, roleEntry);
+    locationBreakdownMap.set(c.location_id, locationEntry);
   }
+
   const roleBreakdown: RoleCallOutBreakdown[] = Array.from(roleBreakdownMap.entries())
     .map(([roleName, { callOuts, noShows }]) => ({ roleName, callOuts, noShows, total: callOuts + noShows }))
     .sort((a, b) => b.total - a.total);
 
-  return {
-    locations: locationGroups,
-    avgVariance: varianceCount ? varianceSum / varianceCount : 0,
-    shortStaffedCount,
-    roleBreakdown,
-  };
+  const locationBreakdown: LocationCallOutBreakdown[] = standLocations
+    .map((loc) => {
+      const { callOuts, noShows } = locationBreakdownMap.get(loc.id) ?? { callOuts: 0, noShows: 0 };
+      return { locationId: loc.id, name: loc.name, yellow_dog_code: loc.yellow_dog_code, callOuts, noShows, total: callOuts + noShows };
+    })
+    .filter((l) => l.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  return { roleBreakdown, locationBreakdown };
+}
+
+export interface CallOutLogEntry {
+  id: string;
+  roleName: string;
+  callOutType: "call_out" | "no_show" | "other";
+  note: string | null;
+  createdAt: string;
+  eventName: string;
+  eventDate: string;
+  reportedByName: string | null;
+}
+
+// Every logged entry (Call-Out, No-Show, and Adjustment alike) for one
+// location during the given month -- the drill-down behind a location row
+// in the summary above.
+export async function getLocationCallOutEntries(
+  supabase: SupabaseClient,
+  year: number,
+  month: number,
+  locationId: string
+): Promise<CallOutLogEntry[]> {
+  const eventIds = await eventIdsForMonth(supabase, year, month);
+  if (!eventIds.length) return [];
+
+  const { data } = await supabase
+    .from("shift_call_outs")
+    .select("id, role_name, call_out_type, note, created_at, event:events(name, event_date), reported_by_profile:profiles(name)")
+    .eq("location_id", locationId)
+    .in("event_id", eventIds)
+    .order("created_at", { ascending: false });
+
+  return ((data as any[] | null) ?? []).map((r) => ({
+    id: r.id,
+    roleName: r.role_name,
+    callOutType: r.call_out_type,
+    note: r.note,
+    createdAt: r.created_at,
+    eventName: r.event?.name ?? "—",
+    eventDate: r.event?.event_date ?? "",
+    reportedByName: r.reported_by_profile?.name ?? null,
+  }));
 }
