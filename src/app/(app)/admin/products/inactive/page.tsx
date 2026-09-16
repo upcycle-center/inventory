@@ -64,7 +64,7 @@ export default async function InactiveProductsPage() {
                   </Link>
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{productTypeLabel(p.product_type)}</td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/case` : "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/CS` : "—"}</td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.supplier?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-right">
                   <form action={toggleProductActive}>

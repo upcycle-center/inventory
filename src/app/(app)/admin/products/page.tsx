@@ -140,7 +140,7 @@ export default async function AdminProductsPage({
                     {p.description}
                   </Link>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/case` : "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/CS` : "—"}</td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   <Link href={`/admin/products/new?from=${p.id}`} className="text-xs font-medium text-amber-600 hover:underline">
                     Duplicate
