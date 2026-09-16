@@ -147,7 +147,7 @@ function CountSheetPage({
           )}
           <Text style={styles.attendanceLine}>ATTENDANCE: {totTickets != null ? totTickets : "____________"}</Text>
           <Text style={styles.attendanceLine}>
-            GRN ROOM: {grnRoomAttendance != null ? grnRoomAttendance : "______"}
+            GREEN ROOM: {grnRoomAttendance != null ? grnRoomAttendance : "______"}
             {"   ·   "}VIP LOUNGE: {vipLoungeAttendance != null ? vipLoungeAttendance : "______"}
           </Text>
         </View>
