@@ -15,6 +15,7 @@ import {
 import { LocationLeadSelect } from "./LocationLeadSelect";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { effectiveCount, totalRecommendedStaff as totalRecommendedStaffAcross } from "@/lib/staffing";
+import { easternDateTimeString } from "@/lib/easternTime";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -118,10 +119,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
         {event.attendance_updated_at && (
           <p className="mb-3 text-xs text-gray-400">
             Last updated{(event as any).attendance_updated_by_profile?.name ? ` by ${(event as any).attendance_updated_by_profile.name}` : ""} on{" "}
-            {new Date(event.attendance_updated_at).toLocaleString(undefined, {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
+            {easternDateTimeString(new Date(event.attendance_updated_at))}
           </p>
         )}
         <ActionForm action={updateEventAttendance} savedLabel="Attendance updated" className="flex flex-col gap-4">
