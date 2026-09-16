@@ -10,7 +10,9 @@ export interface TransferLineInput {
   product_id: string;
   qty_cases: number;
   qty_each: number;
+  qty_middle_unit: number;
   case_size: number | null;
+  middle_unit_size: number | null;
 }
 
 export async function saveTransferDraft(
@@ -57,7 +59,7 @@ export async function submitTransfer(
   if (fromLocationId === toLocationId) {
     return { error: "From and To locations must be different." };
   }
-  const nonZero = lines.filter((l) => l.qty_cases > 0 || l.qty_each > 0);
+  const nonZero = lines.filter((l) => l.qty_cases > 0 || l.qty_each > 0 || l.qty_middle_unit > 0);
   if (!nonZero.length) {
     return { error: "Set a quantity for at least one product." };
   }
@@ -67,9 +69,10 @@ export async function submitTransfer(
     from_location_id: fromLocationId,
     to_location_id: toLocationId,
     type: "transfer" as const,
-    quantity: eachEquivalent(l.qty_each, l.qty_cases, l.case_size),
+    quantity: eachEquivalent(l.qty_each, l.qty_cases, l.case_size, l.qty_middle_unit, l.middle_unit_size),
     qty_cases: l.qty_cases,
     qty_each: l.qty_each,
+    qty_middle_unit: l.qty_middle_unit,
     user_id: profile.id,
   }));
 

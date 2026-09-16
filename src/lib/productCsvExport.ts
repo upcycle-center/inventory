@@ -55,6 +55,9 @@ export async function buildProductExportRows(
     "bottle_size_ml",
     "pour_size_oz",
     "pour_price",
+    "middle_unit_label",
+    "middle_unit_size",
+    "each_countable",
     "pos_square",
     "location",
     "storage_area",
@@ -77,6 +80,9 @@ export async function buildProductExportRows(
       p.bottle_size_ml ?? "",
       p.pour_size_oz ?? "",
       p.pour_price ?? "",
+      p.middle_unit_label ?? "",
+      p.middle_unit_size ?? "",
+      p.each_countable ? "yes" : "no",
       p.pos_square ? "yes" : "no",
     ];
 

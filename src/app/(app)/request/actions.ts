@@ -10,7 +10,9 @@ export interface RequestLineInput {
   product_id: string;
   qty_cases: number;
   qty_each: number;
+  qty_middle_unit: number;
   case_size: number | null;
+  middle_unit_size: number | null;
 }
 
 export async function saveRequestDraft(locationId: string, lines: RequestLineInput[]): Promise<{ error: string } | void> {
@@ -48,7 +50,7 @@ export async function submitRequest(locationId: string, lines: RequestLineInput[
   if (!locationId) {
     return { error: "Select a location first." };
   }
-  const nonZero = lines.filter((l) => l.qty_cases > 0 || l.qty_each > 0);
+  const nonZero = lines.filter((l) => l.qty_cases > 0 || l.qty_each > 0 || l.qty_middle_unit > 0);
   if (!nonZero.length) {
     return { error: "Set a quantity for at least one product." };
   }
@@ -56,7 +58,7 @@ export async function submitRequest(locationId: string, lines: RequestLineInput[
   const rows = nonZero.map((l) => ({
     product_id: l.product_id,
     location_id: locationId,
-    reorder_qty: eachEquivalent(l.qty_each, l.qty_cases, l.case_size),
+    reorder_qty: eachEquivalent(l.qty_each, l.qty_cases, l.case_size, l.qty_middle_unit, l.middle_unit_size),
     requested_at: new Date().toISOString(),
     requested_by: profile.id,
   }));

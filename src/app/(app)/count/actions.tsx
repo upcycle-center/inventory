@@ -15,6 +15,7 @@ export interface CountLineInput {
   product_id: string;
   qty_each: number | null;
   qty_cases: number | null;
+  qty_middle_unit: number | null;
 }
 
 export interface WasteLineInput {
@@ -39,7 +40,7 @@ export async function submitCount(
   const profile = await requireProfile();
   const supabase = createClient();
 
-  const nonEmptyLines = lines.filter((l) => l.qty_each !== null || l.qty_cases !== null);
+  const nonEmptyLines = lines.filter((l) => l.qty_each !== null || l.qty_cases !== null || l.qty_middle_unit !== null);
   if (nonEmptyLines.length === 0) {
     return { error: "Enter at least one quantity before submitting." };
   }
@@ -80,6 +81,7 @@ export async function submitCount(
       product_id: l.product_id,
       qty_each: l.qty_each,
       qty_cases: l.qty_cases,
+      qty_middle_unit: l.qty_middle_unit,
     }))
   );
 
@@ -165,13 +167,16 @@ async function sendClosingCountConfirmation(
       supabase.from("locations").select("name, yellow_dog_code").eq("id", locationId).single(),
       supabase
         .from("products")
-        .select("id, sku, description")
+        .select("id, sku, description, middle_unit_label")
         .in("id", [...new Set([...lines, ...wasteLines, ...compLines].map((l) => l.product_id))]),
     ]);
     if (!location) return;
 
-    const productById = new Map(((products as { id: string; sku: string; description: string }[] | null) ?? []).map((p) => [p.id, p]));
-    const describe = (productId: string) => productById.get(productId) ?? { sku: productId, description: productId };
+    const productById = new Map(
+      ((products as { id: string; sku: string; description: string; middle_unit_label: string | null }[] | null) ?? []).map((p) => [p.id, p])
+    );
+    const describe = (productId: string) =>
+      productById.get(productId) ?? { sku: productId, description: productId, middle_unit_label: null };
 
     const buffer = await renderToBuffer(
       (
@@ -183,7 +188,10 @@ async function sendClosingCountConfirmation(
           eventDate={event?.event_date ?? null}
           submittedByName={submittedByName}
           submittedAt={easternDateTimeString()}
-          lines={lines.map((l) => ({ ...describe(l.product_id), qtyEach: l.qty_each, qtyCases: l.qty_cases }))}
+          lines={lines.map((l) => {
+            const d = describe(l.product_id);
+            return { ...d, qtyEach: l.qty_each, qtyCases: l.qty_cases, qtyMiddleUnit: l.qty_middle_unit, middleUnitLabel: d.middle_unit_label };
+          })}
           wasteLines={wasteLines.map((w) => ({ ...describe(w.product_id), quantity: w.quantity }))}
           compLines={compLines.map((c) => ({ ...describe(c.product_id), quantity: c.quantity }))}
           notes={notes}

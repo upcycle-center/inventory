@@ -13,6 +13,8 @@ interface ProductForMonthEnd {
   description: string;
   photo_url: string | null;
   case_size: number | null;
+  middle_unit_label: string | null;
+  each_countable: boolean;
 }
 
 export interface StorageAreaGroup {
@@ -22,7 +24,7 @@ export interface StorageAreaGroup {
   products: ProductForMonthEnd[];
 }
 
-type QtyState = Record<string, { cases: string; each: string }>;
+type QtyState = Record<string, { cases: string; each: string; middle?: string }>;
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -57,7 +59,7 @@ export function MonthEndForm({
   const [isPending, startTransition] = useTransition();
 
   const groups = productsByLocation[locationId] ?? [];
-  const filledCount = Object.values(qty).filter((v) => v.each.trim() || v.cases.trim()).length;
+  const filledCount = Object.values(qty).filter((v) => v.each.trim() || v.cases.trim() || v.middle?.trim()).length;
 
   function updateNewItem(key: string, field: keyof ReturnType<typeof blankNewItem>, value: string) {
     setNewItems((prev) => prev.map((n) => (n.key === key ? { ...n, [field]: value } : n)));
@@ -69,8 +71,9 @@ export function MonthEndForm({
         product_id: productId,
         qty_each: v.each.trim() === "" ? null : Number(v.each),
         qty_cases: v.cases.trim() === "" ? null : Number(v.cases),
+        qty_middle_unit: v.middle?.trim() ? Number(v.middle) : null,
       }))
-      .filter((l) => l.qty_each !== null || l.qty_cases !== null);
+      .filter((l) => l.qty_each !== null || l.qty_cases !== null || l.qty_middle_unit !== null);
   }
 
   function buildNewItems(): MonthEndNewItemInput[] {
@@ -182,7 +185,7 @@ export function MonthEndForm({
             {groups.map((group) => {
               const isOpen = openArea === group.id;
               const groupFilled = group.products.filter(
-                (p) => qty[p.id]?.each.trim() || qty[p.id]?.cases.trim()
+                (p) => qty[p.id]?.each.trim() || qty[p.id]?.cases.trim() || qty[p.id]?.middle?.trim()
               ).length;
 
               return (
@@ -205,8 +208,8 @@ export function MonthEndForm({
                       <ProductQtyGrid
                         products={group.products}
                         qty={qty}
-                        onSave={(productId, cases, each) => {
-                          setQty((prev) => ({ ...prev, [productId]: { cases, each } }));
+                        onSave={(productId, cases, each, middle) => {
+                          setQty((prev) => ({ ...prev, [productId]: { cases, each, middle } }));
                         }}
                       />
                     </div>

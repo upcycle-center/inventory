@@ -61,6 +61,10 @@ export function ProductCoreFields({
   defaultBottleSizeMl,
   defaultPourSizeOz,
   defaultPourPrice,
+  defaultMiddleUnitLabel,
+  defaultMiddleUnitSize,
+  defaultEachCountable,
+  onCategoryChange,
 }: {
   suppliers: Supplier[];
   categories: ProductCategory[];
@@ -74,8 +78,13 @@ export function ProductCoreFields({
   defaultBottleSizeMl: number | string | null | undefined;
   defaultPourSizeOz: number | string | null | undefined;
   defaultPourPrice: number | string | null | undefined;
+  defaultMiddleUnitLabel?: string | null;
+  defaultMiddleUnitSize?: number | string | null;
+  defaultEachCountable?: boolean;
+  onCategoryChange?: (glCode: string | null) => void;
 }) {
   const [productType, setProductType] = useState(defaultProductType);
+  const [categoryId, setCategoryId] = useState(defaultCategoryId ?? "");
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
   const pourFieldsActive = productType === POUR_FIELDS_ACTIVE_TYPE;
 
@@ -109,7 +118,15 @@ export function ProductCoreFields({
       </label>
       <label className="text-sm text-gray-600">
         Category (drives GL Code)
-        <select name="category_id" defaultValue={defaultCategoryId ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+        <select
+          name="category_id"
+          value={categoryId}
+          onChange={(e) => {
+            setCategoryId(e.target.value);
+            onCategoryChange?.(categories.find((c) => c.id === e.target.value)?.gl_code ?? null);
+          }}
+          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
           <option value="">No category</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -143,6 +160,41 @@ export function ProductCoreFields({
             <option value="each">Each</option>
             <option value="case">Case</option>
           </select>
+        </label>
+      </div>
+
+      <div>
+        <p className="mb-1 text-sm font-medium">Counting units</p>
+        <p className="mb-3 text-sm text-gray-500">
+          For an extra packaging tier between Case and Each — a Sleeve of cups, a Pack of napkins.
+          Leave the name blank for the standard Case/Each setup.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm text-gray-600">
+            Middle unit name
+            <input
+              name="middle_unit_label"
+              defaultValue={defaultMiddleUnitLabel ?? ""}
+              placeholder="e.g. Sleeve, Pack"
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            Each per middle unit
+            <input
+              name="middle_unit_size"
+              type="number"
+              step="1"
+              min={0}
+              defaultValue={defaultMiddleUnitSize ?? ""}
+              placeholder="e.g. 50"
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+          <input type="checkbox" name="each_countable" defaultChecked={defaultEachCountable ?? true} className="h-4 w-4" />
+          Counted in Each (uncheck for products only counted by Case/middle unit — e.g. napkins, flatware)
         </label>
       </div>
 

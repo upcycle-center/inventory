@@ -63,6 +63,7 @@ export function MonthEndValueReportView({
                           <th className="px-3 py-2">Product</th>
                           <th className="px-3 py-2">Qty (each)</th>
                           <th className="px-3 py-2">Qty (cases)</th>
+                          <th className="px-3 py-2">Qty (middle unit)</th>
                           <th className="px-3 py-2">Value</th>
                         </tr>
                       </thead>
@@ -73,6 +74,9 @@ export function MonthEndValueReportView({
                             <td className="px-3 py-2">{line.description}</td>
                             <td className="px-3 py-2 text-gray-500">{line.qtyEach ?? "—"}</td>
                             <td className="px-3 py-2 text-gray-500">{line.qtyCases ?? "—"}</td>
+                            <td className="px-3 py-2 text-gray-500">
+                              {line.qtyMiddleUnit ? `${line.qtyMiddleUnit} ${line.middleUnitLabel ?? ""}`.trim() : "—"}
+                            </td>
                             <td className="px-3 py-2 font-medium">{fmtCurrency(line.value)}</td>
                           </tr>
                         ))}

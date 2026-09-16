@@ -4,11 +4,11 @@ import type { Location, ProductCategory, StorageArea, Supplier } from "@/lib/sup
 import { sortStorageAreas } from "@/lib/storageAreas";
 import { isProductTypeValue } from "@/lib/productType";
 import { LocationLabel } from "@/components/LocationLabel";
-import { ProductCoreFields } from "@/components/ProductCoreFields";
 import { ProductPosFields } from "@/components/ProductPosFields";
 import { createProduct } from "../actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ActionForm } from "@/components/ActionForm";
+import { NewProductFields } from "./NewProductFields";
 
 export default async function NewProductPage({
   searchParams,
@@ -63,22 +63,11 @@ export default async function NewProductPage({
         encType="multipart/form-data"
         className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
-        <label className="text-sm text-gray-600">
-          IC (Internal Code)
-          <input name="sku" required placeholder="Enter a new, unique code" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
-        <label className="text-sm text-gray-600">
-          UPC (optional)
-          <input name="upc" placeholder="UPC (optional, if known)" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
-        <label className="text-sm text-gray-600">
-          Description
-          <input name="description" defaultValue={from?.description ?? ""} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
-        <ProductCoreFields
+        <NewProductFields
           suppliers={(suppliers as Supplier[] | null) ?? []}
           categories={(categories as ProductCategory[] | null) ?? []}
           defaultProductType={defaultProductType}
+          defaultDescription={from?.description}
           defaultSupplierId={from?.supplier_id}
           defaultCategoryId={from?.category_id}
           defaultCaseCost={from?.case_cost}
@@ -88,6 +77,9 @@ export default async function NewProductPage({
           defaultBottleSizeMl={from?.bottle_size_ml}
           defaultPourSizeOz={from?.pour_size_oz}
           defaultPourPrice={from?.pour_price}
+          defaultMiddleUnitLabel={from?.middle_unit_label}
+          defaultMiddleUnitSize={from?.middle_unit_size}
+          defaultEachCountable={from?.each_countable ?? true}
         />
 
         <ProductPosFields defaultPosSquare={from?.pos_square ?? false} />

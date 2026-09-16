@@ -23,11 +23,17 @@ import {
 } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
 
-function fmtQty(each: number | null | undefined, cases: number | null | undefined) {
-  if (each == null && cases == null) return null;
+function fmtQty(
+  each: number | null | undefined,
+  cases: number | null | undefined,
+  middle?: number | null,
+  middleUnitLabel?: string | null
+) {
+  if (each == null && cases == null && middle == null) return null;
   const parts = [];
   if (each != null) parts.push(`${each} EA`);
   if (cases != null) parts.push(`${cases} CS`);
+  if (middle != null && middleUnitLabel) parts.push(`${middle} ${middleUnitLabel}`);
   return parts.join(", ");
 }
 
@@ -41,7 +47,9 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       supabase.from("location_staff_tiers").select("*").eq("location_id", params.id).order("min_attendance"),
       supabase
         .from("location_products")
-        .select("product_id, product:products(id, sku, description, photo_url, active, case_size), storage_area:storage_areas(id, code, name)")
+        .select(
+          "product_id, product:products(id, sku, description, photo_url, active, case_size, middle_unit_label, middle_unit_size, each_countable), storage_area:storage_areas(id, code, name)"
+        )
         .eq("location_id", params.id),
       supabase.from("profiles").select("*").order("name"),
       supabase.from("inventory_thresholds").select("*").eq("location_id", params.id),
@@ -97,7 +105,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       if (line.counted_at < start || line.counted_at >= end) continue;
       if (!latest || line.counted_at > latest.counted_at) latest = line;
     }
-    return latest as { qty_each: number | null; qty_cases: number | null } | null;
+    return latest as { qty_each: number | null; qty_cases: number | null; qty_middle_unit: number | null } | null;
   }
 
   const { data: monthEndRows } = await supabase
@@ -105,7 +113,10 @@ export default async function LocationDetailPage({ params }: { params: { id: str
     .select("*")
     .eq("location_id", params.id);
 
-  const monthEndByProductMonth = new Map<string, { physical_qty_each: number | null; physical_qty_cases: number | null }>();
+  const monthEndByProductMonth = new Map<
+    string,
+    { physical_qty_each: number | null; physical_qty_cases: number | null; physical_qty_middle_unit: number | null }
+  >();
   for (const row of (monthEndRows as any[]) ?? []) {
     monthEndByProductMonth.set(`${row.product_id}:${row.year}-${row.month}`, row);
   }
@@ -426,13 +437,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                   const isLow =
                     !!threshold &&
                     threshold.reorder_threshold > 0 &&
-                    eachEquivalent(onHand?.qty_each, onHand?.qty_cases, p.case_size) <= threshold.reorder_threshold;
+                    eachEquivalent(onHand?.qty_each, onHand?.qty_cases, p.case_size, onHand?.qty_middle_unit, p.middle_unit_size) <=
+                      threshold.reorder_threshold;
 
                   const physicalPrev = monthEndByProductMonth.get(`${p.id}:${prevYear}-${prevMonth}`);
                   const calcPrev = calculatedForMonth(p.id, prevYear, prevMonth);
                   const moStart = physicalPrev
-                    ? fmtQty(physicalPrev.physical_qty_each, physicalPrev.physical_qty_cases)
-                    : fmtQty(calcPrev?.qty_each, calcPrev?.qty_cases);
+                    ? fmtQty(physicalPrev.physical_qty_each, physicalPrev.physical_qty_cases, physicalPrev.physical_qty_middle_unit, p.middle_unit_label)
+                    : fmtQty(calcPrev?.qty_each, calcPrev?.qty_cases, calcPrev?.qty_middle_unit, p.middle_unit_label);
 
                   const physicalCurrent = monthEndByProductMonth.get(`${p.id}:${currentYear}-${currentMonth}`);
                   const calcCurrent = calculatedForMonth(p.id, currentYear, currentMonth);
@@ -440,7 +452,8 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                     physicalCurrent &&
                     calcCurrent &&
                     ((physicalCurrent.physical_qty_each ?? 0) !== (calcCurrent.qty_each ?? 0) ||
-                      (physicalCurrent.physical_qty_cases ?? 0) !== (calcCurrent.qty_cases ?? 0));
+                      (physicalCurrent.physical_qty_cases ?? 0) !== (calcCurrent.qty_cases ?? 0) ||
+                      (physicalCurrent.physical_qty_middle_unit ?? 0) !== (calcCurrent.qty_middle_unit ?? 0));
 
                   return (
                     <tr key={p.id} className="border-t border-gray-100 bg-white align-top">
@@ -454,7 +467,11 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">{moStart ?? <span className="text-gray-400">—</span>}</td>
                       <td className={`whitespace-nowrap py-2 pr-3 ${isLow ? "font-medium text-red-600" : ""}`}>
-                        {onHand ? fmtQty(onHand.qty_each, onHand.qty_cases) : <span className="text-gray-400">—</span>}
+                        {onHand ? (
+                          fmtQty(onHand.qty_each, onHand.qty_cases, onHand.qty_middle_unit, p.middle_unit_label)
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">{waste ? waste : <span className="text-gray-400">—</span>}</td>
                       <td className="whitespace-nowrap py-2 pr-3">
@@ -477,21 +494,26 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">
                         <p className="mb-1 text-xs text-gray-400">
-                          Calc: {calcCurrent ? fmtQty(calcCurrent.qty_each, calcCurrent.qty_cases) : "—"}
+                          Calc:{" "}
+                          {calcCurrent
+                            ? fmtQty(calcCurrent.qty_each, calcCurrent.qty_cases, calcCurrent.qty_middle_unit, p.middle_unit_label)
+                            : "—"}
                         </p>
                         <ActionForm action={postMonthEndPhysicalCount} savedLabel="Posted" className="flex items-center gap-1">
                           <input type="hidden" name="location_id" value={location.id} />
                           <input type="hidden" name="product_id" value={p.id} />
                           <input type="hidden" name="year" value={currentYear} />
                           <input type="hidden" name="month" value={currentMonth} />
-                          <input
-                            name="physical_qty_each"
-                            type="number"
-                            step="0.01"
-                            placeholder="EA"
-                            defaultValue={physicalCurrent?.physical_qty_each ?? ""}
-                            className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
-                          />
+                          {p.each_countable !== false && (
+                            <input
+                              name="physical_qty_each"
+                              type="number"
+                              step="0.01"
+                              placeholder="EA"
+                              defaultValue={physicalCurrent?.physical_qty_each ?? ""}
+                              className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
+                            />
+                          )}
                           <input
                             name="physical_qty_cases"
                             type="number"
@@ -500,6 +522,16 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                             defaultValue={physicalCurrent?.physical_qty_cases ?? ""}
                             className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
                           />
+                          {p.middle_unit_label && (
+                            <input
+                              name="physical_qty_middle_unit"
+                              type="number"
+                              step="0.01"
+                              placeholder={p.middle_unit_label}
+                              defaultValue={physicalCurrent?.physical_qty_middle_unit ?? ""}
+                              className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
+                            />
+                          )}
                           <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
                             Post
                           </button>

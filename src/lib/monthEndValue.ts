@@ -7,6 +7,8 @@ export interface MonthEndValueLine {
   description: string;
   qtyEach: number | null;
   qtyCases: number | null;
+  qtyMiddleUnit: number | null;
+  middleUnitLabel: string | null;
   value: number;
 }
 
@@ -41,7 +43,12 @@ export async function buildMonthEndValueReport(
   supabase: SupabaseClient,
   year: number,
   month: number,
-  valuator: (qtyEach: number | null | undefined, qtyCases: number | null | undefined, product: any) => number
+  valuator: (
+    qtyEach: number | null | undefined,
+    qtyCases: number | null | undefined,
+    product: any,
+    qtyMiddle?: number | null
+  ) => number
 ): Promise<{ locations: MonthEndValueLocationGroup[]; grandTotal: number }> {
   const { data: locationsRaw } = await supabase
     .from("locations")
@@ -57,7 +64,7 @@ export async function buildMonthEndValueReport(
     supabase
       .from("location_product_month_end")
       .select(
-        "location_id, product_id, physical_qty_each, physical_qty_cases, product:products(id, sku, description, product_type, case_cost, sale_price, case_size, bottle_size_ml, pour_size_oz, pour_price)"
+        "location_id, product_id, physical_qty_each, physical_qty_cases, physical_qty_middle_unit, product:products(id, sku, description, product_type, case_cost, sale_price, case_size, bottle_size_ml, pour_size_oz, pour_price, middle_unit_label, middle_unit_size)"
       )
       .in("location_id", locationIds)
       .eq("year", year)
@@ -80,7 +87,7 @@ export async function buildMonthEndValueReport(
 
   for (const row of (monthEndRowsRaw as any[]) ?? []) {
     if (!row.product) continue;
-    const value = valuator(row.physical_qty_each, row.physical_qty_cases, row.product);
+    const value = valuator(row.physical_qty_each, row.physical_qty_cases, row.product, row.physical_qty_middle_unit);
     const area = storageAreaByKey.get(`${row.location_id}:${row.product_id}`) ?? UNASSIGNED_AREA;
 
     const areaMap = areasByLocationId.get(row.location_id) ?? new Map<string, MonthEndValueStorageAreaGroup>();
@@ -91,6 +98,8 @@ export async function buildMonthEndValueReport(
       description: row.product.description,
       qtyEach: row.physical_qty_each,
       qtyCases: row.physical_qty_cases,
+      qtyMiddleUnit: row.physical_qty_middle_unit,
+      middleUnitLabel: row.product.middle_unit_label,
       value,
     });
     group.subtotal += value;

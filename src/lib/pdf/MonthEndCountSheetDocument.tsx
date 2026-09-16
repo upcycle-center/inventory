@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   commentLine: { borderBottomWidth: 1, borderBottomColor: "#000000", height: 20 },
 });
 
-type MonthEndProduct = { sku: string; description: string };
+type MonthEndProduct = { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean };
 type MonthEndArea = { name: string; products: MonthEndProduct[] };
 
 export function MonthEndCountSheetDocument({
@@ -111,13 +111,15 @@ export function MonthEndCountSheetDocument({
             <View style={styles.thRow}>
               <Text style={styles.colProduct}>Product</Text>
               <Text style={styles.colBox}>Cases</Text>
+              <Text style={styles.colBox}>Middle Unit</Text>
               <Text style={styles.colBox}>Each</Text>
             </View>
             {area.products.map((p) => (
               <View key={p.sku} style={styles.tr}>
                 <Text style={styles.colProduct}>{p.description}</Text>
                 <Text style={styles.colBox}></Text>
-                <Text style={styles.colBox}></Text>
+                <Text style={styles.colBox}>{p.middle_unit_label ? `(${p.middle_unit_label})` : ""}</Text>
+                <Text style={styles.colBox}>{p.each_countable === false ? "N/A" : ""}</Text>
               </View>
             ))}
           </View>

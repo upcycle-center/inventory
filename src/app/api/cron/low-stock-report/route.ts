@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   const { data: thresholdRows } = await supabase
     .from("inventory_thresholds")
-    .select("product_id, location_id, reorder_threshold, product:products(sku, description, case_size)")
+    .select("product_id, location_id, reorder_threshold, product:products(sku, description, case_size, middle_unit_size)")
     .gt("reorder_threshold", 0);
 
   const rows = (thresholdRows as any[]) ?? [];
@@ -43,7 +43,13 @@ export async function GET(request: Request) {
   const lowItems = rows
     .map((t) => {
       const onHand = onHandByLocation.get(t.location_id)?.get(t.product_id);
-      const onHandTotal = eachEquivalent(onHand?.qty_each, onHand?.qty_cases, t.product?.case_size);
+      const onHandTotal = eachEquivalent(
+        onHand?.qty_each,
+        onHand?.qty_cases,
+        t.product?.case_size,
+        onHand?.qty_middle_unit,
+        t.product?.middle_unit_size
+      );
       return {
         location: locationNameById.get(t.location_id) ?? t.location_id,
         sku: t.product?.sku ?? "",

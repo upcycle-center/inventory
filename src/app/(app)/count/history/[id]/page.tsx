@@ -5,9 +5,10 @@ import { eachEquivalent } from "@/lib/onHand";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { LocationLabel } from "@/components/LocationLabel";
 
-function fmtQty(each: number | null, cases: number | null) {
+function fmtQty(each: number | null, cases: number | null, middle?: number | null, middleUnitLabel?: string | null) {
   const parts: string[] = [];
   if (cases) parts.push(`${cases} CS`);
+  if (middle && middleUnitLabel) parts.push(`${middle} ${middleUnitLabel}`);
   if (each) parts.push(`${each} EA`);
   return parts.join(", ") || "—";
 }
@@ -29,7 +30,7 @@ export default async function CountHistoryDetailPage({ params }: { params: { id:
   const [{ data: linesRaw }, { data: thresholdsRaw }] = await Promise.all([
     supabase
       .from("location_count_lines")
-      .select("product_id, qty_each, qty_cases, product:products(sku, description, case_size)")
+      .select("product_id, qty_each, qty_cases, qty_middle_unit, product:products(sku, description, case_size, middle_unit_label, middle_unit_size)")
       .eq("location_count_id", record.id),
     supabase
       .from("inventory_thresholds")
@@ -46,7 +47,8 @@ export default async function CountHistoryDetailPage({ params }: { params: { id:
     .map((l) => {
       const threshold = thresholdByProductId.get(l.product_id);
       const flagged =
-        threshold != null && eachEquivalent(l.qty_each, l.qty_cases, l.product?.case_size) <= threshold;
+        threshold != null &&
+        eachEquivalent(l.qty_each, l.qty_cases, l.product?.case_size, l.qty_middle_unit, l.product?.middle_unit_size) <= threshold;
       return { ...l, flagged };
     })
     .sort((a, b) => (a.product?.description ?? "").localeCompare(b.product?.description ?? ""));
@@ -124,7 +126,9 @@ export default async function CountHistoryDetailPage({ params }: { params: { id:
             {lines.map((l) => (
               <tr key={l.product_id} className="border-t border-gray-100">
                 <td className="px-4 py-2">{l.product?.description}</td>
-                <td className="px-4 py-2 text-gray-500">{fmtQty(l.qty_each, l.qty_cases)}</td>
+                <td className="px-4 py-2 text-gray-500">
+                  {fmtQty(l.qty_each, l.qty_cases, l.qty_middle_unit, l.product?.middle_unit_label)}
+                </td>
                 <td className="px-4 py-2">
                   {l.flagged && (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">

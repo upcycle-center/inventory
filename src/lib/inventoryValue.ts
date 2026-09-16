@@ -9,10 +9,11 @@ export function unitCosts(product: { case_cost: number | null; case_size: number
 export function lineValue(
   qtyEach: number | null | undefined,
   qtyCases: number | null | undefined,
-  product: { case_cost: number | null; case_size: number | null }
+  product: { case_cost: number | null; case_size: number | null; middle_unit_size?: number | null },
+  qtyMiddle?: number | null
 ): number {
   const { perEach, perCase } = unitCosts(product);
-  return (qtyEach ?? 0) * perEach + (qtyCases ?? 0) * perCase;
+  return (qtyEach ?? 0) * perEach + (qtyCases ?? 0) * perCase + (qtyMiddle ?? 0) * (product.middle_unit_size ?? 0) * perEach;
 }
 
 // Site-wide spillage/waste allowance applied to pours-per-bottle in the
@@ -30,6 +31,7 @@ type PourProduct = {
   product_type: string;
   sale_price: number | null;
   case_size: number | null;
+  middle_unit_size?: number | null;
   bottle_size_ml?: number | null;
   pour_size_oz?: number | null;
   pour_price?: number | null;
@@ -64,8 +66,9 @@ export function retailUnitPrices(product: PourProduct) {
 export function lineRetailValue(
   qtyEach: number | null | undefined,
   qtyCases: number | null | undefined,
-  product: PourProduct
+  product: PourProduct,
+  qtyMiddle?: number | null
 ): number {
   const { perEach, perCase } = retailUnitPrices(product);
-  return (qtyEach ?? 0) * perEach + (qtyCases ?? 0) * perCase;
+  return (qtyEach ?? 0) * perEach + (qtyCases ?? 0) * perCase + (qtyMiddle ?? 0) * (product.middle_unit_size ?? 0) * perEach;
 }

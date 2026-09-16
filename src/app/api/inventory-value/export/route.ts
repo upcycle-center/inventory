@@ -14,13 +14,26 @@ export async function GET() {
   const rows = await buildInventoryReport(supabase);
 
   const csv = toCsv([
-    ["Location", "IC", "Product", "On-Hand EA", "On-Hand CS", "Case Cost", "Each Cost", "Cost Value", "Sale Price (Each)", "Retail Value"],
+    [
+      "Location",
+      "IC",
+      "Product",
+      "On-Hand EA",
+      "On-Hand CS",
+      "On-Hand Middle Unit",
+      "Case Cost",
+      "Each Cost",
+      "Cost Value",
+      "Sale Price (Each)",
+      "Retail Value",
+    ],
     ...rows.map((r) => [
       r.location,
       r.sku,
       r.description,
       r.qtyEach ?? "",
       r.qtyCases ?? "",
+      r.qtyMiddleUnit ? `${r.qtyMiddleUnit} ${r.middleUnitLabel ?? ""}`.trim() : "",
       r.caseCost.toFixed(2),
       r.eachCost.toFixed(2),
       r.costValue.toFixed(2),

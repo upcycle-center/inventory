@@ -62,7 +62,7 @@ export default async function DashboardPage() {
     ? await supabase
         .from("location_products")
         .select(
-          "location_id, product_id, product:products(id, case_cost, sale_price, case_size, product_type, bottle_size_ml, pour_size_oz, pour_price)"
+          "location_id, product_id, product:products(id, case_cost, sale_price, case_size, product_type, bottle_size_ml, pour_size_oz, pour_price, middle_unit_size)"
         )
         .in("location_id", activeLocationIds)
         .eq("active", true)
@@ -96,8 +96,8 @@ export default async function DashboardPage() {
       for (const [productId, entry] of onHand) {
         const product = products.get(productId);
         if (!product) continue;
-        total += lineValue(entry.qty_each, entry.qty_cases, product);
-        retailTotal += lineRetailValue(entry.qty_each, entry.qty_cases, product);
+        total += lineValue(entry.qty_each, entry.qty_cases, product, entry.qty_middle_unit);
+        retailTotal += lineRetailValue(entry.qty_each, entry.qty_cases, product, entry.qty_middle_unit);
       }
     }
     if (total > 0) locationValues.push({ label: locationDisplayName(loc), value: total });

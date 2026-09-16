@@ -16,14 +16,17 @@ export default async function RecoveriesReportPage() {
   const { data: recoveries } = await supabase
     .from("inventory_movements")
     .select(
-      "id, quantity, qty_cases, qty_each, created_at, product:products(sku, description, case_cost, case_size), from_location:locations!inventory_movements_from_location_id_fkey(id, name, yellow_dog_code), to_location:locations!inventory_movements_to_location_id_fkey(id, name, yellow_dog_code), user:profiles(name)"
+      "id, quantity, qty_cases, qty_each, qty_middle_unit, created_at, product:products(sku, description, case_cost, case_size, middle_unit_label, middle_unit_size), from_location:locations!inventory_movements_from_location_id_fkey(id, name, yellow_dog_code), to_location:locations!inventory_movements_to_location_id_fkey(id, name, yellow_dog_code), user:profiles(name)"
     )
     .eq("type", "recovery")
     .order("created_at", { ascending: false });
 
   const rows = (recoveries as any[]) ?? [];
   const totalQty = rows.reduce((sum, r) => sum + Number(r.quantity), 0);
-  const totalValue = rows.reduce((sum, r) => sum + (r.product ? lineValue(r.qty_each, r.qty_cases, r.product) : 0), 0);
+  const totalValue = rows.reduce(
+    (sum, r) => sum + (r.product ? lineValue(r.qty_each, r.qty_cases, r.product, r.qty_middle_unit) : 0),
+    0
+  );
 
   return (
     <div>
@@ -74,9 +77,16 @@ export default async function RecoveriesReportPage() {
                 <td className="px-4 py-2">{r.product?.description}</td>
                 <td className="px-4 py-2 text-gray-500">
                   {r.qty_cases ? `${r.qty_cases} CS ` : ""}
-                  {r.qty_each ? `${r.qty_each} EA` : !r.qty_cases ? `${r.quantity} EA` : ""}
+                  {r.qty_middle_unit ? `${r.qty_middle_unit} ${r.product?.middle_unit_label ?? ""} ` : ""}
+                  {r.qty_each
+                    ? `${r.qty_each} EA`
+                    : !r.qty_cases && !r.qty_middle_unit
+                      ? `${r.quantity} EA`
+                      : ""}
                 </td>
-                <td className="px-4 py-2 text-gray-500">{r.product ? fmtCurrency(lineValue(r.qty_each, r.qty_cases, r.product)) : "—"}</td>
+                <td className="px-4 py-2 text-gray-500">
+                  {r.product ? fmtCurrency(lineValue(r.qty_each, r.qty_cases, r.product, r.qty_middle_unit)) : "—"}
+                </td>
                 <td className="px-4 py-2 text-gray-500">{r.user?.name ?? "—"}</td>
               </tr>
             ))}

@@ -144,7 +144,7 @@ export default async function CountPage({
   const { data: locationProducts } = await supabase
     .from("location_products")
     .select(
-      "product:products(id, sku, description, photo_url, active), storage_area:storage_areas(id, code, name)"
+      "product:products(id, sku, description, photo_url, active, middle_unit_label, each_countable), storage_area:storage_areas(id, code, name)"
     )
     .eq("location_id", locationId)
     .eq("active", true);
@@ -180,13 +180,17 @@ export default async function CountPage({
   // instead of starting blank — the physical stock on hand doesn't reset
   // between events, so re-counting from zero would just be re-typing the
   // same numbers.
-  let initialQty: Record<string, { each: string; cases: string }> = {};
+  let initialQty: Record<string, { each: string; cases: string; middle?: string }> = {};
   if (type === "opening") {
     const onHand = await getOnHandByProductId(supabase, locationId);
     initialQty = Object.fromEntries(
       Array.from(onHand.entries()).map(([productId, line]) => [
         productId,
-        { each: line.qty_each != null ? String(line.qty_each) : "", cases: line.qty_cases != null ? String(line.qty_cases) : "" },
+        {
+          each: line.qty_each != null ? String(line.qty_each) : "",
+          cases: line.qty_cases != null ? String(line.qty_cases) : "",
+          middle: line.qty_middle_unit != null ? String(line.qty_middle_unit) : "",
+        },
       ])
     );
   }
@@ -348,7 +352,10 @@ async function buildCompletedCountRows(
   const userIds = [...new Set(counts.map((c) => c.user_id).filter(Boolean))];
 
   const [{ data: linesRaw }, { data: thresholdsRaw }, { data: productsRaw }, { data: usersRaw }] = await Promise.all([
-    supabase.from("location_count_lines").select("location_count_id, product_id, qty_each, qty_cases").in("location_count_id", countIds),
+    supabase
+      .from("location_count_lines")
+      .select("location_count_id, product_id, qty_each, qty_cases, qty_middle_unit")
+      .in("location_count_id", countIds),
     locationIds.length
       ? supabase
           .from("inventory_thresholds")
@@ -356,11 +363,14 @@ async function buildCompletedCountRows(
           .in("location_id", locationIds)
           .gt("reorder_threshold", 0)
       : Promise.resolve({ data: [] as any[] }),
-    supabase.from("products").select("id, case_size"),
+    supabase.from("products").select("id, case_size, middle_unit_size"),
     userIds.length ? supabase.from("profiles").select("id, name").in("id", userIds) : Promise.resolve({ data: [] as any[] }),
   ]);
 
-  const linesByCountId = new Map<string, { product_id: string; qty_each: number | null; qty_cases: number | null }[]>();
+  const linesByCountId = new Map<
+    string,
+    { product_id: string; qty_each: number | null; qty_cases: number | null; qty_middle_unit: number | null }[]
+  >();
   for (const l of (linesRaw as any[]) ?? []) {
     const list = linesByCountId.get(l.location_count_id) ?? [];
     list.push(l);
@@ -375,6 +385,9 @@ async function buildCompletedCountRows(
   const caseSizeByProductId = new Map(
     ((productsRaw as { id: string; case_size: number | null }[] | null) ?? []).map((p) => [p.id, p.case_size])
   );
+  const middleUnitSizeByProductId = new Map(
+    ((productsRaw as { id: string; middle_unit_size: number | null }[] | null) ?? []).map((p) => [p.id, p.middle_unit_size])
+  );
   const nameByUserId = new Map(((usersRaw as { id: string; name: string }[] | null) ?? []).map((u) => [u.id, u.name]));
 
   const recordsByEvent = new Map<string, CompletedCountRecord[]>();
@@ -383,7 +396,15 @@ async function buildCompletedCountRows(
     const thresholdFlag = lines.some((l) => {
       const threshold = thresholdByKey.get(`${c.location_id}:${l.product_id}`);
       if (threshold == null) return false;
-      return eachEquivalent(l.qty_each, l.qty_cases, caseSizeByProductId.get(l.product_id)) <= threshold;
+      return (
+        eachEquivalent(
+          l.qty_each,
+          l.qty_cases,
+          caseSizeByProductId.get(l.product_id),
+          l.qty_middle_unit,
+          middleUnitSizeByProductId.get(l.product_id)
+        ) <= threshold
+      );
     });
     const record: CompletedCountRecord = {
       id: c.id,

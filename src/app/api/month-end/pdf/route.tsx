@@ -34,7 +34,9 @@ export async function GET(request: Request) {
 
   const { data: locationProducts } = await supabase
     .from("location_products")
-    .select("product:products(sku, description, active), storage_area:storage_areas(id, code, name)")
+    .select(
+      "product:products(sku, description, active, middle_unit_label, each_countable), storage_area:storage_areas(id, code, name)"
+    )
     .eq("location_id", locationId)
     .eq("active", true);
 

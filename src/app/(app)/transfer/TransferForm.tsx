@@ -12,6 +12,9 @@ interface ProductForTransfer {
   description: string;
   photo_url: string | null;
   case_size: number | null;
+  middle_unit_label: string | null;
+  middle_unit_size: number | null;
+  each_countable: boolean;
 }
 
 export interface StorageAreaGroup {
@@ -21,7 +24,7 @@ export interface StorageAreaGroup {
   products: ProductForTransfer[];
 }
 
-type QtyState = Record<string, { cases: string; each: string }>;
+type QtyState = Record<string, { cases: string; each: string; middle?: string }>;
 
 export function TransferForm({
   locations,
@@ -43,7 +46,11 @@ export function TransferForm({
   const [qty, setQty] = useState<QtyState>(() => {
     const state: QtyState = {};
     for (const line of initialLines) {
-      state[line.product_id] = { cases: String(line.qty_cases), each: String(line.qty_each) };
+      state[line.product_id] = {
+        cases: String(line.qty_cases),
+        each: String(line.qty_each),
+        middle: line.qty_middle_unit ? String(line.qty_middle_unit) : "",
+      };
     }
     return state;
   });
@@ -59,13 +66,20 @@ export function TransferForm({
   function buildLines(): TransferLineInput[] {
     const productsById = new Map(allProducts.map((p) => [p.id, p]));
     return Object.entries(qty)
-      .map(([productId, v]) => ({ productId, cases: Number(v.cases) || 0, each: Number(v.each) || 0 }))
-      .filter((l) => l.cases > 0 || l.each > 0)
+      .map(([productId, v]) => ({
+        productId,
+        cases: Number(v.cases) || 0,
+        each: Number(v.each) || 0,
+        middle: Number(v.middle) || 0,
+      }))
+      .filter((l) => l.cases > 0 || l.each > 0 || l.middle > 0)
       .map((l) => ({
         product_id: l.productId,
         qty_cases: l.cases,
         qty_each: l.each,
+        qty_middle_unit: l.middle,
         case_size: productsById.get(l.productId)?.case_size ?? null,
+        middle_unit_size: productsById.get(l.productId)?.middle_unit_size ?? null,
       }));
   }
 
@@ -124,7 +138,7 @@ export function TransferForm({
     });
   }
 
-  const filledCount = Object.values(qty).filter((v) => Number(v.cases) > 0 || Number(v.each) > 0).length;
+  const filledCount = Object.values(qty).filter((v) => Number(v.cases) > 0 || Number(v.each) > 0 || Number(v.middle) > 0).length;
   const hasInput = !!fromLocationId || !!toLocationId || filledCount > 0;
   const bothSet = !!fromLocationId && !!toLocationId;
 
@@ -189,7 +203,7 @@ export function TransferForm({
               {groups.map((group) => {
                 const isOpen = openArea === group.id || (openArea === null && group === groups[0]);
                 const groupFilled = group.products.filter(
-                  (p) => Number(qty[p.id]?.cases) > 0 || Number(qty[p.id]?.each) > 0
+                  (p) => Number(qty[p.id]?.cases) > 0 || Number(qty[p.id]?.each) > 0 || Number(qty[p.id]?.middle) > 0
                 ).length;
 
                 return (
@@ -212,8 +226,8 @@ export function TransferForm({
                         <ProductQtyGrid
                           products={group.products}
                           qty={qty}
-                          onSave={(productId, cases, each) => {
-                            setQty((prev) => ({ ...prev, [productId]: { cases, each } }));
+                          onSave={(productId, cases, each, middle) => {
+                            setQty((prev) => ({ ...prev, [productId]: { cases, each, middle } }));
                           }}
                         />
                       </div>

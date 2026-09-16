@@ -11,6 +11,8 @@ interface ProductForCount {
   sku: string;
   description: string;
   photo_url: string | null;
+  middle_unit_label: string | null;
+  each_countable: boolean;
 }
 
 interface StorageAreaGroup {
@@ -20,7 +22,7 @@ interface StorageAreaGroup {
   products: ProductForCount[];
 }
 
-type QtyState = Record<string, { each: string; cases: string; waste?: string; comp?: string }>;
+type QtyState = Record<string, { each: string; cases: string; middle?: string; waste?: string; comp?: string }>;
 
 export function CountForm({
   eventId,
@@ -42,7 +44,7 @@ export function CountForm({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filledCount = Object.values(qty).filter((v) => v.each.trim() || v.cases.trim()).length;
+  const filledCount = Object.values(qty).filter((v) => v.each.trim() || v.cases.trim() || v.middle?.trim()).length;
 
   function handleSubmit() {
     setError(null);
@@ -51,8 +53,9 @@ export function CountForm({
         product_id: productId,
         qty_each: v.each.trim() === "" ? null : Number(v.each),
         qty_cases: v.cases.trim() === "" ? null : Number(v.cases),
+        qty_middle_unit: v.middle?.trim() ? Number(v.middle) : null,
       }))
-      .filter((l) => l.qty_each !== null || l.qty_cases !== null);
+      .filter((l) => l.qty_each !== null || l.qty_cases !== null || l.qty_middle_unit !== null);
 
     if (lines.length === 0) {
       setError("Enter at least one quantity before submitting.");
@@ -99,7 +102,7 @@ export function CountForm({
         {groups.map((group) => {
           const isOpen = openArea === group.id;
           const groupFilled = group.products.filter(
-            (p) => qty[p.id]?.each.trim() || qty[p.id]?.cases.trim()
+            (p) => qty[p.id]?.each.trim() || qty[p.id]?.cases.trim() || qty[p.id]?.middle?.trim()
           ).length;
 
           return (
@@ -124,8 +127,8 @@ export function CountForm({
                     qty={qty}
                     showWaste={type === "closing"}
                     showComp={type === "closing"}
-                    onSave={(productId, cases, each, waste, comp) => {
-                      setQty((prev) => ({ ...prev, [productId]: { cases, each, waste, comp } }));
+                    onSave={(productId, cases, each, middle, waste, comp) => {
+                      setQty((prev) => ({ ...prev, [productId]: { cases, each, middle, waste, comp } }));
                     }}
                   />
                 </div>

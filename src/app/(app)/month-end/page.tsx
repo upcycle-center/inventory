@@ -14,7 +14,7 @@ export default async function MonthEndPage() {
     supabase
       .from("location_products")
       .select(
-        "location_id, product:products(id, sku, description, photo_url, active, case_size), storage_area:storage_areas(id, code, name)"
+        "location_id, product:products(id, sku, description, photo_url, active, case_size, middle_unit_label, each_countable), storage_area:storage_areas(id, code, name)"
       )
       .eq("active", true),
   ]);

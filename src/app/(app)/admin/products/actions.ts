@@ -24,6 +24,9 @@ export async function createProduct(formData: FormData): Promise<{ error: string
   const bottleSizeRaw = String(formData.get("bottle_size_ml") || "").trim();
   const pourSizeRaw = String(formData.get("pour_size_oz") || "").trim();
   const pourPriceRaw = String(formData.get("pour_price") || "").trim();
+  const middleUnitLabel = String(formData.get("middle_unit_label") || "").trim() || null;
+  const middleUnitSizeRaw = String(formData.get("middle_unit_size") || "").trim();
+  const eachCountable = formData.get("each_countable") === "on";
   const posSquare = formData.get("pos_square") === "on";
 
   let photoUrl: string | null = null;
@@ -61,6 +64,9 @@ export async function createProduct(formData: FormData): Promise<{ error: string
       bottle_size_ml: bottleSizeRaw ? Number(bottleSizeRaw) : null,
       pour_size_oz: pourSizeRaw ? Number(pourSizeRaw) : null,
       pour_price: pourPriceRaw ? Number(pourPriceRaw) : null,
+      middle_unit_label: middleUnitLabel,
+      middle_unit_size: middleUnitSizeRaw ? Number(middleUnitSizeRaw) : null,
+      each_countable: eachCountable,
       pos_square: posSquare,
       photo_url: photoUrl,
       created_by: user?.id ?? null,

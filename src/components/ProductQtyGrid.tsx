@@ -8,33 +8,47 @@ export interface QtyGridProduct {
   sku: string;
   description: string;
   photo_url: string | null;
+  middle_unit_label?: string | null;
+  each_countable?: boolean;
 }
+
+const GRID_COLS_CLASS: Record<number, string> = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+};
 
 // Thumbnail grid where tapping a product opens a popup to set its
 // quantity — avoids full-size photos crowding every cell, and keeps the
 // tap target for entering a number comfortably large on a phone. Pass
-// caseOptions/eachOptions to render capped dropdowns (e.g. Request);
-// omit either for a free-text number input (e.g. Count, unbounded).
+// caseOptions/eachOptions/middleOptions to render capped dropdowns (e.g.
+// Request); omit any for a free-text number input (e.g. Count, unbounded).
+// The popup shows Case always, the product's own Middle unit (a Sleeve, a
+// Pack) only when it has one, and Each only when the product is actually
+// countable in Each -- some products (napkins, flatware) never are.
 export function ProductQtyGrid({
   products,
   qty,
   onSave,
   caseOptions,
   eachOptions,
+  middleOptions,
   showWaste,
   showComp,
 }: {
   products: QtyGridProduct[];
-  qty: Record<string, { cases: string; each: string; waste?: string; comp?: string }>;
-  onSave: (productId: string, cases: string, each: string, waste: string, comp: string) => void;
+  qty: Record<string, { cases: string; each: string; middle?: string; waste?: string; comp?: string }>;
+  onSave: (productId: string, cases: string, each: string, middle: string, waste: string, comp: string) => void;
   caseOptions?: number[];
   eachOptions?: number[];
+  middleOptions?: number[];
   showWaste?: boolean;
   showComp?: boolean;
 }) {
   const [activeProduct, setActiveProduct] = useState<QtyGridProduct | null>(null);
   const [draftCases, setDraftCases] = useState("");
   const [draftEach, setDraftEach] = useState("");
+  const [draftMiddle, setDraftMiddle] = useState("");
   const [draftWaste, setDraftWaste] = useState("");
   const [draftComp, setDraftComp] = useState("");
 
@@ -42,14 +56,25 @@ export function ProductQtyGrid({
     setActiveProduct(p);
     setDraftCases(qty[p.id]?.cases ?? "");
     setDraftEach(qty[p.id]?.each ?? "");
+    setDraftMiddle(qty[p.id]?.middle ?? "");
     setDraftWaste(qty[p.id]?.waste ?? "");
     setDraftComp(qty[p.id]?.comp ?? "");
   }
 
   function confirmPopup() {
-    if (activeProduct) onSave(activeProduct.id, draftCases, draftEach, draftWaste, draftComp);
+    if (activeProduct) onSave(activeProduct.id, draftCases, draftEach, draftMiddle, draftWaste, draftComp);
     setActiveProduct(null);
   }
+
+  const hasMiddle = !!activeProduct?.middle_unit_label;
+  const eachCountable = activeProduct?.each_countable ?? true;
+  const qtyFields = [
+    { key: "cases", label: "CS", value: draftCases, setValue: setDraftCases, options: caseOptions },
+    ...(hasMiddle
+      ? [{ key: "middle", label: activeProduct!.middle_unit_label!.slice(0, 12), value: draftMiddle, setValue: setDraftMiddle, options: middleOptions }]
+      : []),
+    ...(eachCountable ? [{ key: "each", label: "EA", value: draftEach, setValue: setDraftEach, options: eachOptions }] : []),
+  ];
 
   return (
     <>
@@ -57,10 +82,15 @@ export function ProductQtyGrid({
         {products.map((p) => {
           const cases = qty[p.id]?.cases;
           const each = qty[p.id]?.each;
+          const middle = qty[p.id]?.middle;
           const waste = qty[p.id]?.waste;
           const comp = qty[p.id]?.comp;
           const filled =
-            (!!cases && cases !== "0") || (!!each && each !== "0") || (!!waste && waste !== "0") || (!!comp && comp !== "0");
+            (!!cases && cases !== "0") ||
+            (!!each && each !== "0") ||
+            (!!middle && middle !== "0") ||
+            (!!waste && waste !== "0") ||
+            (!!comp && comp !== "0");
           return (
             <button
               key={p.id}
@@ -83,6 +113,7 @@ export function ProductQtyGrid({
               {filled && (
                 <p className="mt-1 truncate text-[11px] font-medium text-brand">
                   {cases && cases !== "0" ? `${cases} CS ` : ""}
+                  {middle && middle !== "0" ? `${middle} ${p.middle_unit_label} ` : ""}
                   {each && each !== "0" ? `${each} EA ` : ""}
                   {waste && waste !== "0" ? `· ${waste} waste ` : ""}
                   {comp && comp !== "0" ? `· ${comp} comp` : ""}
@@ -118,57 +149,34 @@ export function ProductQtyGrid({
               </div>
             </div>
 
-            <div className="mb-4 grid grid-cols-2 gap-3">
-              <label className="text-xs text-gray-500">
-                CS
-                {caseOptions ? (
-                  <select
-                    value={draftCases || "0"}
-                    onChange={(e) => setDraftCases(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
-                  >
-                    {caseOptions.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    value={draftCases}
-                    onChange={(e) => setDraftCases(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
-                  />
-                )}
-              </label>
-              <label className="text-xs text-gray-500">
-                EA
-                {eachOptions ? (
-                  <select
-                    value={draftEach || "0"}
-                    onChange={(e) => setDraftEach(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
-                  >
-                    {eachOptions.map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    value={draftEach}
-                    onChange={(e) => setDraftEach(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
-                  />
-                )}
-              </label>
+            <div className={`mb-4 grid gap-3 ${GRID_COLS_CLASS[qtyFields.length] ?? "grid-cols-3"}`}>
+              {qtyFields.map((field) => (
+                <label key={field.key} className="text-xs text-gray-500">
+                  {field.label}
+                  {field.options ? (
+                    <select
+                      value={field.value || "0"}
+                      onChange={(e) => field.setValue(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                    >
+                      {field.options.map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      value={field.value}
+                      onChange={(e) => field.setValue(e.target.value)}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-2 py-2 text-sm"
+                    />
+                  )}
+                </label>
+              ))}
             </div>
 
             {(showWaste || showComp) && (

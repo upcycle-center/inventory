@@ -14,7 +14,7 @@ export async function GET() {
   const { data: recoveries } = await supabase
     .from("inventory_movements")
     .select(
-      "quantity, qty_cases, qty_each, created_at, product:products(sku, description, case_cost, case_size), from_location:locations!inventory_movements_from_location_id_fkey(name), to_location:locations!inventory_movements_to_location_id_fkey(name), user:profiles(name)"
+      "quantity, qty_cases, qty_each, qty_middle_unit, created_at, product:products(sku, description, case_cost, case_size, middle_unit_label, middle_unit_size), from_location:locations!inventory_movements_from_location_id_fkey(name), to_location:locations!inventory_movements_to_location_id_fkey(name), user:profiles(name)"
     )
     .eq("type", "recovery")
     .order("created_at", { ascending: false });
@@ -22,7 +22,7 @@ export async function GET() {
   const rows = (recoveries as any[]) ?? [];
 
   const csv = toCsv([
-    ["Date", "From", "To", "SKU", "Product", "Qty Cases", "Qty Each", "Qty (EA equiv)", "Value", "Logged By"],
+    ["Date", "From", "To", "SKU", "Product", "Qty Cases", "Qty Each", "Qty Middle Unit", "Qty (EA equiv)", "Value", "Logged By"],
     ...rows.map((r) => [
       r.created_at ?? "",
       r.from_location?.name ?? "",
@@ -31,8 +31,9 @@ export async function GET() {
       r.product?.description ?? "",
       r.qty_cases ?? 0,
       r.qty_each ?? 0,
+      r.qty_middle_unit ? `${r.qty_middle_unit} ${r.product?.middle_unit_label ?? ""}`.trim() : 0,
       r.quantity ?? 0,
-      r.product ? lineValue(r.qty_each, r.qty_cases, r.product).toFixed(2) : "0.00",
+      r.product ? lineValue(r.qty_each, r.qty_cases, r.product, r.qty_middle_unit).toFixed(2) : "0.00",
       r.user?.name ?? "",
     ]),
   ]);

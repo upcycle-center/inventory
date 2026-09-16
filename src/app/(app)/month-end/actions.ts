@@ -8,6 +8,7 @@ export interface MonthEndLineInput {
   product_id: string;
   qty_cases: number | null;
   qty_each: number | null;
+  qty_middle_unit: number | null;
 }
 
 export interface MonthEndNewItemInput {
@@ -37,7 +38,7 @@ export async function submitMonthEndCount(
   if (!locationId) return { error: "Select a location first." };
   if (!year || !month || month < 1 || month > 12) return { error: "Invalid month/year." };
 
-  const nonEmptyLines = lines.filter((l) => l.qty_each !== null || l.qty_cases !== null);
+  const nonEmptyLines = lines.filter((l) => l.qty_each !== null || l.qty_cases !== null || l.qty_middle_unit !== null);
   const validNewItems = newItems.filter((n) => n.product_name.trim());
   if (!nonEmptyLines.length && !validNewItems.length) {
     return { error: "Enter at least one quantity or new item before submitting." };
@@ -52,6 +53,7 @@ export async function submitMonthEndCount(
         month,
         physical_qty_each: l.qty_each,
         physical_qty_cases: l.qty_cases,
+        physical_qty_middle_unit: l.qty_middle_unit,
         counted_by: profile.id,
         counted_at: new Date().toISOString(),
       })),

@@ -38,14 +38,22 @@ const styles = StyleSheet.create({
   notesText: { fontSize: 9 },
 });
 
-function fmtQty(each: number | null, cases: number | null) {
+function fmtQty(each: number | null, cases: number | null, middle?: number | null, middleUnitLabel?: string | null) {
   const parts: string[] = [];
   if (cases) parts.push(`${cases} CS`);
+  if (middle && middleUnitLabel) parts.push(`${middle} ${middleUnitLabel}`);
   if (each) parts.push(`${each} EA`);
   return parts.join(", ") || "—";
 }
 
-type ConfirmationLine = { sku: string; description: string; qtyEach: number | null; qtyCases: number | null };
+type ConfirmationLine = {
+  sku: string;
+  description: string;
+  qtyEach: number | null;
+  qtyCases: number | null;
+  qtyMiddleUnit?: number | null;
+  middleUnitLabel?: string | null;
+};
 type WasteCompLine = { sku: string; description: string; quantity: number };
 
 function LineTable({ lines }: { lines: WasteCompLine[] }) {
@@ -119,7 +127,7 @@ export function CountConfirmationDocument({
         {lines.map((l) => (
           <View key={l.sku} style={styles.tr}>
             <Text style={styles.colProduct}>{l.description}</Text>
-            <Text style={styles.colQty}>{fmtQty(l.qtyEach, l.qtyCases)}</Text>
+            <Text style={styles.colQty}>{fmtQty(l.qtyEach, l.qtyCases, l.qtyMiddleUnit, l.middleUnitLabel)}</Text>
           </View>
         ))}
 

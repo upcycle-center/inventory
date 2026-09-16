@@ -95,6 +95,9 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           defaultBottleSizeMl={product.bottle_size_ml}
           defaultPourSizeOz={product.pour_size_oz}
           defaultPourPrice={product.pour_price}
+          defaultMiddleUnitLabel={product.middle_unit_label}
+          defaultMiddleUnitSize={product.middle_unit_size}
+          defaultEachCountable={product.each_countable}
         />
 
         <ProductPosFields defaultPosSquare={product.pos_square} />

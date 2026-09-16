@@ -76,6 +76,9 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const bottleSizeIdx = header.indexOf("bottle_size_ml");
   const pourSizeIdx = header.indexOf("pour_size_oz");
   const pourPriceIdx = header.indexOf("pour_price");
+  const middleUnitLabelIdx = header.indexOf("middle_unit_label");
+  const middleUnitSizeIdx = header.indexOf("middle_unit_size");
+  const eachCountableIdx = header.indexOf("each_countable");
   const posSquareIdx = header.indexOf("pos_square");
   const locationIdx = header.indexOf("location");
   const storageAreaIdx = header.indexOf("storage_area");
@@ -182,6 +185,15 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // Square data map.
     const posSquareRaw = posSquareIdx !== -1 ? cols[posSquareIdx]?.trim().toLowerCase() : undefined;
     const posSquare = posSquareRaw !== undefined ? posSquareRaw === "yes" || posSquareRaw === "true" || posSquareRaw === "1" : undefined;
+    // Same "only touch when present" rule -- omitting these on a routine
+    // refresh shouldn't silently drop a product's Sleeve/Pack counting tier.
+    const middleUnitLabelRaw = middleUnitLabelIdx !== -1 ? cols[middleUnitLabelIdx]?.trim() : undefined;
+    const middleUnitLabel = middleUnitLabelRaw !== undefined ? middleUnitLabelRaw || null : undefined;
+    const middleUnitSizeRaw = middleUnitSizeIdx !== -1 ? cols[middleUnitSizeIdx]?.trim() : undefined;
+    const middleUnitSize = middleUnitSizeRaw !== undefined ? (middleUnitSizeRaw ? Number(middleUnitSizeRaw) : null) : undefined;
+    const eachCountableRaw = eachCountableIdx !== -1 ? cols[eachCountableIdx]?.trim().toLowerCase() : undefined;
+    const eachCountable =
+      eachCountableRaw !== undefined ? eachCountableRaw === "yes" || eachCountableRaw === "true" || eachCountableRaw === "1" : undefined;
 
     const { data: existing } = await supabase
       .from("products")
@@ -207,6 +219,9 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           bottle_size_ml: bottleSizeMl,
           pour_size_oz: pourSizeOz,
           pour_price: pourPrice,
+          ...(middleUnitLabel !== undefined ? { middle_unit_label: middleUnitLabel } : {}),
+          ...(middleUnitSize !== undefined ? { middle_unit_size: middleUnitSize } : {}),
+          ...(eachCountable !== undefined ? { each_countable: eachCountable } : {}),
           ...(posSquare !== undefined ? { pos_square: posSquare } : {}),
         })
         .eq("id", existing.id);
@@ -234,6 +249,9 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           bottle_size_ml: bottleSizeMl,
           pour_size_oz: pourSizeOz,
           pour_price: pourPrice,
+          middle_unit_label: middleUnitLabel ?? null,
+          middle_unit_size: middleUnitSize ?? null,
+          each_countable: eachCountable ?? true,
           pos_square: posSquare ?? false,
           created_by: user?.id ?? null,
         })

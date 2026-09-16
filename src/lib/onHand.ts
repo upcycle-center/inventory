@@ -1,17 +1,28 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Total quantity in "each" units, converting cases via the product's case
-// size (defaulting to 1 if the product has no case size on file) — the
-// single comparable number used to check on-hand against a threshold.
+// size (defaulting to 1 if the product has no case size on file) and,
+// where a product has one, a middle unit (a Sleeve, a Pack) via its own
+// size in each — the single comparable number used to check on-hand
+// against a threshold. middle/middleUnitSize are optional so every
+// existing call site (products with no middle tier) is unaffected.
 export function eachEquivalent(
   each: number | null | undefined,
   cases: number | null | undefined,
-  caseSize: number | null | undefined
+  caseSize: number | null | undefined,
+  middle?: number | null,
+  middleUnitSize?: number | null
 ): number {
-  return (each ?? 0) + (cases ?? 0) * (caseSize ?? 1);
+  return (each ?? 0) + (cases ?? 0) * (caseSize ?? 1) + (middle ?? 0) * (middleUnitSize ?? 0);
 }
 
-export type CountLine = { product_id: string; qty_each: number | null; qty_cases: number | null; counted_at: string };
+export type CountLine = {
+  product_id: string;
+  qty_each: number | null;
+  qty_cases: number | null;
+  qty_middle_unit: number | null;
+  counted_at: string;
+};
 
 // Every count line ever submitted for a location, across all events —
 // the shared source for On-Hand, moSTART, and moEND on the Location
@@ -27,7 +38,7 @@ export async function getLocationCountLines(supabase: SupabaseClient, locationId
 
   const { data: countLines } = await supabase
     .from("location_count_lines")
-    .select("product_id, qty_each, qty_cases, counted_at")
+    .select("product_id, qty_each, qty_cases, qty_middle_unit, counted_at")
     .in("location_count_id", countIds);
 
   return (countLines as CountLine[] | null) ?? [];

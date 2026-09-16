@@ -14,10 +14,10 @@ export interface LocationVariance {
   boundaries: number; // how many closing->opening transitions contributed, this month
 }
 
-type CountLine = { product_id: string; qty_each: number | null; qty_cases: number | null };
+type CountLine = { product_id: string; qty_each: number | null; qty_cases: number | null; qty_middle_unit: number | null };
 type CountRow = { id: string; location_id: string; type: "opening" | "closing"; submitted_at: string };
 type MovementRow = { product_id: string; from_location_id: string | null; to_location_id: string | null; quantity: number; created_at: string };
-type ProductCost = { case_cost: number | null; case_size: number | null };
+type ProductCost = { case_cost: number | null; case_size: number | null; middle_unit_size: number | null };
 
 export async function computeLocationVariance(
   supabase: SupabaseClient,
@@ -34,7 +34,7 @@ export async function computeLocationVariance(
       .in("location_id", locationIds)
       .in("type", ["opening", "closing"])
       .order("submitted_at", { ascending: true }),
-    supabase.from("products").select("id, case_cost, case_size"),
+    supabase.from("products").select("id, case_cost, case_size, middle_unit_size"),
   ]);
 
   const counts = (countsRaw as CountRow[] | null) ?? [];
@@ -42,7 +42,7 @@ export async function computeLocationVariance(
 
   const { data: linesRaw } = await supabase
     .from("location_count_lines")
-    .select("location_count_id, product_id, qty_each, qty_cases")
+    .select("location_count_id, product_id, qty_each, qty_cases, qty_middle_unit")
     .in(
       "location_count_id",
       counts.map((c) => c.id)
@@ -103,8 +103,12 @@ export async function computeLocationVariance(
 
         const closingLine = closingLines.get(productId);
         const openingLine = openingLines.get(productId);
-        const closingQty = closingLine ? eachEquivalent(closingLine.qty_each, closingLine.qty_cases, product.case_size) : 0;
-        const openingQty = openingLine ? eachEquivalent(openingLine.qty_each, openingLine.qty_cases, product.case_size) : 0;
+        const closingQty = closingLine
+          ? eachEquivalent(closingLine.qty_each, closingLine.qty_cases, product.case_size, closingLine.qty_middle_unit, product.middle_unit_size)
+          : 0;
+        const openingQty = openingLine
+          ? eachEquivalent(openingLine.qty_each, openingLine.qty_cases, product.case_size, openingLine.qty_middle_unit, product.middle_unit_size)
+          : 0;
 
         let netMovement = 0;
         for (const m of movementsByProduct.get(productId) ?? []) {

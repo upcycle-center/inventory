@@ -30,10 +30,11 @@ function fmtCurrency(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
-function fmtQty(each: number | null, cases: number | null) {
+function fmtQty(each: number | null, cases: number | null, middle?: number | null, middleUnitLabel?: string | null) {
   const parts = [];
   if (each != null) parts.push(`${each} EA`);
   if (cases != null) parts.push(`${cases} CS`);
+  if (middle && middleUnitLabel) parts.push(`${middle} ${middleUnitLabel}`);
   return parts.join(", ") || "—";
 }
 
@@ -67,7 +68,7 @@ export function InventoryReportDocument({ rows, generatedAt }: { rows: Inventory
             {items.map((r) => (
               <View key={r.sku} style={styles.tr}>
                 <Text style={styles.colProduct}>{r.description}</Text>
-                <Text style={styles.colSmall}>{fmtQty(r.qtyEach, r.qtyCases)}</Text>
+                <Text style={styles.colSmall}>{fmtQty(r.qtyEach, r.qtyCases, r.qtyMiddleUnit, r.middleUnitLabel)}</Text>
                 <Text style={styles.colSmall}>{fmtCurrency(r.costValue)}</Text>
                 <Text style={styles.colSmall}>{fmtCurrency(r.retailValue)}</Text>
               </View>

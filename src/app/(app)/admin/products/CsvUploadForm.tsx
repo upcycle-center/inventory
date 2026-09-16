@@ -37,6 +37,13 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         product&apos;s value off pours per bottle instead of Retail Value.
       </p>
       <p className="text-xs text-gray-500">
+        For a product with a packaging tier between Case and Each (a Sleeve of cups, a Pack of
+        napkins), add <code>middle_unit_label</code> (e.g. <code>Sleeve</code>), <code>middle_unit_size</code>{" "}
+        (each per middle unit), and <code>each_countable</code> (<code>yes</code>/<code>no</code> —{" "}
+        <code>no</code> for products only ever counted by Case/middle unit, like napkins or
+        flatware). All three are also left alone on an update if omitted.
+      </p>
+      <p className="text-xs text-gray-500">
         <code>pos_square</code> (<code>yes</code>/<code>no</code> — also left alone on an update if
         omitted) controls whether the product is included in Admin → Data Maps → Square POS&apos;s
         export.

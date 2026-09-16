@@ -159,8 +159,9 @@ export async function postMonthEndPhysicalCount(formData: FormData) {
   const month = Number(formData.get("month"));
   const eachRaw = String(formData.get("physical_qty_each") || "").trim();
   const casesRaw = String(formData.get("physical_qty_cases") || "").trim();
+  const middleRaw = String(formData.get("physical_qty_middle_unit") || "").trim();
   if (!locationId || !productId || !year || !month) return;
-  if (!eachRaw && !casesRaw) return;
+  if (!eachRaw && !casesRaw && !middleRaw) return;
 
   await supabase.from("location_product_month_end").upsert(
     {
@@ -170,6 +171,7 @@ export async function postMonthEndPhysicalCount(formData: FormData) {
       month,
       physical_qty_each: eachRaw ? Number(eachRaw) : null,
       physical_qty_cases: casesRaw ? Number(casesRaw) : null,
+      physical_qty_middle_unit: middleRaw ? Number(middleRaw) : null,
       counted_by: profile.id,
       counted_at: new Date().toISOString(),
     },

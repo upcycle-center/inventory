@@ -8,6 +8,8 @@ export interface InventoryReportRow {
   description: string;
   qtyEach: number | null;
   qtyCases: number | null;
+  qtyMiddleUnit: number | null;
+  middleUnitLabel: string | null;
   caseCost: number;
   eachCost: number;
   costValue: number;
@@ -27,7 +29,7 @@ export async function buildInventoryReport(supabase: SupabaseClient): Promise<In
   const { data: locationProductsRaw } = await supabase
     .from("location_products")
     .select(
-      "location_id, product_id, product:products(id, sku, description, product_type, case_cost, sale_price, case_size, bottle_size_ml, pour_size_oz, pour_price)"
+      "location_id, product_id, product:products(id, sku, description, product_type, case_cost, sale_price, case_size, bottle_size_ml, pour_size_oz, pour_price, middle_unit_label, middle_unit_size)"
     )
     .in("location_id", locationIds)
     .eq("active", true);
@@ -58,11 +60,13 @@ export async function buildInventoryReport(supabase: SupabaseClient): Promise<In
         description: product.description,
         qtyEach: entry.qty_each,
         qtyCases: entry.qty_cases,
+        qtyMiddleUnit: entry.qty_middle_unit,
+        middleUnitLabel: product.middle_unit_label,
         caseCost,
         eachCost,
-        costValue: lineValue(entry.qty_each, entry.qty_cases, product),
+        costValue: lineValue(entry.qty_each, entry.qty_cases, product, entry.qty_middle_unit),
         salePriceEach,
-        retailValue: lineRetailValue(entry.qty_each, entry.qty_cases, product),
+        retailValue: lineRetailValue(entry.qty_each, entry.qty_cases, product, entry.qty_middle_unit),
       });
     }
   }
