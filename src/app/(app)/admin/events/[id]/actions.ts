@@ -41,6 +41,24 @@ export async function postTotTickets(formData: FormData) {
   revalidatePath(`/admin/events/${eventId}`);
 }
 
+// Reference headcounts for two specific areas -- captured the same simple
+// way as EST Tickets (a single number, no EST/TOT split), just to help plan
+// staffing for those areas. Not wired into the tier-based staffing math.
+export async function updateAreaAttendance(formData: FormData) {
+  const supabase = createClient();
+  const eventId = String(formData.get("event_id"));
+  const field = String(formData.get("field") || "");
+  if (!eventId || (field !== "grn_room_attendance" && field !== "vip_lounge_attendance")) return;
+
+  const raw = String(formData.get(field) || "").trim();
+  await supabase
+    .from("events")
+    .update({ [field]: raw ? Number(raw) : null })
+    .eq("id", eventId);
+
+  revalidatePath(`/admin/events/${eventId}`);
+}
+
 export async function toggleLocationOpen(formData: FormData) {
   const supabase = createClient();
   const eventId = String(formData.get("event_id"));

@@ -6,7 +6,14 @@ import { STAFF_ROLES, STAFF_ROLE_SHORT_LABEL } from "@/lib/staffRoles";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
-import { confirmLocationStaffing, postTotTickets, toggleLocationOpen, unlockLocationStaffing, updateEstTickets } from "./actions";
+import {
+  confirmLocationStaffing,
+  postTotTickets,
+  toggleLocationOpen,
+  unlockLocationStaffing,
+  updateAreaAttendance,
+  updateEstTickets,
+} from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { effectiveCount, totalRecommendedStaff as totalRecommendedStaffAcross } from "@/lib/staffing";
@@ -165,6 +172,58 @@ export default async function EventDetailPage({ params }: { params: { id: string
               })}
             </span>
           )}
+        </ActionForm>
+
+        <ActionForm
+          action={updateAreaAttendance}
+          savedLabel="Updated"
+          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+        >
+          <input type="hidden" name="event_id" value={event.id} />
+          <input type="hidden" name="field" value="grn_room_attendance" />
+          <div>
+            <label className="mb-1 block text-xs text-gray-500" title="Headcount for the Green Room — reference only, not factored into stand staffing">
+              GRN Room
+            </label>
+            <input
+              name="grn_room_attendance"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={event.grn_room_attendance ?? ""}
+              placeholder="e.g. 40"
+              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+            Update
+          </button>
+        </ActionForm>
+
+        <ActionForm
+          action={updateAreaAttendance}
+          savedLabel="Updated"
+          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+        >
+          <input type="hidden" name="event_id" value={event.id} />
+          <input type="hidden" name="field" value="vip_lounge_attendance" />
+          <div>
+            <label className="mb-1 block text-xs text-gray-500" title="Headcount for the VIP Lounge — reference only, not factored into stand staffing">
+              VIP Lounge
+            </label>
+            <input
+              name="vip_lounge_attendance"
+              type="number"
+              min={0}
+              step={1}
+              defaultValue={event.vip_lounge_attendance ?? ""}
+              placeholder="e.g. 75"
+              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+            Update
+          </button>
         </ActionForm>
       </div>
 

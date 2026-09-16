@@ -114,6 +114,8 @@ export interface Event {
   tot_tickets: number | null;
   tot_tickets_posted_at: string | null;
   tot_tickets_posted_by: string | null;
+  grn_room_attendance: number | null;
+  vip_lounge_attendance: number | null;
   team_size: number | null;
   created_at: string;
 }
