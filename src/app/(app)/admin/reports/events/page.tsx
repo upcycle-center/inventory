@@ -14,7 +14,7 @@ export default async function EventsReportPage() {
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Reports" }, { label: "Events" }]} />
       <h1 className="mb-2 text-lg font-semibold">Events Report</h1>
       <p className="mb-6 text-sm text-gray-500">
-        Staffing and count-sheet completion for the most recent events, most recent first. Click an event to open it.
+        Attendance and staffing for the most recent events, most recent first. Click an event to open it.
       </p>
       <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
         <table className="w-full whitespace-nowrap text-left text-sm">
@@ -22,13 +22,11 @@ export default async function EventsReportPage() {
             <tr>
               <th className="px-4 py-2">Event Date</th>
               <th className="px-4 py-2">Event Name</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">EST Tickets</th>
               <th className="px-4 py-2">TOT Tickets</th>
-              <th className="px-4 py-2">Recommended Shifts</th>
-              <th className="px-4 py-2">Confirmed Shifts</th>
-              <th className="px-4 py-2">Locations Confirmed</th>
-              <th className="px-4 py-2">Count Sheets</th>
+              <th className="px-4 py-2">GRN Room</th>
+              <th className="px-4 py-2">VIP Lounge</th>
+              <th className="px-4 py-2">#Stands</th>
+              <th className="px-4 py-2">WFM Shifts</th>
             </tr>
           </thead>
           <tbody>
@@ -40,22 +38,16 @@ export default async function EventsReportPage() {
                     {r.name}
                   </Link>
                 </td>
-                <td className="px-4 py-2 uppercase text-gray-500">{r.status}</td>
-                <td className="px-4 py-2 text-gray-500">{r.estTickets ?? "—"}</td>
                 <td className="px-4 py-2 text-gray-500">{r.totTicketsPosted ? r.totTickets : "—"}</td>
-                <td className="px-4 py-2 text-gray-500">{r.recommendedShifts}</td>
-                <td className="px-4 py-2 text-gray-500">{r.confirmedShifts}</td>
-                <td className="px-4 py-2 text-gray-500">
-                  {r.locationsConfirmed}/{r.locationsOpen}
-                </td>
-                <td className="px-4 py-2 text-gray-500">
-                  {r.countSheetsSubmitted}/{r.countSheetsExpected}
-                </td>
+                <td className="px-4 py-2 text-gray-500">{r.grnRoomAttendance ?? "—"}</td>
+                <td className="px-4 py-2 text-gray-500">{r.vipLoungeAttendance ?? "—"}</td>
+                <td className="px-4 py-2 text-gray-500">{r.standsOpen}</td>
+                <td className="px-4 py-2 text-gray-500">{r.wfmShifts}</td>
               </tr>
             ))}
             {!rows.length && (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                   No events on record yet.
                 </td>
               </tr>

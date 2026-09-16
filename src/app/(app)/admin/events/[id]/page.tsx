@@ -114,12 +114,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <DeleteEventButton eventId={event.id} />
       </div>
 
-      <div className="mb-8 flex flex-wrap gap-4">
-        <ActionForm
-          action={updateEstTickets}
-          savedLabel="EST updated"
-          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-        >
+      <div className="mb-8 flex flex-wrap items-start gap-x-6 gap-y-3 rounded-md border border-gray-200 bg-white p-4">
+        <ActionForm action={updateEstTickets} savedLabel="EST updated" className="flex items-end gap-2">
           <input type="hidden" name="event_id" value={event.id} />
           <div>
             <label className="mb-1 block text-xs text-gray-500" title="Estimate from latest ticket sales — drives staffing projections below">
@@ -132,37 +128,35 @@ export default async function EventDetailPage({ params }: { params: { id: string
               step={1}
               defaultValue={event.est_tickets ?? ""}
               placeholder="e.g. 2500"
-              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
             />
           </div>
-          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+          <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
             Update
           </button>
         </ActionForm>
 
-        <ActionForm
-          action={postTotTickets}
-          savedLabel="TOT posted"
-          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-        >
-          <input type="hidden" name="event_id" value={event.id} />
-          <div>
-            <label className="mb-1 block text-xs text-gray-500" title="Actual final count reported to the Stands day-of">
-              TOT Tickets
-            </label>
-            <input
-              name="tot_tickets"
-              type="number"
-              min={0}
-              step={1}
-              defaultValue={event.tot_tickets ?? ""}
-              placeholder="e.g. 2650"
-              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-            Post
-          </button>
+        <div className="flex flex-col gap-1">
+          <ActionForm action={postTotTickets} savedLabel="TOT posted" className="flex items-end gap-2">
+            <input type="hidden" name="event_id" value={event.id} />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500" title="Actual final count reported to the Stands day-of">
+                TOT Tickets
+              </label>
+              <input
+                name="tot_tickets"
+                type="number"
+                min={0}
+                step={1}
+                defaultValue={event.tot_tickets ?? ""}
+                placeholder="e.g. 2650"
+                className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              />
+            </div>
+            <button type="submit" className="rounded-md bg-brand px-2 py-1.5 text-xs text-white">
+              Post
+            </button>
+          </ActionForm>
           {event.tot_tickets_posted_at && (
             <span className="text-xs text-gray-400">
               Posted{(event as any).tot_tickets_posted_by_profile?.name ? ` by ${(event as any).tot_tickets_posted_by_profile.name}` : ""} on{" "}
@@ -172,13 +166,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
               })}
             </span>
           )}
-        </ActionForm>
+        </div>
 
-        <ActionForm
-          action={updateAreaAttendance}
-          savedLabel="Updated"
-          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-        >
+        <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
           <input type="hidden" name="event_id" value={event.id} />
           <input type="hidden" name="field" value="grn_room_attendance" />
           <div>
@@ -192,19 +182,15 @@ export default async function EventDetailPage({ params }: { params: { id: string
               step={1}
               defaultValue={event.grn_room_attendance ?? ""}
               placeholder="e.g. 40"
-              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
             />
           </div>
-          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+          <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
             Update
           </button>
         </ActionForm>
 
-        <ActionForm
-          action={updateAreaAttendance}
-          savedLabel="Updated"
-          className="flex items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-        >
+        <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
           <input type="hidden" name="event_id" value={event.id} />
           <input type="hidden" name="field" value="vip_lounge_attendance" />
           <div>
@@ -218,10 +204,10 @@ export default async function EventDetailPage({ params }: { params: { id: string
               step={1}
               defaultValue={event.vip_lounge_attendance ?? ""}
               placeholder="e.g. 75"
-              className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
             />
           </div>
-          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+          <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
             Update
           </button>
         </ActionForm>

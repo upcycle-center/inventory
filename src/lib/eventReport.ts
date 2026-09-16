@@ -6,26 +6,20 @@ export interface EventReportRow {
   id: string;
   name: string;
   eventDate: string;
-  status: string;
-  estTickets: number | null;
   totTickets: number | null;
   totTicketsPosted: boolean;
-  recommendedShifts: number;
-  confirmedShifts: number;
-  locationsOpen: number;
-  locationsConfirmed: number;
-  countSheetsExpected: number;
-  countSheetsSubmitted: number;
+  grnRoomAttendance: number | null;
+  vipLoungeAttendance: number | null;
+  standsOpen: number;
+  wfmShifts: number;
 }
 
-// One row per event with the same staffing/count-sheet-completion math the
-// Dashboard rolls up across just "upcoming/open" events -- Reports > Events
-// keeps it at per-event detail and covers every event on record (most
-// recent first), not only the currently active ones.
+// One row per event -- Reports > Events -- covering every event on record
+// (most recent first), not only the currently active ones.
 export async function buildEventReport(supabase: SupabaseClient, limit = 200): Promise<EventReportRow[]> {
   const { data: eventsRaw } = await supabase
     .from("events")
-    .select("id, name, event_date, est_tickets, tot_tickets, tot_tickets_posted_at, status")
+    .select("id, name, event_date, est_tickets, tot_tickets, tot_tickets_posted_at, grn_room_attendance, vip_lounge_attendance")
     .order("event_date", { ascending: false })
     .limit(limit);
   const events =
@@ -37,7 +31,8 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
           est_tickets: number | null;
           tot_tickets: number | null;
           tot_tickets_posted_at: string | null;
-          status: string;
+          grn_room_attendance: number | null;
+          vip_lounge_attendance: number | null;
         }[]
       | null) ?? [];
   if (!events.length) return [];
@@ -48,15 +43,14 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
   const standLocations = (standLocationsRaw as Location[] | null) ?? [];
   const standLocationIds = standLocations.map((l) => l.id);
 
-  const [{ data: staffRolesRaw }, { data: staffTiersRaw }, { data: eventLocationsRaw }, { data: closingCountsRaw }] = await Promise.all([
+  const [{ data: staffRolesRaw }, { data: staffTiersRaw }, { data: eventLocationsRaw }] = await Promise.all([
     standLocationIds.length
       ? supabase.from("location_staff_roles").select("*").in("location_id", standLocationIds)
       : Promise.resolve({ data: [] as LocationStaffRole[] }),
     standLocationIds.length
       ? supabase.from("location_staff_tiers").select("*").in("location_id", standLocationIds)
       : Promise.resolve({ data: [] as LocationStaffTier[] }),
-    supabase.from("event_locations").select("event_id, location_id, is_open, confirmed, confirmed_staff_count").in("event_id", eventIds),
-    supabase.from("location_counts").select("event_id, location_id").in("event_id", eventIds).eq("type", "closing"),
+    supabase.from("event_locations").select("event_id, location_id, is_open").in("event_id", eventIds),
   ]);
 
   const rolesByLocationId = new Map<string, LocationStaffRole[]>();
@@ -68,13 +62,7 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
   const staffTiers = (staffTiersRaw as LocationStaffTier[] | null) ?? [];
 
   const eventLocationRows =
-    (eventLocationsRaw as
-      | { event_id: string; location_id: string; is_open: boolean; confirmed: boolean; confirmed_staff_count: number | null }[]
-      | null) ?? [];
-  const submittedKeys = new Set(
-    ((closingCountsRaw as { event_id: string; location_id: string }[] | null) ?? []).map((c) => `${c.event_id}:${c.location_id}`)
-  );
-
+    (eventLocationsRaw as { event_id: string; location_id: string; is_open: boolean }[] | null) ?? [];
   const rowsByEventId = new Map<string, typeof eventLocationRows>();
   for (const r of eventLocationRows) {
     const list = rowsByEventId.get(r.event_id) ?? [];
@@ -85,38 +73,23 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
   return events.map((ev) => {
     const rows = rowsByEventId.get(ev.id) ?? [];
     const openMap = new Map<string, boolean>();
-    const confirmedMap = new Map<string, boolean>();
-    let locationsOpen = 0;
-    let locationsConfirmed = 0;
-    let countSheetsExpected = 0;
-    let countSheetsSubmitted = 0;
+    let standsOpen = 0;
     for (const r of rows) {
       openMap.set(r.location_id, r.is_open);
-      confirmedMap.set(r.location_id, r.is_open && r.confirmed);
-      if (r.is_open) locationsOpen += 1;
-      if (r.is_open && r.confirmed) {
-        locationsConfirmed += 1;
-        countSheetsExpected += 1;
-        if (submittedKeys.has(`${ev.id}:${r.location_id}`)) countSheetsSubmitted += 1;
-      }
+      if (r.is_open) standsOpen += 1;
     }
-    const recommendedShifts = totalRecommendedStaff(standLocationIds, openMap, rolesByLocationId, staffTiers, ev.est_tickets);
-    const confirmedShifts = totalRecommendedStaff(standLocationIds, confirmedMap, rolesByLocationId, staffTiers, ev.est_tickets);
+    const wfmShifts = totalRecommendedStaff(standLocationIds, openMap, rolesByLocationId, staffTiers, ev.est_tickets);
 
     return {
       id: ev.id,
       name: ev.name,
       eventDate: ev.event_date,
-      status: ev.status,
-      estTickets: ev.est_tickets,
       totTickets: ev.tot_tickets,
       totTicketsPosted: !!ev.tot_tickets_posted_at,
-      recommendedShifts,
-      confirmedShifts,
-      locationsOpen,
-      locationsConfirmed,
-      countSheetsExpected,
-      countSheetsSubmitted,
+      grnRoomAttendance: ev.grn_room_attendance,
+      vipLoungeAttendance: ev.vip_lounge_attendance,
+      standsOpen,
+      wfmShifts,
     };
   });
 }
