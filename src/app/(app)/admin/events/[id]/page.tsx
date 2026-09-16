@@ -114,29 +114,38 @@ export default async function EventDetailPage({ params }: { params: { id: string
         <DeleteEventButton eventId={event.id} />
       </div>
 
-      <div className="mb-8 flex flex-wrap items-start gap-x-6 gap-y-3 rounded-md border border-gray-200 bg-white p-4">
-        <ActionForm action={updateEstTickets} savedLabel="EST updated" className="flex items-end gap-2">
-          <input type="hidden" name="event_id" value={event.id} />
-          <div>
-            <label className="mb-1 block text-xs text-gray-500" title="Estimate from latest ticket sales — drives staffing projections below">
-              EST Tickets
-            </label>
-            <input
-              name="est_tickets"
-              type="number"
-              min={0}
-              step={1}
-              defaultValue={event.est_tickets ?? ""}
-              placeholder="e.g. 2500"
-              className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
-            Update
-          </button>
-        </ActionForm>
+      <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
+        {event.tot_tickets_posted_at && (
+          <p className="mb-3 text-xs text-gray-400">
+            Last updated{(event as any).tot_tickets_posted_by_profile?.name ? ` by ${(event as any).tot_tickets_posted_by_profile.name}` : ""} on{" "}
+            {new Date(event.tot_tickets_posted_at).toLocaleString(undefined, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
+          </p>
+        )}
+        <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+          <ActionForm action={updateEstTickets} savedLabel="EST updated" className="flex items-end gap-2">
+            <input type="hidden" name="event_id" value={event.id} />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500" title="Estimate from latest ticket sales — drives staffing projections below">
+                EST Tickets
+              </label>
+              <input
+                name="est_tickets"
+                type="number"
+                min={0}
+                step={1}
+                defaultValue={event.est_tickets ?? ""}
+                placeholder="e.g. 2500"
+                className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              />
+            </div>
+            <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
+              Update
+            </button>
+          </ActionForm>
 
-        <div className="flex flex-col gap-1">
           <ActionForm action={postTotTickets} savedLabel="TOT posted" className="flex items-end gap-2">
             <input type="hidden" name="event_id" value={event.id} />
             <div>
@@ -157,60 +166,51 @@ export default async function EventDetailPage({ params }: { params: { id: string
               Post
             </button>
           </ActionForm>
-          {event.tot_tickets_posted_at && (
-            <span className="text-xs text-gray-400">
-              Posted{(event as any).tot_tickets_posted_by_profile?.name ? ` by ${(event as any).tot_tickets_posted_by_profile.name}` : ""} on{" "}
-              {new Date(event.tot_tickets_posted_at).toLocaleString(undefined, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
-            </span>
-          )}
+
+          <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
+            <input type="hidden" name="event_id" value={event.id} />
+            <input type="hidden" name="field" value="grn_room_attendance" />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500" title="Headcount for the Green Room — reference only, not factored into stand staffing">
+                GRN Room
+              </label>
+              <input
+                name="grn_room_attendance"
+                type="number"
+                min={0}
+                step={1}
+                defaultValue={event.grn_room_attendance ?? ""}
+                placeholder="e.g. 40"
+                className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              />
+            </div>
+            <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
+              Update
+            </button>
+          </ActionForm>
+
+          <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
+            <input type="hidden" name="event_id" value={event.id} />
+            <input type="hidden" name="field" value="vip_lounge_attendance" />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500" title="Headcount for the VIP Lounge — reference only, not factored into stand staffing">
+                VIP Lounge
+              </label>
+              <input
+                name="vip_lounge_attendance"
+                type="number"
+                min={0}
+                step={1}
+                defaultValue={event.vip_lounge_attendance ?? ""}
+                placeholder="e.g. 75"
+                className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              />
+            </div>
+            <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
+              Update
+            </button>
+          </ActionForm>
         </div>
-
-        <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
-          <input type="hidden" name="event_id" value={event.id} />
-          <input type="hidden" name="field" value="grn_room_attendance" />
-          <div>
-            <label className="mb-1 block text-xs text-gray-500" title="Headcount for the Green Room — reference only, not factored into stand staffing">
-              GRN Room
-            </label>
-            <input
-              name="grn_room_attendance"
-              type="number"
-              min={0}
-              step={1}
-              defaultValue={event.grn_room_attendance ?? ""}
-              placeholder="e.g. 40"
-              className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
-            Update
-          </button>
-        </ActionForm>
-
-        <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
-          <input type="hidden" name="event_id" value={event.id} />
-          <input type="hidden" name="field" value="vip_lounge_attendance" />
-          <div>
-            <label className="mb-1 block text-xs text-gray-500" title="Headcount for the VIP Lounge — reference only, not factored into stand staffing">
-              VIP Lounge
-            </label>
-            <input
-              name="vip_lounge_attendance"
-              type="number"
-              min={0}
-              step={1}
-              defaultValue={event.vip_lounge_attendance ?? ""}
-              placeholder="e.g. 75"
-              className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
-            Update
-          </button>
-        </ActionForm>
       </div>
 
       {totRecommended != null && totRecommended !== estRecommended && (
