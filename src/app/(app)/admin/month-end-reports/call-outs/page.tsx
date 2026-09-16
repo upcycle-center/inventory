@@ -61,9 +61,9 @@ function BreakdownTable({
           <thead className="text-gray-500">
             <tr>
               <th className="w-[48%] px-4 py-2">{labelHeader}</th>
-              <th className="w-[13%] px-4 py-2">Call-Outs</th>
-              <th className="w-[13%] px-4 py-2">No-Shows</th>
-              <th className="w-[12%] px-4 py-2">Total</th>
+              <th className="w-[13%] px-4 py-2 text-center">Call-Outs</th>
+              <th className="w-[13%] px-4 py-2 text-center">No-Shows</th>
+              <th className="w-[12%] px-4 py-2 text-center">Total</th>
               <th className="w-[14%] whitespace-nowrap px-2 py-2 text-right">Log</th>
             </tr>
           </thead>
@@ -71,9 +71,9 @@ function BreakdownTable({
             {rows.map((r) => (
               <tr key={r.key} className="border-t border-gray-100">
                 <td className="truncate px-4 py-2">{r.label}</td>
-                <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
-                <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
-                <td className="px-4 py-2 font-medium">{r.total}</td>
+                <td className="px-4 py-2 text-center text-gray-500">{r.callOuts}</td>
+                <td className="px-4 py-2 text-center text-gray-500">{r.noShows}</td>
+                <td className="px-4 py-2 text-center font-medium">{r.total}</td>
                 <td className="whitespace-nowrap px-2 py-2 text-right">
                   <Link href={r.viewLogHref} className="text-xs text-brand hover:underline">
                     View log →
