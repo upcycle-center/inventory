@@ -144,10 +144,11 @@ export default async function AdminProductsPage({
                 <td className="px-4 py-2 whitespace-nowrap">
                   <Link
                     href={`/admin/products/new?from=${p.id}`}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:underline"
+                    aria-label="Duplicate"
+                    title="Duplicate"
+                    className="inline-flex items-center text-amber-600 hover:text-amber-700"
                   >
                     <DuplicateIcon />
-                    Duplicate
                   </Link>
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.supplier?.name ?? "—"}</td>
@@ -169,7 +170,7 @@ export default async function AdminProductsPage({
 
 function DuplicateIcon() {
   return (
-    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" aria-hidden="true">
+    <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" fill="none" aria-hidden="true">
       <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
       <path d="M3.5 10.5h-1a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.3" />
     </svg>

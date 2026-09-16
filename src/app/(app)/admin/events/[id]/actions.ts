@@ -4,56 +4,37 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 
-export async function updateEstTickets(formData: FormData) {
-  const supabase = createClient();
-  const eventId = String(formData.get("event_id"));
-  const estRaw = String(formData.get("est_tickets") || "").trim();
-  if (!eventId) return;
-
-  await supabase
-    .from("events")
-    .update({ est_tickets: estRaw ? Number(estRaw) : null })
-    .eq("id", eventId);
-
-  revalidatePath(`/admin/events/${eventId}`);
-}
-
-// Posting TOT Tickets is the deliberate "this is the actual final count"
-// action — distinct from saving the EST estimate — so the Locations table
-// can compare it against the EST-driven staffing recommendation and flag
-// over/under staffing once the real attendance is known.
-export async function postTotTickets(formData: FormData) {
+// One save for the whole attendance card (EST/TOT Tickets, GRN Room, VIP
+// Lounge) instead of a button per field. These numbers change fast and get
+// updated by whoever has the latest count, so every save stamps
+// attendance_updated_at/by for a single trustworthy "Last updated by X on
+// Y" line. Saving a TOT Tickets value here also counts as "posting" it
+// (tot_tickets_posted_at/by), which is what unlocks the EST-vs-TOT
+// over/under staffing comparison below — clearing the field un-posts it.
+export async function updateEventAttendance(formData: FormData) {
   const profile = await requireProfile(["admin"]);
   const supabase = createClient();
   const eventId = String(formData.get("event_id"));
+  if (!eventId) return;
+
+  const estRaw = String(formData.get("est_tickets") || "").trim();
   const totRaw = String(formData.get("tot_tickets") || "").trim();
-  if (!eventId || !totRaw) return;
+  const grnRaw = String(formData.get("grn_room_attendance") || "").trim();
+  const vipRaw = String(formData.get("vip_lounge_attendance") || "").trim();
+  const now = new Date().toISOString();
 
   await supabase
     .from("events")
     .update({
-      tot_tickets: Number(totRaw),
-      tot_tickets_posted_at: new Date().toISOString(),
-      tot_tickets_posted_by: profile.id,
+      est_tickets: estRaw ? Number(estRaw) : null,
+      tot_tickets: totRaw ? Number(totRaw) : null,
+      tot_tickets_posted_at: totRaw ? now : null,
+      tot_tickets_posted_by: totRaw ? profile.id : null,
+      grn_room_attendance: grnRaw ? Number(grnRaw) : null,
+      vip_lounge_attendance: vipRaw ? Number(vipRaw) : null,
+      attendance_updated_at: now,
+      attendance_updated_by: profile.id,
     })
-    .eq("id", eventId);
-
-  revalidatePath(`/admin/events/${eventId}`);
-}
-
-// Reference headcounts for two specific areas -- captured the same simple
-// way as EST Tickets (a single number, no EST/TOT split), just to help plan
-// staffing for those areas. Not wired into the tier-based staffing math.
-export async function updateAreaAttendance(formData: FormData) {
-  const supabase = createClient();
-  const eventId = String(formData.get("event_id"));
-  const field = String(formData.get("field") || "");
-  if (!eventId || (field !== "grn_room_attendance" && field !== "vip_lounge_attendance")) return;
-
-  const raw = String(formData.get(field) || "").trim();
-  await supabase
-    .from("events")
-    .update({ [field]: raw ? Number(raw) : null })
     .eq("id", eventId);
 
   revalidatePath(`/admin/events/${eventId}`);

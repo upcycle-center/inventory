@@ -8,11 +8,9 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
 import {
   confirmLocationStaffing,
-  postTotTickets,
   toggleLocationOpen,
   unlockLocationStaffing,
-  updateAreaAttendance,
-  updateEstTickets,
+  updateEventAttendance,
 } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
 import { DeleteEventButton } from "./DeleteEventButton";
@@ -25,7 +23,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
     await Promise.all([
       supabase
         .from("events")
-        .select("*, tot_tickets_posted_by_profile:profiles(id, name)")
+        .select(
+          "*, tot_tickets_posted_by_profile:profiles!events_tot_tickets_posted_by_fkey(id, name), attendance_updated_by_profile:profiles!events_attendance_updated_by_fkey(id, name)"
+        )
         .eq("id", params.id)
         .single(),
       supabase.from("locations").select("*").eq("active", true).eq("type", "stand").order("name"),
@@ -115,18 +115,18 @@ export default async function EventDetailPage({ params }: { params: { id: string
       </div>
 
       <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
-        {event.tot_tickets_posted_at && (
+        {event.attendance_updated_at && (
           <p className="mb-3 text-xs text-gray-400">
-            Last updated{(event as any).tot_tickets_posted_by_profile?.name ? ` by ${(event as any).tot_tickets_posted_by_profile.name}` : ""} on{" "}
-            {new Date(event.tot_tickets_posted_at).toLocaleString(undefined, {
+            Last updated{(event as any).attendance_updated_by_profile?.name ? ` by ${(event as any).attendance_updated_by_profile.name}` : ""} on{" "}
+            {new Date(event.attendance_updated_at).toLocaleString(undefined, {
               dateStyle: "medium",
               timeStyle: "short",
             })}
           </p>
         )}
-        <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
-          <ActionForm action={updateEstTickets} savedLabel="EST updated" className="flex items-end gap-2">
-            <input type="hidden" name="event_id" value={event.id} />
+        <ActionForm action={updateEventAttendance} savedLabel="Attendance updated" className="flex flex-col gap-4">
+          <input type="hidden" name="event_id" value={event.id} />
+          <div className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs text-gray-500" title="Estimate from latest ticket sales — drives staffing projections below">
                 EST Tickets
@@ -141,13 +141,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
-            <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
-              Update
-            </button>
-          </ActionForm>
 
-          <ActionForm action={postTotTickets} savedLabel="TOT posted" className="flex items-end gap-2">
-            <input type="hidden" name="event_id" value={event.id} />
             <div>
               <label className="mb-1 block text-xs text-gray-500" title="Actual final count reported to the Stands day-of">
                 TOT Tickets
@@ -162,14 +156,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
-            <button type="submit" className="rounded-md bg-brand px-2 py-1.5 text-xs text-white">
-              Post
-            </button>
-          </ActionForm>
 
-          <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
-            <input type="hidden" name="event_id" value={event.id} />
-            <input type="hidden" name="field" value="grn_room_attendance" />
             <div>
               <label className="mb-1 block text-xs text-gray-500" title="Headcount for the Green Room — reference only, not factored into stand staffing">
                 GRN Room
@@ -184,14 +171,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
-            <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
-              Update
-            </button>
-          </ActionForm>
 
-          <ActionForm action={updateAreaAttendance} savedLabel="Updated" className="flex items-end gap-2">
-            <input type="hidden" name="event_id" value={event.id} />
-            <input type="hidden" name="field" value="vip_lounge_attendance" />
             <div>
               <label className="mb-1 block text-xs text-gray-500" title="Headcount for the VIP Lounge — reference only, not factored into stand staffing">
                 VIP Lounge
@@ -206,11 +186,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
-            <button type="submit" className="rounded-md border border-gray-300 px-2 py-1.5 text-xs">
-              Update
-            </button>
-          </ActionForm>
-        </div>
+          </div>
+          <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+            Update
+          </button>
+        </ActionForm>
       </div>
 
       {totRecommended != null && totRecommended !== estRecommended && (
