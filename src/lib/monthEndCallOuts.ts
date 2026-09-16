@@ -57,7 +57,10 @@ export async function buildMonthEndCallOutsReport(
   roleBreakdown: RoleCallOutBreakdown[];
   locationBreakdown: LocationCallOutBreakdown[];
   eventBreakdown: EventCallOutBreakdown[];
+  summary: { callOuts: number; noShows: number; other: number };
 }> {
+  const emptyResult = { roleBreakdown: [], locationBreakdown: [], eventBreakdown: [], summary: { callOuts: 0, noShows: 0, other: 0 } };
+
   const { data: standLocationsRaw } = await supabase
     .from("locations")
     .select("id, name, yellow_dog_code")
@@ -65,19 +68,27 @@ export async function buildMonthEndCallOutsReport(
     .eq("type", "stand");
   const standLocations = (standLocationsRaw as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? [];
   const standLocationIds = standLocations.map((l) => l.id);
-  if (!standLocationIds.length) return { roleBreakdown: [], locationBreakdown: [], eventBreakdown: [] };
+  if (!standLocationIds.length) return emptyResult;
 
   const events = await eventsForMonth(supabase, year, month);
   const eventIds = events.map((e) => e.id);
-  if (!eventIds.length) return { roleBreakdown: [], locationBreakdown: [], eventBreakdown: [] };
+  if (!eventIds.length) return emptyResult;
 
+  // All three types are fetched here (not just call_out/no_show) so the
+  // month snapshot can include Adjustments -- the per-role/location/event
+  // breakdowns below still only count real absences.
   const { data: callOutsRaw } = await supabase
     .from("shift_call_outs")
     .select("event_id, location_id, role_name, call_out_type")
     .in("event_id", eventIds)
-    .in("location_id", standLocationIds)
-    .in("call_out_type", ["call_out", "no_show"]);
-  const callOuts = (callOutsRaw as { event_id: string; location_id: string; role_name: string; call_out_type: string }[] | null) ?? [];
+    .in("location_id", standLocationIds);
+  const allEntries = (callOutsRaw as { event_id: string; location_id: string; role_name: string; call_out_type: string }[] | null) ?? [];
+  const summary = {
+    callOuts: allEntries.filter((c) => c.call_out_type === "call_out").length,
+    noShows: allEntries.filter((c) => c.call_out_type === "no_show").length,
+    other: allEntries.filter((c) => c.call_out_type === "other").length,
+  };
+  const callOuts = allEntries.filter((c) => c.call_out_type === "call_out" || c.call_out_type === "no_show");
 
   const roleBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
   const locationBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
@@ -120,7 +131,7 @@ export async function buildMonthEndCallOutsReport(
     .filter((e) => e.total > 0)
     .sort((a, b) => b.total - a.total);
 
-  return { roleBreakdown, locationBreakdown, eventBreakdown };
+  return { roleBreakdown, locationBreakdown, eventBreakdown, summary };
 }
 
 export interface CallOutLogEntry {

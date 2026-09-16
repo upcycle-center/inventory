@@ -12,6 +12,7 @@ import { DonutChart } from "@/components/DonutChart";
 import { Meter } from "@/components/Meter";
 import { LocationLabel } from "@/components/LocationLabel";
 import { RoleActionButtons } from "@/components/RoleActionButtons";
+import { ThreeStatCard } from "@/components/ThreeStatCard";
 import { locationDisplayName } from "@/lib/locationLabel";
 
 function fmtCurrency(value: number) {
@@ -631,30 +632,3 @@ function WfmShiftsCard({ shifts, confirmed, pending }: { shifts: number; confirm
   );
 }
 
-// Same "N : N : N" layout as WfmShiftsCard, generalized to any set of
-// labeled counts -- used for the Call-Outs/No-Shows/Other breakdown.
-function ThreeStatCard({
-  values,
-  labels,
-  className = "",
-}: {
-  values: [number, number, number];
-  labels: [string, string, string];
-  className?: string;
-}) {
-  return (
-    <div className={`rounded-md border border-gray-200 bg-white p-5 ${className}`}>
-      <div className="flex items-start justify-center gap-3">
-        {values.map((value, i) => (
-          <div key={labels[i]} className="flex items-center gap-3">
-            {i > 0 && <p className="text-2xl font-bold text-gray-300">:</p>}
-            <div className="text-center">
-              <p className="text-2xl font-bold">{value}</p>
-              <p className="text-xs text-gray-500">{labels[i]}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}

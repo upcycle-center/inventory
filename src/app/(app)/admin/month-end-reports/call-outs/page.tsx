@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { MonthYearPicker } from "@/components/MonthYearPicker";
 import { LocationLabel } from "@/components/LocationLabel";
+import { ThreeStatCard } from "@/components/ThreeStatCard";
 import {
   buildMonthEndCallOutsReport,
   getEventCallOutEntries,
@@ -59,11 +60,11 @@ function BreakdownTable({
         <table className="w-full table-fixed text-left text-sm">
           <thead className="text-gray-500">
             <tr>
-              <th className="w-[52%] px-4 py-2">{labelHeader}</th>
-              <th className="w-[14%] px-4 py-2">Call-Outs</th>
-              <th className="w-[14%] px-4 py-2">No-Shows</th>
-              <th className="w-[13%] px-4 py-2">Total</th>
-              <th className="w-[7%] px-2 py-2 text-right">Log</th>
+              <th className="w-[48%] px-4 py-2">{labelHeader}</th>
+              <th className="w-[13%] px-4 py-2">Call-Outs</th>
+              <th className="w-[13%] px-4 py-2">No-Shows</th>
+              <th className="w-[12%] px-4 py-2">Total</th>
+              <th className="w-[14%] whitespace-nowrap px-2 py-2 text-right">Log</th>
             </tr>
           </thead>
           <tbody>
@@ -73,7 +74,7 @@ function BreakdownTable({
                 <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
                 <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
                 <td className="px-4 py-2 font-medium">{r.total}</td>
-                <td className="px-2 py-2 text-right">
+                <td className="whitespace-nowrap px-2 py-2 text-right">
                   <Link href={r.viewLogHref} className="text-xs text-brand hover:underline">
                     View log →
                   </Link>
@@ -243,7 +244,7 @@ export default async function MonthEndCallOutsPage({
     );
   }
 
-  const { roleBreakdown, locationBreakdown, eventBreakdown } = await buildMonthEndCallOutsReport(supabase, year, month);
+  const { roleBreakdown, locationBreakdown, eventBreakdown, summary } = await buildMonthEndCallOutsReport(supabase, year, month);
 
   return (
     <div>
@@ -259,6 +260,13 @@ export default async function MonthEndCallOutsPage({
         Call-Outs and No-Shows logged by role on each event&apos;s page, across {MONTH_NAMES[month - 1]} {year}.
       </p>
       <MonthYearPicker basePath={basePath} year={year} month={month} />
+
+      <div className="mt-6 max-w-xs">
+        <ThreeStatCard
+          values={[summary.callOuts, summary.noShows, summary.other]}
+          labels={["Call-Outs", "No-Shows", "Other"]}
+        />
+      </div>
 
       <div className="mt-6 space-y-6">
         <BreakdownTable
