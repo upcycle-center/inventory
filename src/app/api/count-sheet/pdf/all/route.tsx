@@ -24,7 +24,11 @@ export async function GET(request: Request) {
   const supabase = createClient();
 
   const [{ data: event }, { data: locations }, { data: eventLocations }] = await Promise.all([
-    supabase.from("events").select("id, name, event_date, est_tickets, tot_tickets").eq("id", eventId).single(),
+    supabase
+      .from("events")
+      .select("id, name, event_date, est_tickets, tot_tickets, grn_room_attendance, vip_lounge_attendance")
+      .eq("id", eventId)
+      .single(),
     supabase.from("locations").select("id, name, type, yellow_dog_code").eq("active", true).eq("type", "stand").order("name"),
     supabase.from("event_locations").select("location_id, is_open").eq("event_id", eventId),
   ]);
@@ -102,6 +106,8 @@ export async function GET(request: Request) {
         eventDate: event.event_date,
         leadName: leadNameByLocationId.get(location.id) ?? null,
         totTickets: event.tot_tickets,
+        grnRoomAttendance: event.grn_room_attendance ?? null,
+        vipLoungeAttendance: event.vip_lounge_attendance ?? null,
         roles,
         areas,
         qrCodeDataUri: await checkinQrDataUri(origin, location.id),
