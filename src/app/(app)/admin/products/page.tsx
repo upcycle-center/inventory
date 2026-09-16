@@ -108,15 +108,15 @@ export default async function AdminProductsPage({
       </form>
 
       <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <table className="w-full whitespace-nowrap text-left text-sm">
+        <table className="w-full text-left text-sm">
           <thead className="text-gray-500">
             <tr>
               <th className="px-4 py-2"></th>
-              <th className="px-4 py-2">IC</th>
+              <th className="px-4 py-2 whitespace-nowrap">IC</th>
               <th className="px-4 py-2">Product</th>
-              <th className="px-4 py-2">Unit</th>
+              <th className="px-4 py-2 whitespace-nowrap">Case Size</th>
               <th className="px-4 py-2"></th>
-              <th className="px-4 py-2">Supplier</th>
+              <th className="px-4 py-2 whitespace-nowrap">Supplier</th>
             </tr>
           </thead>
           <tbody>
@@ -134,25 +134,19 @@ export default async function AdminProductsPage({
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-gray-500">{p.sku}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.sku}</td>
+                <td className="px-4 py-2 max-w-xs">
                   <Link href={`/admin/products/${p.id}`} className="font-medium text-brand hover:underline">
                     {p.description}
                   </Link>
                 </td>
-                <td className="px-4 py-2 text-gray-500">
-                  {p.unit_of_measure === "case" && p.case_size
-                    ? `Case of ${p.case_size}`
-                    : p.case_size
-                      ? `${p.unit_of_measure} · ${p.case_size}/case`
-                      : p.unit_of_measure}
-                </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/case` : "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap">
                   <Link href={`/admin/products/new?from=${p.id}`} className="text-xs font-medium text-amber-600 hover:underline">
                     Duplicate
                   </Link>
                 </td>
-                <td className="px-4 py-2 text-gray-500">{p.supplier?.name ?? "—"}</td>
+                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.supplier?.name ?? "—"}</td>
               </tr>
             ))}
             {!products?.length && (
