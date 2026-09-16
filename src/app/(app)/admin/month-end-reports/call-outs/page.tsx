@@ -234,43 +234,6 @@ export default async function MonthEndCallOutsPage({
       </div>
 
       <div className="mb-6 overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <p className="px-4 pt-3 text-sm font-medium">Call-Outs / No-Shows by ROLE</p>
-        {roleBreakdown.length > 0 ? (
-          <table className="w-full text-left text-sm">
-            <thead className="text-gray-500">
-              <tr>
-                <th className="px-4 py-2">Role</th>
-                <th className="px-4 py-2">Call-Outs</th>
-                <th className="px-4 py-2">No-Shows</th>
-                <th className="px-4 py-2">Total</th>
-                <th className="px-4 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {roleBreakdown.map((r) => (
-                <tr key={r.roleName} className="border-t border-gray-100">
-                  <td className="px-4 py-2">{r.roleName}</td>
-                  <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
-                  <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
-                  <td className="px-4 py-2 font-medium">{r.total}</td>
-                  <td className="px-4 py-2">
-                    <Link
-                      href={`${basePath}?${monthQuery}&role=${encodeURIComponent(r.roleName)}`}
-                      className="text-xs text-brand hover:underline"
-                    >
-                      View log →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="px-4 py-6 text-center text-sm text-gray-400">No call-outs or no-shows logged for this month.</p>
-        )}
-      </div>
-
-      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
         <p className="px-4 pt-3 text-sm font-medium">Call-Outs / No-Shows by LOCATION</p>
         {locationBreakdown.length > 0 ? (
           <table className="w-full text-left text-sm">
@@ -295,6 +258,43 @@ export default async function MonthEndCallOutsPage({
                   <td className="px-4 py-2">
                     <Link
                       href={`${basePath}?${monthQuery}&location=${l.locationId}`}
+                      className="text-xs text-brand hover:underline"
+                    >
+                      View log →
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="px-4 py-6 text-center text-sm text-gray-400">No call-outs or no-shows logged for this month.</p>
+        )}
+      </div>
+
+      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+        <p className="px-4 pt-3 text-sm font-medium">Call-Outs / No-Shows by ROLE</p>
+        {roleBreakdown.length > 0 ? (
+          <table className="w-full text-left text-sm">
+            <thead className="text-gray-500">
+              <tr>
+                <th className="px-4 py-2">Role</th>
+                <th className="px-4 py-2">Call-Outs</th>
+                <th className="px-4 py-2">No-Shows</th>
+                <th className="px-4 py-2">Total</th>
+                <th className="px-4 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {roleBreakdown.map((r) => (
+                <tr key={r.roleName} className="border-t border-gray-100">
+                  <td className="px-4 py-2">{r.roleName}</td>
+                  <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
+                  <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
+                  <td className="px-4 py-2 font-medium">{r.total}</td>
+                  <td className="px-4 py-2">
+                    <Link
+                      href={`${basePath}?${monthQuery}&role=${encodeURIComponent(r.roleName)}`}
                       className="text-xs text-brand hover:underline"
                     >
                       View log →
