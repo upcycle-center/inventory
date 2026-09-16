@@ -250,17 +250,24 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 const eventLocation = eventLocationByLocationId.get(l.id);
                 const confirmed = eventLocation?.confirmed ?? false;
                 const roles = rolesByLocationId.get(l.id) ?? [];
+                const confirmedRoleCounts = (eventLocation?.confirmed_role_counts as Record<string, number> | null) ?? null;
 
                 // A closed location needs nobody: every role reads 0, not
                 // just the total. An open location always needs at least
                 // the (1) Stand Lead — that's a fixed baseline, not a
-                // configurable role/tier.
+                // configurable role/tier. displayCount is what's actually
+                // shown for a confirmed row (the confirmed/adjusted count,
+                // not the freshly recomputed suggestion) -- used for both
+                // the row itself and the column totals below, so the two
+                // can't drift apart the way they did when the totals summed
+                // the raw suggestion instead of what was actually confirmed.
                 const roleCounts = STAFF_ROLES.map((roleName) => {
-                  if (!isOpen) return { roleName, count: 0, note: "Closed" };
+                  if (!isOpen) return { roleName, count: 0, note: "Closed", displayCount: 0 };
                   const role = roles.find((r) => r.role_name === roleName);
-                  if (!role) return { roleName, count: null as number | null, note: null as string | null };
+                  if (!role) return { roleName, count: null as number | null, note: null as string | null, displayCount: null as number | null };
                   const { count, note } = effectiveCount(role, tiers, event.est_tickets);
-                  return { roleName, count, note };
+                  const displayCount = confirmed ? confirmedRoleCounts?.[roleName] ?? count : count;
+                  return { roleName, count, note, displayCount };
                 });
                 const leadCount = isOpen ? 1 : 0;
                 const roleTotal = roleCounts.reduce((sum, r) => sum + (r.count ?? 0), 0);
@@ -272,8 +279,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
                     : recommended;
                 grandTotal += displayedStaff;
                 leadColumnTotal += leadCount;
-                for (const { roleName, count } of roleCounts) {
-                  roleColumnTotals.set(roleName, (roleColumnTotals.get(roleName) ?? 0) + (count ?? 0));
+                for (const { roleName, displayCount } of roleCounts) {
+                  roleColumnTotals.set(roleName, (roleColumnTotals.get(roleName) ?? 0) + (displayCount ?? 0));
                 }
 
                 return { location: l, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff };
@@ -329,14 +336,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
                       </td>
                       {confirmed ? (
                         <>
-                          {roleCounts.map(({ roleName, count, note }) => {
-                            const previousConfirmed = (eventLocation?.confirmed_role_counts as Record<string, number> | null)?.[roleName];
-                            return (
-                              <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
-                                {count == null ? <span className="text-gray-300">—</span> : previousConfirmed ?? count}
-                              </td>
-                            );
-                          })}
+                          {roleCounts.map(({ roleName, count, note, displayCount }) => (
+                            <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
+                              {count == null ? <span className="text-gray-300">—</span> : displayCount}
+                            </td>
+                          ))}
                           <td className="py-2 pr-3 font-medium">{displayedStaff}</td>
                           <td className="py-2">
                             <form action={unlockLocationStaffing} className="flex flex-wrap items-start gap-2">
