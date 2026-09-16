@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -25,6 +26,68 @@ const REASON_BADGE_CLASS: Record<"call_out" | "no_show" | "other", string> = {
   no_show: "bg-red-100 text-red-700",
   other: "bg-gray-100 text-gray-600",
 };
+
+// The three summary tables (by Event/Location/Role) share this shape so
+// their columns line up with each other pixel-for-pixel -- table-fixed
+// with the same percentage widths on every <th>, regardless of how long
+// a given row's label happens to be (truncated instead of pushing the
+// table wider).
+type BreakdownRow = {
+  key: string;
+  label: ReactNode;
+  callOuts: number;
+  noShows: number;
+  total: number;
+  viewLogHref: string;
+};
+
+function BreakdownTable({
+  title,
+  labelHeader,
+  rows,
+  emptyMessage,
+}: {
+  title: string;
+  labelHeader: string;
+  rows: BreakdownRow[];
+  emptyMessage: string;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+      <p className="px-4 pt-3 text-sm font-medium">{title}</p>
+      {rows.length > 0 ? (
+        <table className="w-full table-fixed text-left text-sm">
+          <thead className="text-gray-500">
+            <tr>
+              <th className="w-[40%] px-4 py-2">{labelHeader}</th>
+              <th className="w-[15%] px-4 py-2">Call-Outs</th>
+              <th className="w-[15%] px-4 py-2">No-Shows</th>
+              <th className="w-[15%] px-4 py-2">Total</th>
+              <th className="w-[15%] px-4 py-2 text-right">Log</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.key} className="border-t border-gray-100">
+                <td className="truncate px-4 py-2">{r.label}</td>
+                <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
+                <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
+                <td className="px-4 py-2 font-medium">{r.total}</td>
+                <td className="px-4 py-2 text-right">
+                  <Link href={r.viewLogHref} className="text-xs text-brand hover:underline">
+                    View log →
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p className="px-4 py-6 text-center text-sm text-gray-400">{emptyMessage}</p>
+      )}
+    </div>
+  );
+}
 
 // showRole/showLocation/showEvent let each drill-down hide whichever
 // column is already implied by the page it's on (e.g. the Location
@@ -197,116 +260,52 @@ export default async function MonthEndCallOutsPage({
       </p>
       <MonthYearPicker basePath={basePath} year={year} month={month} />
 
-      <div className="mb-6 mt-6 overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <p className="px-4 pt-3 text-sm font-medium">Call-Outs / No-Shows by EVENT</p>
-        {eventBreakdown.length > 0 ? (
-          <table className="w-full text-left text-sm">
-            <thead className="text-gray-500">
-              <tr>
-                <th className="px-4 py-2">Event</th>
-                <th className="px-4 py-2">Call-Outs</th>
-                <th className="px-4 py-2">No-Shows</th>
-                <th className="px-4 py-2">Total</th>
-                <th className="px-4 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {eventBreakdown.map((e) => (
-                <tr key={e.eventId} className="border-t border-gray-100">
-                  <td className="px-4 py-2">
-                    {e.eventName} <span className="text-gray-400">· {e.eventDate}</span>
-                  </td>
-                  <td className="px-4 py-2 text-gray-500">{e.callOuts}</td>
-                  <td className="px-4 py-2 text-gray-500">{e.noShows}</td>
-                  <td className="px-4 py-2 font-medium">{e.total}</td>
-                  <td className="px-4 py-2">
-                    <Link href={`${basePath}?${monthQuery}&event=${e.eventId}`} className="text-xs text-brand hover:underline">
-                      View log →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="px-4 py-6 text-center text-sm text-gray-400">No call-outs or no-shows logged for this month.</p>
-        )}
-      </div>
+      <div className="mt-6 space-y-6">
+        <BreakdownTable
+          title="Call-Outs / No-Shows by EVENT"
+          labelHeader="Event"
+          emptyMessage="No call-outs or no-shows logged for this month."
+          rows={eventBreakdown.map((e) => ({
+            key: e.eventId,
+            label: (
+              <>
+                {e.eventName} <span className="text-gray-400">· {e.eventDate}</span>
+              </>
+            ),
+            callOuts: e.callOuts,
+            noShows: e.noShows,
+            total: e.total,
+            viewLogHref: `${basePath}?${monthQuery}&event=${e.eventId}`,
+          }))}
+        />
 
-      <div className="mb-6 overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <p className="px-4 pt-3 text-sm font-medium">Call-Outs / No-Shows by LOCATION</p>
-        {locationBreakdown.length > 0 ? (
-          <table className="w-full text-left text-sm">
-            <thead className="text-gray-500">
-              <tr>
-                <th className="px-4 py-2">Location</th>
-                <th className="px-4 py-2">Call-Outs</th>
-                <th className="px-4 py-2">No-Shows</th>
-                <th className="px-4 py-2">Total</th>
-                <th className="px-4 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {locationBreakdown.map((l) => (
-                <tr key={l.locationId} className="border-t border-gray-100">
-                  <td className="px-4 py-2">
-                    <LocationLabel location={{ name: l.name, yellow_dog_code: l.yellow_dog_code }} />
-                  </td>
-                  <td className="px-4 py-2 text-gray-500">{l.callOuts}</td>
-                  <td className="px-4 py-2 text-gray-500">{l.noShows}</td>
-                  <td className="px-4 py-2 font-medium">{l.total}</td>
-                  <td className="px-4 py-2">
-                    <Link
-                      href={`${basePath}?${monthQuery}&location=${l.locationId}`}
-                      className="text-xs text-brand hover:underline"
-                    >
-                      View log →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="px-4 py-6 text-center text-sm text-gray-400">No call-outs or no-shows logged for this month.</p>
-        )}
-      </div>
+        <BreakdownTable
+          title="Call-Outs / No-Shows by LOCATION"
+          labelHeader="Location"
+          emptyMessage="No call-outs or no-shows logged for this month."
+          rows={locationBreakdown.map((l) => ({
+            key: l.locationId,
+            label: <LocationLabel location={{ name: l.name, yellow_dog_code: l.yellow_dog_code }} />,
+            callOuts: l.callOuts,
+            noShows: l.noShows,
+            total: l.total,
+            viewLogHref: `${basePath}?${monthQuery}&location=${l.locationId}`,
+          }))}
+        />
 
-      <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <p className="px-4 pt-3 text-sm font-medium">Call-Outs / No-Shows by ROLE</p>
-        {roleBreakdown.length > 0 ? (
-          <table className="w-full text-left text-sm">
-            <thead className="text-gray-500">
-              <tr>
-                <th className="px-4 py-2">Role</th>
-                <th className="px-4 py-2">Call-Outs</th>
-                <th className="px-4 py-2">No-Shows</th>
-                <th className="px-4 py-2">Total</th>
-                <th className="px-4 py-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {roleBreakdown.map((r) => (
-                <tr key={r.roleName} className="border-t border-gray-100">
-                  <td className="px-4 py-2">{r.roleName}</td>
-                  <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
-                  <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
-                  <td className="px-4 py-2 font-medium">{r.total}</td>
-                  <td className="px-4 py-2">
-                    <Link
-                      href={`${basePath}?${monthQuery}&role=${encodeURIComponent(r.roleName)}`}
-                      className="text-xs text-brand hover:underline"
-                    >
-                      View log →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="px-4 py-6 text-center text-sm text-gray-400">No call-outs or no-shows logged for this month.</p>
-        )}
+        <BreakdownTable
+          title="Call-Outs / No-Shows by ROLE"
+          labelHeader="Role"
+          emptyMessage="No call-outs or no-shows logged for this month."
+          rows={roleBreakdown.map((r) => ({
+            key: r.roleName,
+            label: r.roleName,
+            callOuts: r.callOuts,
+            noShows: r.noShows,
+            total: r.total,
+            viewLogHref: `${basePath}?${monthQuery}&role=${encodeURIComponent(r.roleName)}`,
+          }))}
+        />
       </div>
     </div>
   );
