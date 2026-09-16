@@ -233,7 +233,6 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <thead className="text-gray-500">
             <tr>
               <th className="pb-2 pr-3 whitespace-nowrap">Location</th>
-              <th className="pb-2 pr-3"></th>
               <th className="pb-2 pr-3 whitespace-nowrap" title="Fixed baseline — always 1 when open">
                 Lead
               </th>
@@ -291,39 +290,39 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   {rows.map(({ location, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff }) => (
                     <tr key={location.id} className="border-t border-gray-100">
                       <td className="whitespace-nowrap py-2 pr-3">
-                        <div className="flex items-center gap-2">
-                          <form action={toggleLocationOpen} className="shrink-0">
-                            <input type="hidden" name="event_id" value={event.id} />
-                            <input type="hidden" name="location_id" value={location.id} />
-                            <input type="hidden" name="is_open" value={String(isOpen)} />
-                            <button
-                              type="submit"
-                              className={
-                                isOpen
-                                  ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                                  : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
-                              }
-                            >
-                              {isOpen ? "Open" : "Closed"}
-                            </button>
-                          </form>
-                          <Link href={`/admin/locations/${location.id}`} className="text-brand hover:underline">
-                            {location.yellow_dog_code && (
-                              <span className="mr-1 font-mono text-xs text-gray-400">{location.yellow_dog_code}</span>
-                            )}
-                            {location.name}
-                          </Link>
+                        <div className="flex flex-col items-start gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <form action={toggleLocationOpen} className="shrink-0">
+                              <input type="hidden" name="event_id" value={event.id} />
+                              <input type="hidden" name="location_id" value={location.id} />
+                              <input type="hidden" name="is_open" value={String(isOpen)} />
+                              <button
+                                type="submit"
+                                className={
+                                  isOpen
+                                    ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                    : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
+                                }
+                              >
+                                {isOpen ? "Open" : "Closed"}
+                              </button>
+                            </form>
+                            <Link href={`/admin/locations/${location.id}`} className="text-brand hover:underline">
+                              {location.yellow_dog_code && (
+                                <span className="mr-1 font-mono text-xs text-gray-400">{location.yellow_dog_code}</span>
+                              )}
+                              {location.name}
+                            </Link>
+                          </div>
+                          <LocationLeadSelect
+                            eventId={event.id}
+                            locationId={location.id}
+                            currentLeadId={leadUserIdByLocationId.get(location.id) ?? null}
+                            defaultLeadId={location.default_lead_user_id}
+                            users={(users as Profile[] | null) ?? []}
+                            disabled={confirmed}
+                          />
                         </div>
-                      </td>
-                      <td className="py-2 pr-3">
-                        <LocationLeadSelect
-                          eventId={event.id}
-                          locationId={location.id}
-                          currentLeadId={leadUserIdByLocationId.get(location.id) ?? null}
-                          defaultLeadId={location.default_lead_user_id}
-                          users={(users as Profile[] | null) ?? []}
-                          disabled={confirmed}
-                        />
                       </td>
                       <td className="py-2 pr-3 text-center">
                         {isOpen ? 1 : <span className="text-gray-300">—</span>}
@@ -372,14 +371,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   ))}
                   {!rows.length && (
                     <tr>
-                      <td colSpan={STAFF_ROLES.length + 5} className="py-4 text-gray-400">
+                      <td colSpan={STAFF_ROLES.length + 4} className="py-4 text-gray-400">
                         No locations available.
                       </td>
                     </tr>
                   )}
                   {rows.length > 0 && (
                     <tr className="border-t border-gray-200 font-medium">
-                      <td colSpan={2} />
+                      <td />
                       <td className="py-2 pr-3 text-center">{leadColumnTotal}</td>
                       {STAFF_ROLES.map((roleName) => (
                         <td key={roleName} className="py-2 pr-3 text-center">
