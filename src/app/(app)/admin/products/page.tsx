@@ -114,7 +114,7 @@ export default async function AdminProductsPage({
               <th className="px-4 py-2"></th>
               <th className="px-4 py-2 whitespace-nowrap">IC</th>
               <th className="px-4 py-2">Product</th>
-              <th className="px-4 py-2 whitespace-nowrap">Case Size</th>
+              <th className="px-4 py-2 whitespace-nowrap"><span className="sr-only">Case Size</span></th>
               <th className="px-4 py-2"></th>
               <th className="px-4 py-2 whitespace-nowrap">Supplier</th>
             </tr>
@@ -135,14 +135,18 @@ export default async function AdminProductsPage({
                   </div>
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.sku}</td>
-                <td className="px-4 py-2 max-w-xs">
+                <td className="px-4 py-2 whitespace-nowrap">
                   <Link href={`/admin/products/${p.id}`} className="font-medium text-brand hover:underline">
                     {p.description}
                   </Link>
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.case_size ? `${p.case_size}/CS` : "—"}</td>
                 <td className="px-4 py-2 whitespace-nowrap">
-                  <Link href={`/admin/products/new?from=${p.id}`} className="text-xs font-medium text-amber-600 hover:underline">
+                  <Link
+                    href={`/admin/products/new?from=${p.id}`}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:underline"
+                  >
+                    <DuplicateIcon />
                     Duplicate
                   </Link>
                 </td>
@@ -160,5 +164,14 @@ export default async function AdminProductsPage({
         </table>
       </div>
     </div>
+  );
+}
+
+function DuplicateIcon() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0" fill="none" aria-hidden="true">
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M3.5 10.5h-1a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
   );
 }

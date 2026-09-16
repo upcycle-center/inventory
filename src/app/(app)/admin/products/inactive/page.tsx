@@ -37,7 +37,7 @@ export default async function InactiveProductsPage() {
               <th className="px-4 py-2 whitespace-nowrap">IC</th>
               <th className="px-4 py-2">Product</th>
               <th className="px-4 py-2 whitespace-nowrap">Type</th>
-              <th className="px-4 py-2 whitespace-nowrap">Case Size</th>
+              <th className="px-4 py-2 whitespace-nowrap"><span className="sr-only">Case Size</span></th>
               <th className="px-4 py-2 whitespace-nowrap">Supplier</th>
               <th className="px-4 py-2"></th>
             </tr>
@@ -58,7 +58,7 @@ export default async function InactiveProductsPage() {
                   </div>
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.sku}</td>
-                <td className="px-4 py-2 max-w-xs">
+                <td className="px-4 py-2 whitespace-nowrap">
                   <Link href={`/admin/products/${p.id}`} className="font-medium text-brand hover:underline">
                     {p.description}
                   </Link>
