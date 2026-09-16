@@ -36,16 +36,24 @@ export function WfmEditableCells({
           ) : count == null ? (
             <span className="text-gray-300">—</span>
           ) : (
-            <input
-              key={`${roleName}-${resetCount}`}
-              type="number"
-              min={0}
-              step={1}
-              form={formId}
-              name={`role_count_${roleName}`}
-              defaultValue={resetCount === 0 ? previousCounts?.[roleName] ?? count : count}
-              className="w-12 rounded-md border border-gray-300 px-1 py-0.5 text-center text-xs"
-            />
+            <>
+              {/* The baseline this input started from (last confirmed, or
+                  the suggested count on a location's first-ever confirm) --
+                  submitted alongside the edited value so the server can
+                  tell a real reduction from a first-time entry without
+                  needing prior confirmed_role_counts to exist. */}
+              <input type="hidden" form={formId} name={`role_baseline_${roleName}`} value={previousCounts?.[roleName] ?? count} />
+              <input
+                key={`${roleName}-${resetCount}`}
+                type="number"
+                min={0}
+                step={1}
+                form={formId}
+                name={`role_count_${roleName}`}
+                defaultValue={resetCount === 0 ? previousCounts?.[roleName] ?? count : count}
+                className="w-12 rounded-md border border-gray-300 px-1 py-0.5 text-center text-xs"
+              />
+            </>
           )}
         </td>
       ))}

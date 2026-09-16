@@ -106,37 +106,43 @@ export async function confirmLocationStaffing(formData: FormData) {
   if (!eventId || !locationId) return;
 
   const roleCounts: Record<string, number> = {};
+  const roleBaselines: Record<string, number> = {};
   for (const roleName of STAFF_ROLES) {
     roleCounts[roleName] = Math.max(0, Number(formData.get(`role_count_${roleName}`) || 0));
+    roleBaselines[roleName] = Math.max(0, Number(formData.get(`role_baseline_${roleName}`) || 0));
   }
   const staffCount = 1 + Object.values(roleCounts).reduce((sum, n) => sum + n, 0);
 
   const { data: existing } = await supabase
     .from("event_locations")
-    .select("confirmed_role_counts, pending_unlock_reason")
+    .select("pending_unlock_reason")
     .eq("event_id", eventId)
     .eq("location_id", locationId)
     .maybeSingle();
 
   // A pending Call-Out/No-Show reason (set when this was last unlocked)
-  // means: log it now, for whichever role(s) came down from what was last
-  // confirmed. The edit itself is the record of what happened -- no
-  // separate "which role" picker needed.
+  // means: log it now, for whichever role(s) came down from the baseline
+  // each field started from (submitted as role_baseline_<role> -- the
+  // last confirmed count, or the suggested count on a first-ever confirm,
+  // whichever the manager actually saw and edited from). The edit itself
+  // is the record of what happened -- no separate "which role" picker.
   const reason = existing?.pending_unlock_reason;
   if (reason === "call_out" || reason === "no_show") {
-    const previousCounts = (existing?.confirmed_role_counts as Record<string, number> | null) ?? {};
-    const callOutRows = STAFF_ROLES.filter((roleName) => roleCounts[roleName] < (previousCounts[roleName] ?? 0)).map((roleName) => ({
+    const callOutRows = STAFF_ROLES.filter((roleName) => roleCounts[roleName] < roleBaselines[roleName]).map((roleName) => ({
       event_id: eventId,
       location_id: locationId,
       role_name: roleName,
       call_out_type: reason,
-      note: `${previousCounts[roleName] ?? 0} → ${roleCounts[roleName]} on reconfirm`,
+      note: `${roleBaselines[roleName]} → ${roleCounts[roleName]} on reconfirm`,
       reported_by: profile.id,
     }));
-    if (callOutRows.length) await supabase.from("shift_call_outs").insert(callOutRows);
+    if (callOutRows.length) {
+      const { error: callOutError } = await supabase.from("shift_call_outs").insert(callOutRows);
+      if (callOutError) console.error("Failed to log shift call-out:", callOutError.message);
+    }
   }
 
-  await supabase.from("event_locations").upsert(
+  const { error } = await supabase.from("event_locations").upsert(
     {
       event_id: eventId,
       location_id: locationId,
@@ -149,6 +155,7 @@ export async function confirmLocationStaffing(formData: FormData) {
     },
     { onConflict: "event_id,location_id" }
   );
+  if (error) console.error("Failed to confirm location staffing:", error.message);
 
   revalidatePath(`/admin/events/${eventId}`);
 }
@@ -166,11 +173,12 @@ export async function unlockLocationStaffing(formData: FormData) {
   const reasonRaw = String(formData.get("reason") || "");
   const reason = reasonRaw === "call_out" || reasonRaw === "no_show" || reasonRaw === "other" ? reasonRaw : null;
 
-  await supabase
+  const { error } = await supabase
     .from("event_locations")
     .update({ confirmed: false, pending_unlock_reason: reason })
     .eq("event_id", eventId)
     .eq("location_id", locationId);
+  if (error) console.error("Failed to unlock location staffing:", error.message);
 
   revalidatePath(`/admin/events/${eventId}`);
 }
