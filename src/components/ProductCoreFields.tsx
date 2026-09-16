@@ -296,37 +296,39 @@ export function ProductCoreFields({
         </label>
       </div>
 
-      <div>
-        <p className="mb-1 text-sm font-medium">Pour details (Type: Non-Chargeable – Bottles only)</p>
-        <p className="mb-3 text-sm text-gray-500">
-          For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Retail Value.
-        </p>
-        <div className="grid grid-cols-3 gap-3">
-          <DisableableNumberField
-            label="Bottle size (mL)"
-            name="bottle_size_ml"
-            defaultValue={defaultBottleSizeMl}
-            disabled={!pourFieldsActive}
-            placeholder="e.g. 750"
-            disabledTitle="Only used for Type: Non-Chargeable – Bottles."
-          />
-          <DisableableNumberField
-            label="Pour size (oz)"
-            name="pour_size_oz"
-            defaultValue={defaultPourSizeOz}
-            disabled={!pourFieldsActive}
-            placeholder="e.g. 1.5"
-            disabledTitle="Only used for Type: Non-Chargeable – Bottles."
-          />
-          <DisableableNumberField
-            label="Price per pour"
-            name="pour_price"
-            defaultValue={defaultPourPrice}
-            disabled={!pourFieldsActive}
-            disabledTitle="Only used for Type: Non-Chargeable – Bottles."
-          />
+      {productType !== "disposable" && (
+        <div>
+          <p className="mb-1 text-sm font-medium">Pour details (Type: Non-Chargeable – Bottles only)</p>
+          <p className="mb-3 text-sm text-gray-500">
+            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Retail Value.
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <DisableableNumberField
+              label="Bottle size (mL)"
+              name="bottle_size_ml"
+              defaultValue={defaultBottleSizeMl}
+              disabled={!pourFieldsActive}
+              placeholder="e.g. 750"
+              disabledTitle="Only used for Type: Non-Chargeable – Bottles."
+            />
+            <DisableableNumberField
+              label="Pour size (oz)"
+              name="pour_size_oz"
+              defaultValue={defaultPourSizeOz}
+              disabled={!pourFieldsActive}
+              placeholder="e.g. 1.5"
+              disabledTitle="Only used for Type: Non-Chargeable – Bottles."
+            />
+            <DisableableNumberField
+              label="Price per pour"
+              name="pour_price"
+              defaultValue={defaultPourPrice}
+              disabled={!pourFieldsActive}
+              disabledTitle="Only used for Type: Non-Chargeable – Bottles."
+            />
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
