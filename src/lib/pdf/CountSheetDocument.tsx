@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   commentLine: { borderBottomWidth: 1, borderBottomColor: "#000000", height: 20 },
 });
 
-type CountSheetProduct = { sku: string; description: string };
+type CountSheetProduct = { sku: string; description: string; product_type?: string };
 type CountSheetArea = { name: string; products: CountSheetProduct[] };
 type CountSheetRole = { name: string; count: number };
 
@@ -204,18 +204,25 @@ function CountSheetPage({
             <Text style={styles.colBox}>EA</Text>
             <Text style={styles.colBox}>CS</Text>
           </View>
-          {area.products.map((p) => (
-            <View key={p.sku} style={styles.tr}>
-              <Text style={styles.colProduct}>{p.description}</Text>
-              <Text style={styles.colBox}></Text>
-              <Text style={styles.colBox}></Text>
-              <Text style={styles.colBox}></Text>
-              <Text style={styles.colBox}></Text>
-              {showEmpty && <Text style={styles.colBox}></Text>}
-              <Text style={styles.colBox}></Text>
-              <Text style={styles.colBox}></Text>
-            </View>
-          ))}
+          {area.products.map((p) => {
+            // Disposables/Cleaning are never wasted or comped -- N/A instead
+            // of a blank box that invites someone to fill in a number that
+            // doesn't apply, mirroring how each_countable === false shows
+            // N/A on the Month-End Count Sheet.
+            const wasteComp = p.product_type === "disposable" ? "N/A" : "";
+            return (
+              <View key={p.sku} style={styles.tr}>
+                <Text style={styles.colProduct}>{p.description}</Text>
+                <Text style={styles.colBox}></Text>
+                <Text style={styles.colBox}></Text>
+                <Text style={styles.colBox}>{wasteComp}</Text>
+                <Text style={styles.colBox}>{wasteComp}</Text>
+                {showEmpty && <Text style={styles.colBox}></Text>}
+                <Text style={styles.colBox}></Text>
+                <Text style={styles.colBox}></Text>
+              </View>
+            );
+          })}
         </View>
         );
       })}

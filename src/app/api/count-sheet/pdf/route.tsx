@@ -35,7 +35,7 @@ export async function GET(request: Request) {
         : Promise.resolve({ data: null }),
       supabase
         .from("location_products")
-        .select("product:products(sku, description, active), storage_area:storage_areas(id, code, name)")
+        .select("product:products(sku, description, product_type, active), storage_area:storage_areas(id, code, name)")
         .eq("location_id", locationId)
         .eq("active", true),
       supabase.from("location_staff_roles").select("*").eq("location_id", locationId),
@@ -64,11 +64,11 @@ export async function GET(request: Request) {
 
   const areaMap = new Map<
     string,
-    { area: { id: string; code: string; name: string }; products: { sku: string; description: string }[] }
+    { area: { id: string; code: string; name: string }; products: { sku: string; description: string; product_type: string }[] }
   >();
   for (const row of (locationProducts as any[]) ?? []) {
     if (!row.product?.active || !row.storage_area) continue;
-    const entry = areaMap.get(row.storage_area.id) ?? { area: row.storage_area, products: [] as { sku: string; description: string }[] };
+    const entry = areaMap.get(row.storage_area.id) ?? { area: row.storage_area, products: [] as { sku: string; description: string; product_type: string }[] };
     entry.products.push(row.product);
     areaMap.set(row.storage_area.id, entry);
   }
