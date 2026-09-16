@@ -20,6 +20,13 @@ export interface CallOutLocationGroup {
   shortStaffedCount: number;
 }
 
+export interface RoleCallOutBreakdown {
+  roleName: string;
+  callOuts: number;
+  noShows: number;
+  total: number;
+}
+
 // There's no real attendance/call-out record in the schema -- only an
 // admin-entered confirmed_staff_count per (event, location) vs. the
 // location_staff_roles/tiers-derived recommendation, the same "Avg staff
@@ -31,7 +38,12 @@ export async function buildMonthEndCallOutsReport(
   supabase: SupabaseClient,
   year: number,
   month: number
-): Promise<{ locations: CallOutLocationGroup[]; avgVariance: number; shortStaffedCount: number }> {
+): Promise<{
+  locations: CallOutLocationGroup[];
+  avgVariance: number;
+  shortStaffedCount: number;
+  roleBreakdown: RoleCallOutBreakdown[];
+}> {
   const monthStartStr = `${year}-${String(month).padStart(2, "0")}-01`;
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextMonthYear = month === 12 ? year + 1 : year;
@@ -45,7 +57,7 @@ export async function buildMonthEndCallOutsReport(
     .order("name");
   const standLocations = (standLocationsRaw as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? [];
   const standLocationIds = standLocations.map((l) => l.id);
-  if (!standLocationIds.length) return { locations: [], avgVariance: 0, shortStaffedCount: 0 };
+  if (!standLocationIds.length) return { locations: [], avgVariance: 0, shortStaffedCount: 0, roleBreakdown: [] };
 
   const [{ data: eventsRaw }, { data: staffRolesRaw }, { data: staffTiersRaw }] = await Promise.all([
     supabase
@@ -69,15 +81,20 @@ export async function buildMonthEndCallOutsReport(
   }
   const staffTiers = (staffTiersRaw as LocationStaffTier[] | null) ?? [];
 
-  const { data: eventLocationsRaw } = eventIds.length
-    ? await supabase
-        .from("event_locations")
-        .select("event_id, location_id, confirmed_staff_count")
-        .in("event_id", eventIds)
-        .in("location_id", standLocationIds)
-        .eq("confirmed", true)
-        .not("confirmed_staff_count", "is", null)
-    : { data: [] as any[] };
+  const [{ data: eventLocationsRaw }, { data: callOutsRaw }] = await Promise.all([
+    eventIds.length
+      ? supabase
+          .from("event_locations")
+          .select("event_id, location_id, confirmed_staff_count")
+          .in("event_id", eventIds)
+          .in("location_id", standLocationIds)
+          .eq("confirmed", true)
+          .not("confirmed_staff_count", "is", null)
+      : Promise.resolve({ data: [] as any[] }),
+    eventIds.length
+      ? supabase.from("shift_call_outs").select("role_name, call_out_type").in("event_id", eventIds).in("location_id", standLocationIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
 
   const eventById = new Map(events.map((e) => [e.id, e]));
   const rowsByLocationId = new Map<string, CallOutEventRow[]>();
@@ -121,9 +138,24 @@ export async function buildMonthEndCallOutsReport(
     });
   }
 
+  // Real per-role trend, straight from shift_call_outs -- unlike the
+  // variance-based numbers above (a proxy inferred from headcount alone),
+  // this is an actual logged record of who was short and which role.
+  const roleBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
+  for (const c of (callOutsRaw as { role_name: string; call_out_type: string }[] | null) ?? []) {
+    const entry = roleBreakdownMap.get(c.role_name) ?? { callOuts: 0, noShows: 0 };
+    if (c.call_out_type === "no_show") entry.noShows += 1;
+    else entry.callOuts += 1;
+    roleBreakdownMap.set(c.role_name, entry);
+  }
+  const roleBreakdown: RoleCallOutBreakdown[] = Array.from(roleBreakdownMap.entries())
+    .map(([roleName, { callOuts, noShows }]) => ({ roleName, callOuts, noShows, total: callOuts + noShows }))
+    .sort((a, b) => b.total - a.total);
+
   return {
     locations: locationGroups,
     avgVariance: varianceCount ? varianceSum / varianceCount : 0,
     shortStaffedCount,
+    roleBreakdown,
   };
 }

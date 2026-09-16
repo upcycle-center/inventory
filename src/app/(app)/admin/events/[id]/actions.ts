@@ -116,18 +116,71 @@ export async function confirmLocationStaffing(formData: FormData) {
   revalidatePath(`/admin/events/${eventId}`);
 }
 
+// Unlocking a confirmed shift is usually because of a same-day Call-Out or
+// No-Show -- when the reason says so, log it (by role) in the same step
+// instead of making the manager separately fill out the log form below.
 export async function unlockLocationStaffing(formData: FormData) {
-  await requireProfile(["admin"]);
+  const profile = await requireProfile(["admin"]);
   const supabase = createClient();
   const eventId = String(formData.get("event_id"));
   const locationId = String(formData.get("location_id"));
   if (!eventId || !locationId) return;
+
+  const reason = String(formData.get("reason") || "");
+  const roleName = String(formData.get("role_name") || "").trim();
+  if ((reason === "call_out" || reason === "no_show") && roleName) {
+    await supabase.from("shift_call_outs").insert({
+      event_id: eventId,
+      location_id: locationId,
+      role_name: roleName,
+      call_out_type: reason,
+      reported_by: profile.id,
+    });
+  }
 
   await supabase
     .from("event_locations")
     .update({ confirmed: false })
     .eq("event_id", eventId)
     .eq("location_id", locationId);
+
+  revalidatePath(`/admin/events/${eventId}`);
+}
+
+// Same role set as Transfer/Recovery -- a manager can log for any stand,
+// a stand_lead only for the one they're actually running (enforced by the
+// shift_call_outs RLS policy, not re-checked here).
+export async function logShiftCallOut(formData: FormData) {
+  const profile = await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
+  const supabase = createClient();
+  const eventId = String(formData.get("event_id"));
+  const locationId = String(formData.get("location_id"));
+  const roleName = String(formData.get("role_name") || "").trim();
+  const callOutType = String(formData.get("call_out_type") || "");
+  const note = String(formData.get("note") || "").trim() || null;
+  if (!eventId || !locationId || !roleName) return;
+  if (callOutType !== "call_out" && callOutType !== "no_show") return;
+
+  await supabase.from("shift_call_outs").insert({
+    event_id: eventId,
+    location_id: locationId,
+    role_name: roleName,
+    call_out_type: callOutType,
+    note,
+    reported_by: profile.id,
+  });
+
+  revalidatePath(`/admin/events/${eventId}`);
+}
+
+export async function deleteShiftCallOut(formData: FormData) {
+  await requireProfile(["admin", "warehouse", "stand_lead", "kitchen", "catering", "ops"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const eventId = String(formData.get("event_id"));
+  if (!id || !eventId) return;
+
+  await supabase.from("shift_call_outs").delete().eq("id", id);
 
   revalidatePath(`/admin/events/${eventId}`);
 }

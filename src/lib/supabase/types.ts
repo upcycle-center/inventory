@@ -142,6 +142,17 @@ export interface EventLocation {
   updated_at: string;
 }
 
+export interface ShiftCallOut {
+  id: string;
+  event_id: string;
+  location_id: string;
+  role_name: string;
+  call_out_type: "call_out" | "no_show";
+  note: string | null;
+  reported_by: string | null;
+  created_at: string;
+}
+
 export interface Supplier {
   id: string;
   name: string;

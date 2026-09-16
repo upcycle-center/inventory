@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile } from "@/lib/supabase/types";
+import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile, ShiftCallOut } from "@/lib/supabase/types";
 import { STAFF_ROLES, STAFF_ROLE_SHORT_LABEL } from "@/lib/staffRoles";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateEventStatus } from "../actions";
 import {
   confirmLocationStaffing,
+  deleteShiftCallOut,
+  logShiftCallOut,
   toggleLocationOpen,
   unlockLocationStaffing,
   updateEventAttendance,
@@ -40,6 +42,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
         .select("*, confirmed_by_profile:profiles(id, name)")
         .eq("event_id", params.id),
     ]);
+
+  const { data: callOuts } = await supabase
+    .from("shift_call_outs")
+    .select("*, reported_by_profile:profiles(id, name)")
+    .eq("event_id", params.id)
+    .order("created_at", { ascending: false });
 
   if (!event) notFound();
 
@@ -78,6 +86,16 @@ export default async function EventDetailPage({ params }: { params: { id: string
 
   const estRecommended = totalRecommendedStaff(event.est_tickets);
   const totRecommended = event.tot_tickets_posted_at ? totalRecommendedStaff(event.tot_tickets) : null;
+
+  // Call-outs are logged against a specific stand's confirmed team, so the
+  // log form only offers locations that are actually open and confirmed.
+  const confirmedOpenLocations = ((locations as Location[] | null) ?? []).filter((l) => {
+    const el = eventLocationByLocationId.get(l.id);
+    return (openByLocationId.get(l.id) ?? true) && (el?.confirmed ?? false);
+  });
+  const shiftRoleOptions = ["Stand Lead", ...STAFF_ROLES];
+  const locationNameById = new Map(((locations as Location[] | null) ?? []).map((l) => [l.id, l.name]));
+  const callOutList = ((callOuts as any[] | null) ?? []) as (ShiftCallOut & { reported_by_profile: Profile | null })[];
 
   return (
     <div>
@@ -320,21 +338,51 @@ export default async function EventDetailPage({ params }: { params: { id: string
                       </td>
                       <td className="py-2">
                         {confirmed ? (
-                          <form action={unlockLocationStaffing} className="flex items-center gap-2">
+                          <form action={unlockLocationStaffing} className="flex flex-wrap items-center gap-1.5">
                             <input type="hidden" name="event_id" value={event.id} />
                             <input type="hidden" name="location_id" value={location.id} />
                             <span className="text-xs text-gray-400" title={eventLocation?.confirmed_at ?? ""}>
                               🔒 Confirmed{eventLocation?.confirmed_by_profile?.name ? ` by ${eventLocation.confirmed_by_profile.name}` : ""}
                             </span>
+                            <select
+                              name="reason"
+                              defaultValue=""
+                              title="Reason for unlocking — Call-Out/No-Show also logs it below, by role"
+                              className="rounded-md border border-gray-300 px-1 py-1 text-xs"
+                            >
+                              <option value="">Adjust (other)</option>
+                              <option value="call_out">Call-Out</option>
+                              <option value="no_show">No-Show</option>
+                            </select>
+                            <select
+                              name="role_name"
+                              defaultValue={shiftRoleOptions[0]}
+                              title="Role — only used when the reason above is Call-Out or No-Show"
+                              className="rounded-md border border-gray-300 px-1 py-1 text-xs"
+                            >
+                              {shiftRoleOptions.map((r) => (
+                                <option key={r} value={r}>
+                                  {r}
+                                </option>
+                              ))}
+                            </select>
                             <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
                               Unlock
                             </button>
                           </form>
                         ) : (
-                          <form action={confirmLocationStaffing}>
+                          <form action={confirmLocationStaffing} className="flex items-center gap-1.5">
                             <input type="hidden" name="event_id" value={event.id} />
                             <input type="hidden" name="location_id" value={location.id} />
-                            <input type="hidden" name="staff_count" value={recommended} />
+                            <input
+                              name="staff_count"
+                              type="number"
+                              min={0}
+                              step={1}
+                              defaultValue={recommended}
+                              title="Recommended headcount — adjust before confirming if needed"
+                              className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
+                            />
                             <button
                               type="submit"
                               disabled={isOpen && !leadUserIdByLocationId.get(location.id)}
@@ -372,6 +420,109 @@ export default async function EventDetailPage({ params }: { params: { id: string
             })()}
           </tbody>
         </table>
+      </div>
+
+      <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
+        <p className="mb-1 text-sm font-medium">Call-Outs / No-Shows</p>
+        <p className="mb-3 text-sm text-gray-500">
+          Log who&apos;s short day-of, by role, once a stand&apos;s team is confirmed — tracks trends and helps
+          bridge staffing gaps.
+        </p>
+
+        {confirmedOpenLocations.length > 0 ? (
+          <ActionForm action={logShiftCallOut} savedLabel="Logged" className="mb-4 flex flex-wrap items-end gap-2">
+            <input type="hidden" name="event_id" value={event.id} />
+            <label className="text-xs text-gray-500">
+              Location
+              <select name="location_id" required className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+                {confirmedOpenLocations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-gray-500">
+              Role
+              <select name="role_name" required className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+                {shiftRoleOptions.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-gray-500">
+              Type
+              <select name="call_out_type" required className="mt-1 block rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+                <option value="call_out">Call-Out</option>
+                <option value="no_show">No-Show</option>
+              </select>
+            </label>
+            <label className="min-w-[160px] flex-1 text-xs text-gray-500">
+              Note (optional)
+              <input
+                name="note"
+                placeholder="e.g. covered by X"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              />
+            </label>
+            <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs text-white">
+              Log
+            </button>
+          </ActionForm>
+        ) : (
+          <p className="mb-4 text-sm text-gray-400">Confirm a stand&apos;s team above before logging a call-out.</p>
+        )}
+
+        {callOutList.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="pb-2 pr-3">Location</th>
+                  <th className="pb-2 pr-3">Role</th>
+                  <th className="pb-2 pr-3">Type</th>
+                  <th className="pb-2 pr-3">Note</th>
+                  <th className="pb-2 pr-3">Reported</th>
+                  <th className="pb-2"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {callOutList.map((c) => (
+                  <tr key={c.id} className="border-t border-gray-100">
+                    <td className="py-2 pr-3">{locationNameById.get(c.location_id) ?? "—"}</td>
+                    <td className="py-2 pr-3">{c.role_name}</td>
+                    <td className="py-2 pr-3">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          c.call_out_type === "no_show" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {c.call_out_type === "no_show" ? "No-Show" : "Call-Out"}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 text-gray-500">{c.note ?? "—"}</td>
+                    <td className="py-2 pr-3 text-xs text-gray-400">
+                      {c.reported_by_profile?.name ?? "—"} · {easternDateTimeString(new Date(c.created_at))}
+                    </td>
+                    <td className="py-2">
+                      <form action={deleteShiftCallOut}>
+                        <input type="hidden" name="id" value={c.id} />
+                        <input type="hidden" name="event_id" value={event.id} />
+                        <button type="submit" className="text-xs text-gray-400 hover:text-red-600">
+                          Remove
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400">No call-outs or no-shows logged for this event yet.</p>
+        )}
       </div>
     </div>
   );

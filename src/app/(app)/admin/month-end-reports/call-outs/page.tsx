@@ -39,7 +39,7 @@ export default async function MonthEndCallOutsPage({
   const year = Number(searchParams.year) || defaultYear;
   const month = Number(searchParams.month) || defaultMonth;
 
-  const { locations, avgVariance, shortStaffedCount } = await buildMonthEndCallOutsReport(supabase, year, month);
+  const { locations, avgVariance, shortStaffedCount, roleBreakdown } = await buildMonthEndCallOutsReport(supabase, year, month);
 
   return (
     <div>
@@ -52,16 +52,46 @@ export default async function MonthEndCallOutsPage({
       />
       <h1 className="mb-2 text-lg font-semibold">moEND Workforce Call-Outs</h1>
       <p className="mb-6 text-sm text-gray-500">
-        Confirmed staffing vs. recommended, across {MONTH_NAMES[month - 1]} {year}&apos;s events. There&apos;s no
-        per-person attendance record in the system yet — this is confirmed headcount vs. recommendation per stand, the
-        same figure the Dashboard&apos;s &ldquo;Avg staff variance&rdquo; stat uses, so it can&apos;t break out by
-        Stand Role.
+        Confirmed staffing vs. recommended, across {MONTH_NAMES[month - 1]} {year}&apos;s events, plus real
+        call-outs/no-shows logged by role on each event&apos;s page. The variance figures below are a proxy
+        (confirmed headcount vs. recommendation per stand — the same number the Dashboard&apos;s &ldquo;Avg staff
+        variance&rdquo; stat uses); the By Role table is the real logged record.
       </p>
       <MonthYearPicker basePath="/admin/month-end-reports/call-outs" year={year} month={month} />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:max-w-md sm:grid-cols-2">
         <StatCard label="Avg staff variance" value={fmtVariance(avgVariance)} />
         <StatCard label="Short-staffed events" value={String(shortStaffedCount)} />
+      </div>
+
+      <div className="mb-6 overflow-x-auto rounded-md border border-gray-200 bg-white">
+        <p className="px-4 pt-3 text-sm font-medium">Call-Outs / No-Shows by Role</p>
+        {roleBreakdown.length > 0 ? (
+          <table className="w-full text-left text-sm">
+            <thead className="text-gray-500">
+              <tr>
+                <th className="px-4 py-2">Role</th>
+                <th className="px-4 py-2">Call-Outs</th>
+                <th className="px-4 py-2">No-Shows</th>
+                <th className="px-4 py-2">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {roleBreakdown.map((r) => (
+                <tr key={r.roleName} className="border-t border-gray-100">
+                  <td className="px-4 py-2">{r.roleName}</td>
+                  <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
+                  <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
+                  <td className="px-4 py-2 font-medium">{r.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="px-4 py-6 text-center text-sm text-gray-400">
+            No call-outs or no-shows logged for this month.
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">
