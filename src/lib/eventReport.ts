@@ -6,6 +6,7 @@ export interface EventReportRow {
   id: string;
   name: string;
   eventDate: string;
+  status: string;
   totTickets: number | null;
   totTicketsPosted: boolean;
   grnRoomAttendance: number | null;
@@ -14,20 +15,35 @@ export interface EventReportRow {
   wfmShifts: number;
 }
 
+export type EventStatusFilter = "all" | "upcoming" | "open" | "closed";
+
 // One row per event -- Reports > Events -- covering every event on record
-// (most recent first), not only the currently active ones.
-export async function buildEventReport(supabase: SupabaseClient, limit = 200): Promise<EventReportRow[]> {
-  const { data: eventsRaw } = await supabase
+// (most recent first), optionally narrowed to one status. Surfaces the
+// query error instead of silently returning an empty report, since an
+// empty report and "the query actually failed" otherwise look identical
+// on the page.
+export async function buildEventReport(
+  supabase: SupabaseClient,
+  statusFilter: EventStatusFilter = "all",
+  limit = 200
+): Promise<{ rows: EventReportRow[]; error: string | null }> {
+  let query = supabase
     .from("events")
-    .select("id, name, event_date, est_tickets, tot_tickets, tot_tickets_posted_at, grn_room_attendance, vip_lounge_attendance")
+    .select("id, name, event_date, status, est_tickets, tot_tickets, tot_tickets_posted_at, grn_room_attendance, vip_lounge_attendance")
     .order("event_date", { ascending: false })
     .limit(limit);
+  if (statusFilter !== "all") query = query.eq("status", statusFilter);
+
+  const { data: eventsRaw, error } = await query;
+  if (error) return { rows: [], error: error.message };
+
   const events =
     (eventsRaw as
       | {
           id: string;
           name: string;
           event_date: string;
+          status: string;
           est_tickets: number | null;
           tot_tickets: number | null;
           tot_tickets_posted_at: string | null;
@@ -35,7 +51,7 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
           vip_lounge_attendance: number | null;
         }[]
       | null) ?? [];
-  if (!events.length) return [];
+  if (!events.length) return { rows: [], error: null };
 
   const eventIds = events.map((e) => e.id);
 
@@ -70,11 +86,11 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
     rowsByEventId.set(r.event_id, list);
   }
 
-  return events.map((ev) => {
-    const rows = rowsByEventId.get(ev.id) ?? [];
+  const rows = events.map((ev) => {
+    const evRows = rowsByEventId.get(ev.id) ?? [];
     const openMap = new Map<string, boolean>();
     let standsOpen = 0;
-    for (const r of rows) {
+    for (const r of evRows) {
       openMap.set(r.location_id, r.is_open);
       if (r.is_open) standsOpen += 1;
     }
@@ -84,6 +100,7 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
       id: ev.id,
       name: ev.name,
       eventDate: ev.event_date,
+      status: ev.status,
       totTickets: ev.tot_tickets,
       totTicketsPosted: !!ev.tot_tickets_posted_at,
       grnRoomAttendance: ev.grn_room_attendance,
@@ -92,4 +109,6 @@ export async function buildEventReport(supabase: SupabaseClient, limit = 200): P
       wfmShifts,
     };
   });
+
+  return { rows, error: null };
 }
