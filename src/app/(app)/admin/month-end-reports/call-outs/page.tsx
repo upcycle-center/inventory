@@ -6,6 +6,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { MonthYearPicker } from "@/components/MonthYearPicker";
 import { LocationLabel } from "@/components/LocationLabel";
 import { ThreeStatCard } from "@/components/ThreeStatCard";
+import { ReasonBadge } from "@/components/ReasonBadge";
 import {
   buildMonthEndCallOutsReport,
   getEventCallOutEntries,
@@ -15,18 +16,6 @@ import {
 } from "@/lib/monthEndCallOuts";
 import { easternDateString, easternDateTimeString } from "@/lib/easternTime";
 import { MONTH_NAMES } from "@/lib/monthNames";
-
-const REASON_LABELS: Record<"call_out" | "no_show" | "other", string> = {
-  call_out: "Call-Out",
-  no_show: "No-Show",
-  other: "Adjustment",
-};
-
-const REASON_BADGE_CLASS: Record<"call_out" | "no_show" | "other", string> = {
-  call_out: "bg-amber-100 text-amber-700",
-  no_show: "bg-red-100 text-red-700",
-  other: "bg-gray-100 text-gray-600",
-};
 
 // The three summary tables (by Event/Location/Role) share this shape so
 // their columns line up with each other pixel-for-pixel -- table-fixed
@@ -124,9 +113,7 @@ function EntriesTable({
               <tr key={e.id} className="border-t border-gray-100">
                 {showRole && <td className="px-3 py-1.5">{e.roleName}</td>}
                 <td className="px-3 py-1.5">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${REASON_BADGE_CLASS[e.callOutType]}`}>
-                    {REASON_LABELS[e.callOutType]}
-                  </span>
+                  <ReasonBadge type={e.callOutType} />
                 </td>
                 <td className="px-3 py-1.5 text-gray-500">{e.note ?? "—"}</td>
                 {showLocation && <td className="px-3 py-1.5 text-gray-500">{e.locationName}</td>}

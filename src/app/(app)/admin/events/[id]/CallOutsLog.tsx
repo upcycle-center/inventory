@@ -3,21 +3,10 @@
 import { useState } from "react";
 import { easternDateTimeString } from "@/lib/easternTime";
 import { deleteShiftCallOut } from "./actions";
+import { ReasonBadge } from "@/components/ReasonBadge";
 import type { ShiftCallOut, Profile } from "@/lib/supabase/types";
 
 type CallOutRow = ShiftCallOut & { reported_by_profile: Profile | null };
-
-const REASON_LABELS: Record<ShiftCallOut["call_out_type"], string> = {
-  call_out: "Call-Out",
-  no_show: "No-Show",
-  other: "Adjustment",
-};
-
-const REASON_BADGE_CLASS: Record<ShiftCallOut["call_out_type"], string> = {
-  call_out: "bg-amber-100 text-amber-700",
-  no_show: "bg-red-100 text-red-700",
-  other: "bg-gray-100 text-gray-600",
-};
 
 // Client-side filter over an already-fetched list -- a single event's log
 // is small enough that there's no need to round-trip to the server just to
@@ -69,9 +58,7 @@ export function CallOutsLog({
                   <td className="py-2 pr-3">{locationNameById.get(c.location_id) ?? "—"}</td>
                   <td className="py-2 pr-3">{c.role_name}</td>
                   <td className="py-2 pr-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${REASON_BADGE_CLASS[c.call_out_type]}`}>
-                      {REASON_LABELS[c.call_out_type]}
-                    </span>
+                    <ReasonBadge type={c.call_out_type} />
                   </td>
                   <td className="py-2 pr-3 text-gray-500">{c.note ?? "—"}</td>
                   <td className="py-2 pr-3 text-xs text-gray-400">
