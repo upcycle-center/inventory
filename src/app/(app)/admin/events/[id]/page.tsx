@@ -14,6 +14,7 @@ import {
   updateEventAttendance,
 } from "./actions";
 import { LocationLeadSelect } from "./LocationLeadSelect";
+import { WfmEditableCells } from "./WfmEditableCells";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { effectiveCount, totalRecommendedStaff as totalRecommendedStaffAcross } from "@/lib/staffing";
 import { easternDateTimeString } from "@/lib/easternTime";
@@ -326,74 +327,52 @@ export default async function EventDetailPage({ params }: { params: { id: string
                       <td className="py-2 pr-3 text-center">
                         {isOpen ? 1 : <span className="text-gray-300">—</span>}
                       </td>
-                      {roleCounts.map(({ roleName, count, note }) => {
-                        const previousConfirmed = (eventLocation?.confirmed_role_counts as Record<string, number> | null)?.[roleName];
-                        const editable = isOpen && !confirmed && count != null;
-                        return (
-                          <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
-                            {editable ? (
-                              <input
-                                type="number"
-                                min={0}
-                                step={1}
-                                form={`confirm-form-${location.id}`}
-                                name={`role_count_${roleName}`}
-                                defaultValue={previousConfirmed ?? count ?? 0}
-                                className="w-12 rounded-md border border-gray-300 px-1 py-0.5 text-center text-xs"
-                              />
-                            ) : count == null ? (
-                              <span className="text-gray-300">—</span>
-                            ) : confirmed ? (
-                              previousConfirmed ?? count
-                            ) : (
-                              count
-                            )}
+                      {confirmed ? (
+                        <>
+                          {roleCounts.map(({ roleName, count, note }) => {
+                            const previousConfirmed = (eventLocation?.confirmed_role_counts as Record<string, number> | null)?.[roleName];
+                            return (
+                              <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
+                                {count == null ? <span className="text-gray-300">—</span> : previousConfirmed ?? count}
+                              </td>
+                            );
+                          })}
+                          <td className="py-2 pr-3 font-medium">{displayedStaff}</td>
+                          <td className="py-2">
+                            <form action={unlockLocationStaffing} className="flex flex-wrap items-start gap-2">
+                              <input type="hidden" name="event_id" value={event.id} />
+                              <input type="hidden" name="location_id" value={location.id} />
+                              <div className="text-left text-xs leading-tight text-gray-400">
+                                <p>🔒 Confirmed by:</p>
+                                <p className="text-gray-600">{eventLocation?.confirmed_by_profile?.name ?? "—"}</p>
+                                {eventLocation?.confirmed_at && <p>{easternDateTimeString(new Date(eventLocation.confirmed_at))}</p>}
+                              </div>
+                              <select
+                                name="reason"
+                                defaultValue=""
+                                title="Reason for unlocking — Call-Out/No-Show auto-logs any role you then reduce, once you save the change"
+                                className="rounded-md border border-gray-300 px-1 py-1 text-xs"
+                              >
+                                <option value="">Adjust (other)</option>
+                                <option value="call_out">Call-Out</option>
+                                <option value="no_show">No-Show</option>
+                              </select>
+                              <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
+                                Unlock
+                              </button>
+                            </form>
                           </td>
-                        );
-                      })}
-                      <td className="py-2 pr-3 font-medium">
-                        {displayedStaff}
-                        {confirmed && recommended !== displayedStaff && (
-                          <span className="ml-1 text-xs text-amber-600" title="Recalculated recommendation has changed since this was confirmed">
-                            (now {recommended})
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2">
-                        {confirmed ? (
-                          <form action={unlockLocationStaffing} className="flex flex-wrap items-start gap-2">
-                            <input type="hidden" name="event_id" value={event.id} />
-                            <input type="hidden" name="location_id" value={location.id} />
-                            <div className="text-left text-xs leading-tight text-gray-400">
-                              <p>🔒 Confirmed by:</p>
-                              <p className="text-gray-600">{eventLocation?.confirmed_by_profile?.name ?? "—"}</p>
-                              {eventLocation?.confirmed_at && <p>{easternDateTimeString(new Date(eventLocation.confirmed_at))}</p>}
-                            </div>
-                            <select
-                              name="reason"
-                              defaultValue=""
-                              title="Reason for unlocking — Call-Out/No-Show auto-logs any role you then reduce, once you save the change"
-                              className="rounded-md border border-gray-300 px-1 py-1 text-xs"
-                            >
-                              <option value="">Adjust (other)</option>
-                              <option value="call_out">Call-Out</option>
-                              <option value="no_show">No-Show</option>
-                            </select>
-                            <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
-                              Unlock
-                            </button>
-                          </form>
-                        ) : (
-                          <button
-                            type="submit"
-                            form={`confirm-form-${location.id}`}
-                            disabled={isOpen && !leadUserIdByLocationId.get(location.id)}
-                            className="rounded-md bg-brand px-3 py-1 text-xs text-white disabled:opacity-40"
-                          >
-                            Confirm
-                          </button>
-                        )}
-                      </td>
+                        </>
+                      ) : (
+                        <WfmEditableCells
+                          formId={`confirm-form-${location.id}`}
+                          roleCounts={roleCounts}
+                          previousCounts={(eventLocation?.confirmed_role_counts as Record<string, number> | null) ?? null}
+                          recommended={recommended}
+                          confirmDisabled={isOpen && !leadUserIdByLocationId.get(location.id)}
+                          isOpen={isOpen}
+                        />
+                      )}
                     </tr>
                   ))}
                   {!rows.length && (
