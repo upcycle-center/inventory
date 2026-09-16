@@ -32,6 +32,7 @@ const SECTION_GROUPS = [
     items: [
       { href: "/admin/users", label: "Users" },
       { href: "/admin/permissions", label: "Permissions" },
+      { href: "/admin/staff", label: "Staff" },
     ],
   },
   {

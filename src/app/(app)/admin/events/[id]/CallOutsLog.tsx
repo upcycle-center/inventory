@@ -4,9 +4,9 @@ import { useState } from "react";
 import { easternDateTimeString } from "@/lib/easternTime";
 import { deleteShiftCallOut } from "./actions";
 import { ReasonBadge } from "@/components/ReasonBadge";
-import type { ShiftCallOut, Profile } from "@/lib/supabase/types";
+import type { ShiftCallOut, Profile, Staff } from "@/lib/supabase/types";
 
-type CallOutRow = ShiftCallOut & { reported_by_profile: Profile | null };
+type CallOutRow = ShiftCallOut & { reported_by_profile: Profile | null; staff: Staff | null };
 
 // Client-side filter over an already-fetched list -- a single event's log
 // is small enough that there's no need to round-trip to the server just to
@@ -46,6 +46,7 @@ export function CallOutsLog({
               <tr>
                 <th className="pb-2 pr-3">Location</th>
                 <th className="pb-2 pr-3">Role</th>
+                <th className="pb-2 pr-3">Staff</th>
                 <th className="pb-2 pr-3">Reason</th>
                 <th className="pb-2 pr-3">Note</th>
                 <th className="pb-2 pr-3">Reported</th>
@@ -57,6 +58,7 @@ export function CallOutsLog({
                 <tr key={c.id} className="border-t border-gray-100">
                   <td className="py-2 pr-3">{locationNameById.get(c.location_id) ?? "—"}</td>
                   <td className="py-2 pr-3">{c.role_name}</td>
+                  <td className="py-2 pr-3 text-gray-500">{c.staff?.name ?? "—"}</td>
                   <td className="py-2 pr-3">
                     <ReasonBadge type={c.call_out_type} />
                   </td>

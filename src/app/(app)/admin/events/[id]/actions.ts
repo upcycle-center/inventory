@@ -115,7 +115,7 @@ export async function confirmLocationStaffing(formData: FormData) {
 
   const { data: existing } = await supabase
     .from("event_locations")
-    .select("pending_unlock_reason")
+    .select("pending_unlock_reason, pending_unlock_staff_id")
     .eq("event_id", eventId)
     .eq("location_id", locationId)
     .maybeSingle();
@@ -126,7 +126,8 @@ export async function confirmLocationStaffing(formData: FormData) {
   // (submitted as role_baseline_<role> -- the last confirmed count, or
   // the suggested count on a first-ever confirm, whichever the manager
   // actually saw and edited from). The edit itself is the record of what
-  // happened -- no separate "which role" picker.
+  // happened -- no separate "which role" picker. A staff member picked at
+  // Unlock time (optional) is attached to every row this produces.
   const reason = existing?.pending_unlock_reason;
   if (reason === "call_out" || reason === "no_show" || reason === "other") {
     const callOutRows = STAFF_ROLES.filter((roleName) => roleCounts[roleName] < roleBaselines[roleName]).map((roleName) => ({
@@ -135,6 +136,7 @@ export async function confirmLocationStaffing(formData: FormData) {
       role_name: roleName,
       call_out_type: reason,
       note: `${roleBaselines[roleName]} → ${roleCounts[roleName]} on reconfirm`,
+      staff_id: existing?.pending_unlock_staff_id ?? null,
       reported_by: profile.id,
     }));
     if (callOutRows.length) {
@@ -153,6 +155,7 @@ export async function confirmLocationStaffing(formData: FormData) {
       confirmed_at: new Date().toISOString(),
       confirmed_by: profile.id,
       pending_unlock_reason: null,
+      pending_unlock_staff_id: null,
     },
     { onConflict: "event_id,location_id" }
   );
@@ -173,10 +176,11 @@ export async function unlockLocationStaffing(formData: FormData) {
 
   const reasonRaw = String(formData.get("reason") || "");
   const reason = reasonRaw === "call_out" || reasonRaw === "no_show" || reasonRaw === "other" ? reasonRaw : null;
+  const staffId = String(formData.get("staff_id") || "") || null;
 
   const { error } = await supabase
     .from("event_locations")
-    .update({ confirmed: false, pending_unlock_reason: reason })
+    .update({ confirmed: false, pending_unlock_reason: reason, pending_unlock_staff_id: staffId })
     .eq("event_id", eventId)
     .eq("location_id", locationId);
   if (error) console.error("Failed to unlock location staffing:", error.message);

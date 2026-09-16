@@ -25,6 +25,14 @@ export interface EventCallOutBreakdown {
   total: number;
 }
 
+export interface StaffCallOutBreakdown {
+  staffId: string;
+  name: string;
+  callOuts: number;
+  noShows: number;
+  total: number;
+}
+
 function monthRange(year: number, month: number) {
   const monthStartStr = `${year}-${String(month).padStart(2, "0")}-01`;
   const nextMonth = month === 12 ? 1 : month + 1;
@@ -57,9 +65,16 @@ export async function buildMonthEndCallOutsReport(
   roleBreakdown: RoleCallOutBreakdown[];
   locationBreakdown: LocationCallOutBreakdown[];
   eventBreakdown: EventCallOutBreakdown[];
+  staffBreakdown: StaffCallOutBreakdown[];
   summary: { callOuts: number; noShows: number; other: number };
 }> {
-  const emptyResult = { roleBreakdown: [], locationBreakdown: [], eventBreakdown: [], summary: { callOuts: 0, noShows: 0, other: 0 } };
+  const emptyResult = {
+    roleBreakdown: [],
+    locationBreakdown: [],
+    eventBreakdown: [],
+    staffBreakdown: [],
+    summary: { callOuts: 0, noShows: 0, other: 0 },
+  };
 
   const { data: standLocationsRaw } = await supabase
     .from("locations")
@@ -75,14 +90,17 @@ export async function buildMonthEndCallOutsReport(
   if (!eventIds.length) return emptyResult;
 
   // All three types are fetched here (not just call_out/no_show) so the
-  // month snapshot can include Adjustments -- the per-role/location/event
-  // breakdowns below still only count real absences.
+  // month snapshot can include Adjustments -- the per-role/location/event/
+  // staff breakdowns below still only count real absences.
   const { data: callOutsRaw } = await supabase
     .from("shift_call_outs")
-    .select("event_id, location_id, role_name, call_out_type")
+    .select("event_id, location_id, role_name, call_out_type, staff_id, staff:staff(name)")
     .in("event_id", eventIds)
     .in("location_id", standLocationIds);
-  const allEntries = (callOutsRaw as { event_id: string; location_id: string; role_name: string; call_out_type: string }[] | null) ?? [];
+  const allEntries =
+    (callOutsRaw as
+      | { event_id: string; location_id: string; role_name: string; call_out_type: string; staff_id: string | null; staff: { name: string } | null }[]
+      | null) ?? [];
   const summary = {
     callOuts: allEntries.filter((c) => c.call_out_type === "call_out").length,
     noShows: allEntries.filter((c) => c.call_out_type === "no_show").length,
@@ -93,22 +111,29 @@ export async function buildMonthEndCallOutsReport(
   const roleBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
   const locationBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
   const eventBreakdownMap = new Map<string, { callOuts: number; noShows: number }>();
+  const staffBreakdownMap = new Map<string, { name: string; callOuts: number; noShows: number }>();
   for (const c of callOuts) {
     const roleEntry = roleBreakdownMap.get(c.role_name) ?? { callOuts: 0, noShows: 0 };
     const locationEntry = locationBreakdownMap.get(c.location_id) ?? { callOuts: 0, noShows: 0 };
     const eventEntry = eventBreakdownMap.get(c.event_id) ?? { callOuts: 0, noShows: 0 };
+    // Only entries where a Manager actually picked a staff member count
+    // here -- there's no meaningful "unattributed" bucket to show.
+    const staffEntry = c.staff_id ? staffBreakdownMap.get(c.staff_id) ?? { name: c.staff?.name ?? "—", callOuts: 0, noShows: 0 } : null;
     if (c.call_out_type === "no_show") {
       roleEntry.noShows += 1;
       locationEntry.noShows += 1;
       eventEntry.noShows += 1;
+      if (staffEntry) staffEntry.noShows += 1;
     } else {
       roleEntry.callOuts += 1;
       locationEntry.callOuts += 1;
       eventEntry.callOuts += 1;
+      if (staffEntry) staffEntry.callOuts += 1;
     }
     roleBreakdownMap.set(c.role_name, roleEntry);
     locationBreakdownMap.set(c.location_id, locationEntry);
     eventBreakdownMap.set(c.event_id, eventEntry);
+    if (c.staff_id && staffEntry) staffBreakdownMap.set(c.staff_id, staffEntry);
   }
 
   const roleBreakdown: RoleCallOutBreakdown[] = Array.from(roleBreakdownMap.entries())
@@ -131,7 +156,11 @@ export async function buildMonthEndCallOutsReport(
     .filter((e) => e.total > 0)
     .sort((a, b) => b.total - a.total);
 
-  return { roleBreakdown, locationBreakdown, eventBreakdown, summary };
+  const staffBreakdown: StaffCallOutBreakdown[] = Array.from(staffBreakdownMap.entries())
+    .map(([staffId, { name, callOuts, noShows }]) => ({ staffId, name, callOuts, noShows, total: callOuts + noShows }))
+    .sort((a, b) => b.total - a.total);
+
+  return { roleBreakdown, locationBreakdown, eventBreakdown, staffBreakdown, summary };
 }
 
 export interface CallOutLogEntry {
@@ -143,6 +172,7 @@ export interface CallOutLogEntry {
   locationName: string;
   eventName: string;
   eventDate: string;
+  staffName: string | null;
   reportedByName: string | null;
 }
 
@@ -160,7 +190,9 @@ export async function getLocationCallOutEntries(
 
   const { data } = await supabase
     .from("shift_call_outs")
-    .select("id, role_name, call_out_type, note, created_at, event:events(name, event_date), reported_by_profile:profiles(name)")
+    .select(
+      "id, role_name, call_out_type, note, created_at, event:events(name, event_date), staff:staff(name), reported_by_profile:profiles(name)"
+    )
     .eq("location_id", locationId)
     .in("event_id", events.map((e) => e.id))
     .order("created_at", { ascending: false });
@@ -174,6 +206,7 @@ export async function getLocationCallOutEntries(
     locationName: "",
     eventName: r.event?.name ?? "—",
     eventDate: r.event?.event_date ?? "",
+    staffName: r.staff?.name ?? null,
     reportedByName: r.reported_by_profile?.name ?? null,
   }));
 }
@@ -184,7 +217,7 @@ export async function getLocationCallOutEntries(
 export async function getEventCallOutEntries(supabase: SupabaseClient, eventId: string): Promise<CallOutLogEntry[]> {
   const { data } = await supabase
     .from("shift_call_outs")
-    .select("id, role_name, call_out_type, note, created_at, location:locations(name), reported_by_profile:profiles(name)")
+    .select("id, role_name, call_out_type, note, created_at, location:locations(name), staff:staff(name), reported_by_profile:profiles(name)")
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
@@ -197,6 +230,7 @@ export async function getEventCallOutEntries(supabase: SupabaseClient, eventId: 
     locationName: r.location?.name ?? "—",
     eventName: "",
     eventDate: "",
+    staffName: r.staff?.name ?? null,
     reportedByName: r.reported_by_profile?.name ?? null,
   }));
 }
@@ -216,7 +250,7 @@ export async function getRoleCallOutEntries(
   const { data } = await supabase
     .from("shift_call_outs")
     .select(
-      "id, role_name, call_out_type, note, created_at, location:locations(name), event:events(name, event_date), reported_by_profile:profiles(name)"
+      "id, role_name, call_out_type, note, created_at, location:locations(name), event:events(name, event_date), staff:staff(name), reported_by_profile:profiles(name)"
     )
     .eq("role_name", roleName)
     .in("event_id", events.map((e) => e.id))
@@ -231,6 +265,42 @@ export async function getRoleCallOutEntries(
     locationName: r.location?.name ?? "—",
     eventName: r.event?.name ?? "—",
     eventDate: r.event?.event_date ?? "",
+    staffName: r.staff?.name ?? null,
+    reportedByName: r.reported_by_profile?.name ?? null,
+  }));
+}
+
+// Every logged entry (Call-Out, No-Show, and Adjustment alike) for one
+// staff member during the given month, across every location, event, and
+// role -- the drill-down behind a staff row in the By Staff summary above.
+export async function getStaffCallOutEntries(
+  supabase: SupabaseClient,
+  year: number,
+  month: number,
+  staffId: string
+): Promise<CallOutLogEntry[]> {
+  const events = await eventsForMonth(supabase, year, month);
+  if (!events.length) return [];
+
+  const { data } = await supabase
+    .from("shift_call_outs")
+    .select(
+      "id, role_name, call_out_type, note, created_at, location:locations(name), event:events(name, event_date), reported_by_profile:profiles(name)"
+    )
+    .eq("staff_id", staffId)
+    .in("event_id", events.map((e) => e.id))
+    .order("created_at", { ascending: false });
+
+  return ((data as any[] | null) ?? []).map((r) => ({
+    id: r.id,
+    roleName: r.role_name,
+    callOutType: r.call_out_type,
+    note: r.note,
+    createdAt: r.created_at,
+    locationName: r.location?.name ?? "—",
+    eventName: r.event?.name ?? "—",
+    eventDate: r.event?.event_date ?? "",
+    staffName: null,
     reportedByName: r.reported_by_profile?.name ?? null,
   }));
 }

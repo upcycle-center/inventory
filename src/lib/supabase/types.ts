@@ -139,6 +139,7 @@ export interface EventLocation {
   confirmed_staff_count: number | null;
   confirmed_role_counts: Record<string, number> | null;
   pending_unlock_reason: "call_out" | "no_show" | "other" | null;
+  pending_unlock_staff_id: string | null;
   confirmed_at: string | null;
   confirmed_by: string | null;
   updated_at: string;
@@ -151,7 +152,17 @@ export interface ShiftCallOut {
   role_name: string;
   call_out_type: "call_out" | "no_show" | "other";
   note: string | null;
+  staff_id: string | null;
   reported_by: string | null;
+  created_at: string;
+}
+
+export interface Staff {
+  id: string;
+  name: string;
+  certified: boolean;
+  ready_to_work: boolean;
+  active: boolean;
   created_at: string;
 }
 

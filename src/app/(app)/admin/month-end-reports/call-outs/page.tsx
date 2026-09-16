@@ -12,6 +12,7 @@ import {
   getEventCallOutEntries,
   getLocationCallOutEntries,
   getRoleCallOutEntries,
+  getStaffCallOutEntries,
   type CallOutLogEntry,
 } from "@/lib/monthEndCallOuts";
 import { easternDateString, easternDateTimeString } from "@/lib/easternTime";
@@ -85,20 +86,23 @@ function BreakdownTable({
   );
 }
 
-// showRole/showLocation/showEvent let each drill-down hide whichever
-// column is already implied by the page it's on (e.g. the Location
-// drill-down doesn't need to repeat the location on every row) while the
-// Role drill-down, which spans every location and event, shows both.
+// showRole/showLocation/showEvent/showStaff let each drill-down hide
+// whichever column is already implied by the page it's on (e.g. the
+// Location drill-down doesn't need to repeat the location on every row)
+// while the Role drill-down, which spans every location/event/staff
+// member, shows all of them.
 function EntriesTable({
   entries,
   showRole = true,
   showLocation = false,
   showEvent = false,
+  showStaff = true,
 }: {
   entries: CallOutLogEntry[];
   showRole?: boolean;
   showLocation?: boolean;
   showEvent?: boolean;
+  showStaff?: boolean;
 }) {
   return (
     <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
@@ -107,6 +111,7 @@ function EntriesTable({
           <thead className="text-gray-500">
             <tr>
               {showRole && <th className="px-3 py-1.5">Role</th>}
+              {showStaff && <th className="px-3 py-1.5">Staff</th>}
               <th className="px-3 py-1.5">Reason</th>
               <th className="px-3 py-1.5">Note</th>
               {showLocation && <th className="px-3 py-1.5">Location</th>}
@@ -118,6 +123,7 @@ function EntriesTable({
             {entries.map((e) => (
               <tr key={e.id} className="border-t border-gray-100">
                 {showRole && <td className="px-3 py-1.5">{e.roleName}</td>}
+                {showStaff && <td className="px-3 py-1.5 text-gray-500">{e.staffName ?? "—"}</td>}
                 <td className="px-3 py-1.5">
                   <ReasonBadge type={e.callOutType} />
                 </td>
@@ -145,7 +151,7 @@ function EntriesTable({
 export default async function MonthEndCallOutsPage({
   searchParams,
 }: {
-  searchParams: { year?: string; month?: string; location?: string; event?: string; role?: string };
+  searchParams: { year?: string; month?: string; location?: string; event?: string; role?: string; staff?: string };
 }) {
   await requireProfile(["admin"]);
   const supabase = createClient();
@@ -237,7 +243,39 @@ export default async function MonthEndCallOutsPage({
     );
   }
 
-  const { roleBreakdown, locationBreakdown, eventBreakdown, summary } = await buildMonthEndCallOutsReport(supabase, year, month);
+  if (searchParams.staff) {
+    const [{ data: staffMember }, entries] = await Promise.all([
+      supabase.from("staff").select("id, name").eq("id", searchParams.staff).single(),
+      getStaffCallOutEntries(supabase, year, month, searchParams.staff),
+    ]);
+
+    return (
+      <div>
+        <Breadcrumbs
+          items={[
+            { label: "Admin", href: "/admin" },
+            { label: "Month-End Reports", href: "/admin/month-end-reports" },
+            { label: "Workforce Attendance", href: `${basePath}?${monthQuery}` },
+            { label: staffMember?.name ?? "Staff" },
+          ]}
+        />
+        <Link href={`${basePath}?${monthQuery}`} className="mb-2 inline-block text-sm text-brand hover:underline">
+          ← Back to Workforce Attendance
+        </Link>
+        <h1 className="mb-1 text-lg font-semibold">{staffMember?.name ?? "Staff"}</h1>
+        <p className="mb-6 text-sm text-gray-500">
+          Every Call-Out, No-Show, and Adjustment logged for this person during {MONTH_NAMES[month - 1]} {year}.
+        </p>
+        <EntriesTable entries={entries} showLocation showEvent showStaff={false} />
+      </div>
+    );
+  }
+
+  const { roleBreakdown, locationBreakdown, eventBreakdown, staffBreakdown, summary } = await buildMonthEndCallOutsReport(
+    supabase,
+    year,
+    month
+  );
 
   return (
     <div>
@@ -305,6 +343,20 @@ export default async function MonthEndCallOutsPage({
             noShows: r.noShows,
             total: r.total,
             viewLogHref: `${basePath}?${monthQuery}&role=${encodeURIComponent(r.roleName)}`,
+          }))}
+        />
+
+        <BreakdownTable
+          title="Call-Outs / No-Shows by STAFF"
+          labelHeader="Staff"
+          emptyMessage="No Call-Outs or No-Shows were attributed to a specific staff member this month."
+          rows={staffBreakdown.map((s) => ({
+            key: s.staffId,
+            label: s.name,
+            callOuts: s.callOuts,
+            noShows: s.noShows,
+            total: s.total,
+            viewLogHref: `${basePath}?${monthQuery}&staff=${s.staffId}`,
           }))}
         />
       </div>

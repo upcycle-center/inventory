@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile, ShiftCallOut } from "@/lib/supabase/types";
+import type { EventLocation, Location, LocationStaffRole, LocationStaffTier, Profile, ShiftCallOut, Staff } from "@/lib/supabase/types";
 import { STAFF_ROLES, STAFF_ROLE_SHORT_LABEL } from "@/lib/staffRoles";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -22,7 +22,7 @@ import { easternDateTimeString } from "@/lib/easternTime";
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: event }, { data: locations }, { data: users }, { data: assignments }, { data: eventLocations }] =
+  const [{ data: event }, { data: locations }, { data: users }, { data: assignments }, { data: eventLocations }, { data: activeStaff }] =
     await Promise.all([
       supabase
         .from("events")
@@ -41,11 +41,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
         .from("event_locations")
         .select("*, confirmed_by_profile:profiles(id, name)")
         .eq("event_id", params.id),
+      supabase.from("staff").select("*").eq("active", true).order("name"),
     ]);
 
   const { data: callOuts } = await supabase
     .from("shift_call_outs")
-    .select("*, reported_by_profile:profiles(id, name)")
+    .select("*, reported_by_profile:profiles(id, name), staff:staff(id, name)")
     .eq("event_id", params.id)
     .order("created_at", { ascending: false });
 
@@ -88,7 +89,11 @@ export default async function EventDetailPage({ params }: { params: { id: string
   const totRecommended = event.tot_tickets_posted_at ? totalRecommendedStaff(event.tot_tickets) : null;
 
   const locationNameById = new Map(((locations as Location[] | null) ?? []).map((l) => [l.id, l.name]));
-  const callOutList = ((callOuts as any[] | null) ?? []) as (ShiftCallOut & { reported_by_profile: Profile | null })[];
+  const staffList = (activeStaff as Staff[] | null) ?? [];
+  const callOutList = ((callOuts as any[] | null) ?? []) as (ShiftCallOut & {
+    reported_by_profile: Profile | null;
+    staff: Staff | null;
+  })[];
 
   return (
     <div>
@@ -360,6 +365,19 @@ export default async function EventDetailPage({ params }: { params: { id: string
                                 <option value="other">Adjustment</option>
                                 <option value="call_out">Call-Out</option>
                                 <option value="no_show">No-Show</option>
+                              </select>
+                              <select
+                                name="staff_id"
+                                defaultValue=""
+                                title="Optional — who this Call-Out/No-Show is, if known"
+                                className="rounded-md border border-gray-300 px-1 py-1 text-xs"
+                              >
+                                <option value="">— Staff —</option>
+                                {staffList.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.name}
+                                  </option>
+                                ))}
                               </select>
                               <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
                                 Unlock
