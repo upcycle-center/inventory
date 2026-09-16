@@ -21,6 +21,7 @@ function DisableableNumberField({
   disabled,
   placeholder,
   disabledTitle,
+  currency,
 }: {
   label: string;
   name: string;
@@ -28,24 +29,28 @@ function DisableableNumberField({
   disabled: boolean;
   placeholder?: string;
   disabledTitle: string;
+  currency?: boolean;
 }) {
   return (
     <label className="text-sm text-gray-600">
       {label}
       {disabled && <input type="hidden" name={name} value={defaultValue ?? ""} />}
-      <input
-        type="number"
-        step="0.01"
-        min={0}
-        name={disabled ? undefined : name}
-        defaultValue={defaultValue ?? ""}
-        placeholder={placeholder}
-        disabled={disabled}
-        title={disabled ? disabledTitle : undefined}
-        className={`mt-1 w-full rounded-md border px-3 py-2 text-sm ${
-          disabled ? "border-gray-200 bg-gray-100 text-gray-400" : "border-gray-300"
-        }`}
-      />
+      <div className="relative mt-1">
+        {currency && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>}
+        <input
+          type="number"
+          step="0.01"
+          min={0}
+          name={disabled ? undefined : name}
+          defaultValue={defaultValue ?? ""}
+          placeholder={placeholder}
+          disabled={disabled}
+          title={disabled ? disabledTitle : undefined}
+          className={`w-full rounded-md border py-2 pr-3 text-sm ${currency ? "pl-6" : "pl-3"} ${
+            disabled ? "border-gray-200 bg-gray-100 text-gray-400" : "border-gray-300"
+          }`}
+        />
+      </div>
     </label>
   );
 }
@@ -176,14 +181,17 @@ export function ProductCoreFields({
       <div className="grid grid-cols-2 gap-3">
         <label className="text-sm text-gray-600">
           Cost (CS)
-          <input
-            name="case_cost"
-            type="number"
-            step="0.01"
-            value={caseCost}
-            onChange={(e) => setCaseCost(e.target.value)}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
+          <div className="relative mt-1">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+            <input
+              name="case_cost"
+              type="number"
+              step="0.01"
+              value={caseCost}
+              onChange={(e) => setCaseCost(e.target.value)}
+              className="w-full rounded-md border border-gray-300 py-2 pl-6 pr-3 text-sm"
+            />
+          </div>
         </label>
         <label className="text-sm text-gray-600">
           Cost (EA)
@@ -204,6 +212,7 @@ export function ProductCoreFields({
           defaultValue={defaultSalePrice}
           disabled={retailValueDisabled}
           disabledTitle="Not used for this Type -- Non-Chargeable and Disposable items don't factor into TOT Retail directly."
+          currency
         />
         <label className="text-sm text-gray-600">
           {middleUnitLabel.trim() ? `Case size (${middleUnitLabel.trim()}s per case)` : "Case size (each per case)"}
