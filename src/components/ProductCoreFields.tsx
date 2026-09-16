@@ -18,7 +18,7 @@ function DisableableNumberField({
   label,
   name,
   defaultValue,
-  disabled,
+  disabled = false,
   placeholder,
   disabledTitle,
   currency,
@@ -26,9 +26,9 @@ function DisableableNumberField({
   label: string;
   name: string;
   defaultValue: number | string | null | undefined;
-  disabled: boolean;
+  disabled?: boolean;
   placeholder?: string;
-  disabledTitle: string;
+  disabledTitle?: string;
   currency?: boolean;
 }) {
   return (
@@ -296,36 +296,16 @@ export function ProductCoreFields({
         </label>
       </div>
 
-      {productType !== "disposable" && (
+      {pourFieldsActive && (
         <div>
           <p className="mb-1 text-sm font-medium">Pour details (Type: Non-Chargeable – Bottles only)</p>
           <p className="mb-3 text-sm text-gray-500">
             For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Retail Value.
           </p>
           <div className="grid grid-cols-3 gap-3">
-            <DisableableNumberField
-              label="Bottle size (mL)"
-              name="bottle_size_ml"
-              defaultValue={defaultBottleSizeMl}
-              disabled={!pourFieldsActive}
-              placeholder="e.g. 750"
-              disabledTitle="Only used for Type: Non-Chargeable – Bottles."
-            />
-            <DisableableNumberField
-              label="Pour size (oz)"
-              name="pour_size_oz"
-              defaultValue={defaultPourSizeOz}
-              disabled={!pourFieldsActive}
-              placeholder="e.g. 1.5"
-              disabledTitle="Only used for Type: Non-Chargeable – Bottles."
-            />
-            <DisableableNumberField
-              label="Price per pour"
-              name="pour_price"
-              defaultValue={defaultPourPrice}
-              disabled={!pourFieldsActive}
-              disabledTitle="Only used for Type: Non-Chargeable – Bottles."
-            />
+            <DisableableNumberField label="Bottle size (mL)" name="bottle_size_ml" defaultValue={defaultBottleSizeMl} placeholder="e.g. 750" />
+            <DisableableNumberField label="Pour size (oz)" name="pour_size_oz" defaultValue={defaultPourSizeOz} placeholder="e.g. 1.5" />
+            <DisableableNumberField label="Price per pour" name="pour_price" defaultValue={defaultPourPrice} />
           </div>
         </div>
       )}
