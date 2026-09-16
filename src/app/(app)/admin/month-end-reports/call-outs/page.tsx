@@ -64,7 +64,7 @@ function BreakdownTable({
               <th className="w-[13%] px-4 py-2 text-center">Call-Outs</th>
               <th className="w-[13%] px-4 py-2 text-center">No-Shows</th>
               <th className="w-[12%] px-4 py-2 text-center">Total</th>
-              <th className="w-[14%] whitespace-nowrap px-2 py-2 text-right">Log</th>
+              <th className="w-[14%] whitespace-nowrap px-2 py-2 text-right"></th>
             </tr>
           </thead>
           <tbody>
