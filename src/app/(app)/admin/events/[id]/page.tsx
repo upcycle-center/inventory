@@ -338,12 +338,14 @@ export default async function EventDetailPage({ params }: { params: { id: string
                       </td>
                       <td className="py-2">
                         {confirmed ? (
-                          <form action={unlockLocationStaffing} className="flex flex-wrap items-center gap-1.5">
+                          <form action={unlockLocationStaffing} className="flex flex-wrap items-start gap-2">
                             <input type="hidden" name="event_id" value={event.id} />
                             <input type="hidden" name="location_id" value={location.id} />
-                            <span className="text-xs text-gray-400" title={eventLocation?.confirmed_at ?? ""}>
-                              🔒 Confirmed{eventLocation?.confirmed_by_profile?.name ? ` by ${eventLocation.confirmed_by_profile.name}` : ""}
-                            </span>
+                            <div className="text-left text-xs leading-tight text-gray-400">
+                              <p>🔒 Confirmed by:</p>
+                              <p className="text-gray-600">{eventLocation?.confirmed_by_profile?.name ?? "—"}</p>
+                              {eventLocation?.confirmed_at && <p>{easternDateTimeString(new Date(eventLocation.confirmed_at))}</p>}
+                            </div>
                             <select
                               name="reason"
                               defaultValue=""
