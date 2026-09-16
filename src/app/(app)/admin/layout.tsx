@@ -6,24 +6,27 @@ const SECTION_GROUPS = [
     label: "Catalog",
     items: [
       { href: "/admin/products", label: "Products" },
-      { href: "/admin/categories", label: "Categories" },
       { href: "/admin/suppliers", label: "Suppliers" },
-      { href: "/admin/storage-areas", label: "Storage Areas" },
+      { href: "/admin/categories", label: "Categories" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { href: "/admin/locations", label: "Locations" },
-      { href: "/admin/events", label: "Events" },
       { href: "/restock-requests", label: "RequestQ" },
-      { href: "/comps", label: "Comps" },
-      { href: "/recoveries", label: "Recoveries" },
+      { href: "/admin/events", label: "Events" },
+      { href: "/admin/locations", label: "Locations" },
+      { href: "/admin/storage-areas", label: "Storage Areas" },
+      { href: "/warehouse", label: "Warehouse" },
     ],
   },
   {
     label: "Reports",
-    items: [{ href: "/admin/month-end-reports", label: "Month-End Reports" }],
+    items: [
+      { href: "/admin/reports/events", label: "Events" },
+      { href: "/admin/month-end-reports", label: "Month End" },
+      { href: "/admin/reports/year-end", label: "Year End" },
+    ],
   },
   {
     label: "Access",
@@ -33,8 +36,11 @@ const SECTION_GROUPS = [
     ],
   },
   {
-    label: "Integrations",
-    items: [{ href: "/admin/yellow-dog-mapping", label: "Yellow Dog CSV Mapping" }],
+    label: "Data Maps",
+    items: [
+      { href: "/admin/yellow-dog-mapping", label: "Yellow Dog" },
+      { href: "/admin/square-pos-mapping", label: "Square POS" },
+    ],
   },
 ];
 
