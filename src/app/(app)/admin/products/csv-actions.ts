@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isProductTypeValue } from "@/lib/productType";
-import { SUB_UNIT_OPTIONS } from "@/lib/subUnit";
+import { SUB_UNIT_LABEL } from "@/lib/subUnit";
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -130,7 +130,6 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let categoriesUnmatched = 0;
   let suppliersUnmatched = 0;
   let productTypesUnmatched = 0;
-  let subUnitsUnmatched = 0;
 
   for (const cols of rows.slice(1)) {
     const sku = cols[skuIdx]?.trim();
@@ -193,21 +192,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     const posSquareRaw = posSquareIdx !== -1 ? cols[posSquareIdx]?.trim().toLowerCase() : undefined;
     const posSquare = posSquareRaw !== undefined ? posSquareRaw === "yes" || posSquareRaw === "true" || posSquareRaw === "1" : undefined;
     // Same "only touch when present" rule -- omitting these on a routine
-    // refresh shouldn't silently drop a product's Sleeve/Pack counting tier.
-    // middle_unit_label is constrained to the same fixed Pack/Sleeve
-    // vocabulary as the product form's dropdown -- an unrecognized value is
-    // treated as "column not usable" and leaves the row's Sub-Unit alone,
-    // same as an unrecognized product_type.
+    // refresh shouldn't silently drop a product's Count counting tier.
+    // Sub-Unit is a uniform unit ("Count") rather than a named container --
+    // any non-blank value in the column just turns it on.
     const middleUnitLabelRaw = middleUnitLabelIdx !== -1 ? cols[middleUnitLabelIdx]?.trim() : undefined;
-    let middleUnitLabel: string | null | undefined;
-    if (middleUnitLabelRaw !== undefined) {
-      if (!middleUnitLabelRaw) {
-        middleUnitLabel = null;
-      } else {
-        middleUnitLabel = SUB_UNIT_OPTIONS.find((o) => o.value.toLowerCase() === middleUnitLabelRaw.toLowerCase())?.value;
-        if (!middleUnitLabel) subUnitsUnmatched++;
-      }
-    }
+    const middleUnitLabel = middleUnitLabelRaw !== undefined ? (middleUnitLabelRaw ? SUB_UNIT_LABEL : null) : undefined;
     const middleUnitSizeRaw = middleUnitSizeIdx !== -1 ? cols[middleUnitSizeIdx]?.trim() : undefined;
     const middleUnitSize = middleUnitSizeRaw !== undefined ? (middleUnitSizeRaw ? Number(middleUnitSizeRaw) : null) : undefined;
     const eachCountableRaw = eachCountableIdx !== -1 ? cols[eachCountableIdx]?.trim().toLowerCase() : undefined;
@@ -331,10 +320,6 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     }${
       productTypesUnmatched
         ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
-        : ""
-    }${
-      subUnitsUnmatched
-        ? ` ${subUnitsUnmatched} middle_unit_label value(s) weren't recognized (must be exactly Pack or Sleeve) — those rows' Sub-Unit was left unchanged.`
         : ""
     }${failed ? ` First error: ${firstError}` : ""}`,
   };

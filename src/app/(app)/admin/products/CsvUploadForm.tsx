@@ -38,13 +38,12 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         product&apos;s value off pours per bottle instead of Retail Value.
       </p>
       <p className="text-xs text-gray-500">
-        For a product with a Sub-Unit tier between Case and Each, add <code>middle_unit_label</code>{" "}
-        (must be exactly <code>Pack</code> or <code>Sleeve</code>), <code>middle_unit_size</code>{" "}
-        (each per Sub-Unit), and <code>each_countable</code> (<code>yes</code>/<code>no</code> —{" "}
-        <code>no</code> for products only ever counted by Case/Sub-Unit, like napkins or
-        flatware). All three are also left alone on an update if omitted. Once{" "}
-        <code>middle_unit_label</code> is set, <code>case_size</code> means Sub-Units per case
-        (e.g. 20 sleeves/case), not each per case.
+        For a product with a Sub-Unit tier between Case and Each (shown uniformly as Count/CT), add
+        any non-blank <code>middle_unit_label</code> value to turn it on, <code>middle_unit_size</code>{" "}
+        (each per Count), and <code>each_countable</code> (<code>yes</code>/<code>no</code> —{" "}
+        <code>no</code> for products only ever counted by Case/Count, like napkins or flatware). All
+        three are also left alone on an update if omitted. Once <code>middle_unit_label</code> is
+        set, <code>case_size</code> means Counts per case (e.g. 20 sleeves/case), not each per case.
       </p>
       <p className="text-xs text-gray-500">
         <code>pos_square</code> (<code>yes</code>/<code>no</code> — also left alone on an update if

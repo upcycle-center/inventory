@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { PRODUCT_TYPE_OPTIONS, type ProductTypeValue } from "@/lib/productType";
-import { SUB_UNIT_OPTIONS } from "@/lib/subUnit";
+import { SUB_UNIT_LABEL } from "@/lib/subUnit";
 import { caseSizeInEach } from "@/lib/onHand";
 import type { ProductCategory, Supplier } from "@/lib/supabase/types";
 
@@ -94,7 +94,8 @@ export function ProductCoreFields({
 }) {
   const [productType, setProductType] = useState(defaultProductType);
   const [categoryId, setCategoryId] = useState(defaultCategoryId ?? "");
-  const [middleUnitLabel, setMiddleUnitLabel] = useState(defaultMiddleUnitLabel ?? "");
+  const [hasSubUnit, setHasSubUnit] = useState(!!defaultMiddleUnitLabel);
+  const middleUnitLabel = hasSubUnit ? SUB_UNIT_LABEL : "";
   const [eachCountable, setEachCountable] = useState(defaultEachCountable ?? true);
   const [unitOfMeasure, setUnitOfMeasure] = useState(defaultUnitOfMeasure ?? "each");
   const [caseCost, setCaseCost] = useState(String(defaultCaseCost ?? ""));
@@ -111,9 +112,9 @@ export function ProductCoreFields({
 
   // Unit of measure is just "which of this product's own counting units is
   // primary" -- offer only the ones that actually apply: Each (unless
-  // turned off below), Case (always), and the product's own middle unit
-  // (Sleeve, Pack, ...) once it has a name. If a prior selection no longer
-  // applies (e.g. Each got unchecked), fall back to the first option that does.
+  // turned off below), Case (always), and Count once the product has a
+  // Sub-Unit. If a prior selection no longer applies (e.g. Each got
+  // unchecked), fall back to the first option that does.
   const unitOptions = [
     ...(eachCountable ? [{ value: "each", label: "Each" }] : []),
     { value: "case", label: "Case" },
@@ -252,25 +253,22 @@ export function ProductCoreFields({
       <div>
         <p className="mb-1 text-sm font-medium">Counting units</p>
         <p className="mb-3 text-sm text-gray-500">
-          For an extra packaging tier between Case and Each — a Sleeve of cups, a Pack of napkins.
-          Leave Sub-Unit unset for the standard Case/Each setup.
+          For an extra packaging tier between Case and Each — a sleeve of cups, a pack of napkins —
+          shown uniformly as Count (CT). Leave unchecked for the standard Case/Each setup.
         </p>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm text-gray-600">
             Sub-Unit
-            <select
-              name="middle_unit_label"
-              value={middleUnitLabel}
-              onChange={(e) => setMiddleUnitLabel(e.target.value)}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">— None —</option>
-              {SUB_UNIT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
+            <input type="hidden" name="middle_unit_label" value={middleUnitLabel} />
+            <div className="mt-1 flex h-[38px] items-center gap-2 rounded-md border border-gray-300 px-3 text-sm">
+              <input
+                type="checkbox"
+                checked={hasSubUnit}
+                onChange={(e) => setHasSubUnit(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <span className="text-gray-700">{hasSubUnit ? "Count (CT)" : "None"}</span>
+            </div>
           </label>
           <label className="text-sm text-gray-600">
             Sub-Unit Count

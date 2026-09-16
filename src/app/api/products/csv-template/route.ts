@@ -36,9 +36,9 @@ export async function GET() {
     ],
     ["EX-001", "Example Product", "", "chargeable", "", "", "012345678905", "24.00", "6.00", "each", "24", "", "", "", "", "", "yes", "yes", "023", "LC", "12"],
     ["EX-001", "Example Product", "", "chargeable", "", "", "012345678905", "24.00", "6.00", "each", "24", "", "", "", "", "", "yes", "yes", "VIP In Seat", "WF", "6"],
-    ["EX-002", "16oz Plastic Cup", "", "disposable", "", "", "", "18.00", "", "each", "10", "", "", "", "Sleeve", "50", "yes", "no", "023", "OTH", "1000"],
+    ["EX-002", "16oz Plastic Cup", "", "disposable", "", "", "", "18.00", "", "each", "10", "", "", "", "Count", "50", "yes", "no", "023", "OTH", "1000"],
     ["EX-003", "Well Vodka 750ml", "", "non_chargeable_bottle", "Liquor", "", "", "18.00", "", "each", "1", "750", "1.5", "9.00", "", "", "yes", "no", "023", "LC", "6"],
-    ["EX-004", "Dinner Napkins", "", "disposable", "", "", "", "22.00", "", "each", "12", "", "", "", "Pack", "500", "no", "no", "023", "OTH", "2000"],
+    ["EX-004", "Dinner Napkins", "", "disposable", "", "", "", "22.00", "", "each", "12", "", "", "", "Count", "500", "no", "no", "023", "OTH", "2000"],
   ]);
 
   return new Response(csv, {
