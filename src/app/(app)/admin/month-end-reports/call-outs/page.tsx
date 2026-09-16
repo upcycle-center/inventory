@@ -50,8 +50,14 @@ function BreakdownTable({
           <thead className="text-gray-500">
             <tr>
               <th className="w-[48%] px-4 py-2">{labelHeader}</th>
-              <th className="w-[13%] px-4 py-2 text-center">Call-Outs</th>
-              <th className="w-[13%] px-4 py-2 text-center">No-Shows</th>
+              <th className="w-[13%] whitespace-nowrap px-4 py-2 text-center">
+                <span className="sm:hidden">C/O</span>
+                <span className="hidden sm:inline">Call-Outs</span>
+              </th>
+              <th className="w-[13%] whitespace-nowrap px-4 py-2 text-center">
+                <span className="sm:hidden">N/S</span>
+                <span className="hidden sm:inline">No-Shows</span>
+              </th>
               <th className="w-[12%] px-4 py-2 text-center">Total</th>
               <th className="w-[14%] whitespace-nowrap px-2 py-2 text-right"></th>
             </tr>
