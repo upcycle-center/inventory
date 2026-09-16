@@ -24,6 +24,7 @@ export async function createProduct(formData: FormData) {
   const bottleSizeRaw = String(formData.get("bottle_size_ml") || "").trim();
   const pourSizeRaw = String(formData.get("pour_size_oz") || "").trim();
   const pourPriceRaw = String(formData.get("pour_price") || "").trim();
+  const posSquare = formData.get("pos_square") === "on";
 
   let photoUrl: string | null = null;
   const photo = formData.get("photo");
@@ -60,6 +61,7 @@ export async function createProduct(formData: FormData) {
       bottle_size_ml: bottleSizeRaw ? Number(bottleSizeRaw) : null,
       pour_size_oz: pourSizeRaw ? Number(pourSizeRaw) : null,
       pour_price: pourPriceRaw ? Number(pourPriceRaw) : null,
+      pos_square: posSquare,
       photo_url: photoUrl,
       created_by: user?.id ?? null,
     })

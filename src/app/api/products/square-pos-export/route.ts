@@ -4,13 +4,9 @@ import { toCsv } from "@/lib/csv";
 import { exportFilename } from "@/lib/exportFilename";
 import { buildProductExportRows } from "@/lib/productCsvExport";
 
-// A real export of every product's current values, in the exact column
-// layout bulkUploadProducts expects -- download, edit only what needs to
-// change, re-upload. Every field round-trips as-is, so an unedited row
-// re-applies the same value it already had (a no-op), and the upload's
-// per-row "only touch when present" rules (product_type, category,
-// supplier) mean leaving a cell as exported never overwrites something
-// else by accident.
+// The Square data map -- only products with the "POS Square" checkbox
+// checked on the Product Details page, same column layout as the full
+// Products export.
 export async function GET() {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "admin") {
@@ -18,13 +14,13 @@ export async function GET() {
   }
 
   const supabase = createClient();
-  const rows = await buildProductExportRows(supabase);
+  const rows = await buildProductExportRows(supabase, { posSquareOnly: true });
   const csv = toCsv(rows);
 
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${exportFilename("Products-Export", "csv")}"`,
+      "Content-Disposition": `attachment; filename="${exportFilename("Square-POS-Data-Map", "csv")}"`,
     },
   });
 }

@@ -166,6 +166,7 @@ export interface Product {
   bottle_size_ml: number | null;
   pour_size_oz: number | null;
   pour_price: number | null;
+  pos_square: boolean;
   photo_url: string | null;
   active: boolean;
   created_by: string | null;

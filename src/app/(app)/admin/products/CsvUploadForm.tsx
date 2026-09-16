@@ -37,6 +37,11 @@ export function CsvUploadForm({ suppliers }: { suppliers: Supplier[] }) {
         product&apos;s value off pours per bottle instead of Retail Value.
       </p>
       <p className="text-xs text-gray-500">
+        <code>pos_square</code> (<code>yes</code>/<code>no</code> — also left alone on an update if
+        omitted) controls whether the product is included in Admin → Data Maps → Square POS&apos;s
+        export.
+      </p>
+      <p className="text-xs text-gray-500">
         To also assign a location (and skip doing it by hand under Admin → Locations), add{" "}
         <code>location</code> (Yellow Dog code or location name) and <code>storage_area</code>{" "}
         (its code or name) columns, plus an optional <code>reorder_threshold</code>. A product

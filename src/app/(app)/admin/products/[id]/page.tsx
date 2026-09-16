@@ -6,6 +6,7 @@ import { sortStorageAreas } from "@/lib/storageAreas";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { LocationLabel } from "@/components/LocationLabel";
 import { ProductCoreFields } from "@/components/ProductCoreFields";
+import { ProductPosFields } from "@/components/ProductPosFields";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { syncProductLocations, updateProduct } from "./actions";
@@ -95,6 +96,8 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           defaultPourSizeOz={product.pour_size_oz}
           defaultPourPrice={product.pour_price}
         />
+
+        <ProductPosFields defaultPosSquare={product.pos_square} />
 
         <label className="text-sm text-gray-600">
           Replace photo

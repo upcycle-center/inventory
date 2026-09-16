@@ -76,6 +76,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const bottleSizeIdx = header.indexOf("bottle_size_ml");
   const pourSizeIdx = header.indexOf("pour_size_oz");
   const pourPriceIdx = header.indexOf("pour_price");
+  const posSquareIdx = header.indexOf("pos_square");
   const locationIdx = header.indexOf("location");
   const storageAreaIdx = header.indexOf("storage_area");
   const thresholdIdx = header.indexOf("reorder_threshold");
@@ -176,6 +177,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     const bottleSizeMl = bottleSizeIdx !== -1 && cols[bottleSizeIdx]?.trim() ? Number(cols[bottleSizeIdx]) : null;
     const pourSizeOz = pourSizeIdx !== -1 && cols[pourSizeIdx]?.trim() ? Number(cols[pourSizeIdx]) : null;
     const pourPrice = pourPriceIdx !== -1 && cols[pourPriceIdx]?.trim() ? Number(cols[pourPriceIdx]) : null;
+    // Same "only touch when the column is present" rule as product_type --
+    // a routine price refresh shouldn't silently drop a product from the
+    // Square data map.
+    const posSquareRaw = posSquareIdx !== -1 ? cols[posSquareIdx]?.trim().toLowerCase() : undefined;
+    const posSquare = posSquareRaw !== undefined ? posSquareRaw === "yes" || posSquareRaw === "true" || posSquareRaw === "1" : undefined;
 
     const { data: existing } = await supabase
       .from("products")
@@ -201,6 +207,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           bottle_size_ml: bottleSizeMl,
           pour_size_oz: pourSizeOz,
           pour_price: pourPrice,
+          ...(posSquare !== undefined ? { pos_square: posSquare } : {}),
         })
         .eq("id", existing.id);
       if (error) {
@@ -227,6 +234,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           bottle_size_ml: bottleSizeMl,
           pour_size_oz: pourSizeOz,
           pour_price: pourPrice,
+          pos_square: posSquare ?? false,
           created_by: user?.id ?? null,
         })
         .select("id")
