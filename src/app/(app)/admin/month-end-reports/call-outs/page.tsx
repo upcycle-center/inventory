@@ -59,11 +59,11 @@ function BreakdownTable({
         <table className="w-full table-fixed text-left text-sm">
           <thead className="text-gray-500">
             <tr>
-              <th className="w-[40%] px-4 py-2">{labelHeader}</th>
-              <th className="w-[15%] px-4 py-2">Call-Outs</th>
-              <th className="w-[15%] px-4 py-2">No-Shows</th>
-              <th className="w-[15%] px-4 py-2">Total</th>
-              <th className="w-[15%] px-4 py-2 text-right">Log</th>
+              <th className="w-[52%] px-4 py-2">{labelHeader}</th>
+              <th className="w-[14%] px-4 py-2">Call-Outs</th>
+              <th className="w-[14%] px-4 py-2">No-Shows</th>
+              <th className="w-[13%] px-4 py-2">Total</th>
+              <th className="w-[7%] px-2 py-2 text-right">Log</th>
             </tr>
           </thead>
           <tbody>
@@ -73,7 +73,7 @@ function BreakdownTable({
                 <td className="px-4 py-2 text-gray-500">{r.callOuts}</td>
                 <td className="px-4 py-2 text-gray-500">{r.noShows}</td>
                 <td className="px-4 py-2 font-medium">{r.total}</td>
-                <td className="px-4 py-2 text-right">
+                <td className="px-2 py-2 text-right">
                   <Link href={r.viewLogHref} className="text-xs text-brand hover:underline">
                     View log →
                   </Link>
