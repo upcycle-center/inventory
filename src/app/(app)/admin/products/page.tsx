@@ -43,7 +43,7 @@ export default async function AdminProductsPage({
         <h1 className="text-lg font-semibold">Products</h1>
         <div className="flex items-center gap-4">
           <Link href="/admin/products/bulk-upload" className="text-sm text-brand hover:underline">
-            Bulk upload from CSV
+            Data Map CSV
           </Link>
           <Link href="/admin/products/cost-log" className="text-sm text-brand hover:underline">
             Cost variance log

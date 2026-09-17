@@ -52,7 +52,6 @@ function parseCsv(text: string): string[][] {
 // one place. Rows with no location/storage_area just upsert the product.
 export async function bulkUploadProducts(formData: FormData): Promise<{ message: string }> {
   const supabase = createClient();
-  const supplierId = String(formData.get("supplier_id") || "") || null;
   const file = formData.get("csv");
 
   if (!(file instanceof File) || file.size === 0) {
@@ -192,10 +191,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         if (!categoryId) categoriesUnmatched++;
       }
     }
-    // Per-row supplier (matched by name) takes over from the single
-    // form-wide dropdown when a "supplier" column is present -- otherwise
-    // that one dropdown value would get stamped onto every row, clobbering
-    // whatever supplier each product already had on file. A name that
+    // Same "only touch when present" rule as category -- a name that
     // doesn't match an existing supplier gets created on the spot, flagged
     // needs_review so a typo doesn't silently become an unnoticed
     // duplicate -- supplierByName is updated immediately so repeat
@@ -280,7 +276,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           ...(active !== undefined ? { active } : {}),
           ...(productType ? { product_type: productType } : {}),
           ...(categoryId !== undefined ? { category_id: categoryId } : {}),
-          ...(supplierRaw !== undefined ? (rowSupplierId !== undefined ? { supplier_id: rowSupplierId } : {}) : { supplier_id: supplierId }),
+          ...(rowSupplierId !== undefined ? { supplier_id: rowSupplierId } : {}),
           ...(caseCost !== undefined ? { case_cost: caseCost } : {}),
           ...(salePrice !== undefined ? { sale_price: salePrice } : {}),
           ...(unitOfMeasure !== undefined ? { unit_of_measure: unitOfMeasure } : {}),
@@ -322,7 +318,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           ...(active !== undefined ? { active } : {}),
           product_type: productType ?? "chargeable",
           category_id: categoryId ?? null,
-          supplier_id: supplierRaw !== undefined ? rowSupplierId ?? null : supplierId,
+          supplier_id: rowSupplierId ?? null,
           case_cost: caseCost ?? null,
           sale_price: salePrice ?? null,
           unit_of_measure: unitOfMeasure ?? "each",
