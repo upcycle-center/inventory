@@ -52,10 +52,21 @@ export default async function UserDetailPage({ params }: { params: { id: string 
       >
         <input type="hidden" name="id" value={user.id} />
         <p className="text-sm font-medium">Profile</p>
-        <label className="text-sm text-gray-600">
-          Name
-          <input name="name" defaultValue={user.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm text-gray-600">
+            First name
+            <input
+              name="first_name"
+              defaultValue={user.first_name}
+              required
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            Last name
+            <input name="last_name" defaultValue={user.last_name} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+        </div>
         <label className="text-sm text-gray-600">
           Username (used to sign in)
           <input

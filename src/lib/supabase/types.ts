@@ -16,7 +16,12 @@ export type WasteReason =
 
 export interface Profile {
   id: string;
+  // Generated (first_name || ' ' || last_name) -- selectable and joinable
+  // exactly like before, so this stays read-only everywhere except the
+  // Users add/edit forms, which write first_name/last_name directly.
   name: string;
+  first_name: string;
+  last_name: string;
   email: string;
   username: string;
   role: UserRole;

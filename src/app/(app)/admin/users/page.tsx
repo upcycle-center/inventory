@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminUsersPage() {
   const supabase = createClient();
-  const { data: users } = await supabase.from("profiles").select("*").eq("active", true).order("name");
+  const { data: users } = await supabase.from("profiles").select("*").eq("active", true).order("last_name").order("first_name");
 
   return (
     <div>
@@ -27,7 +27,8 @@ export default async function AdminUsersPage() {
         <table className="text-left text-sm">
           <thead className="text-gray-500">
             <tr>
-              <th className="whitespace-nowrap pb-2 pr-6">Name</th>
+              <th className="whitespace-nowrap pb-2 pr-6">First Name</th>
+              <th className="whitespace-nowrap pb-2 pr-6">Last Name</th>
               <th className="whitespace-nowrap pb-2 pr-6">Username</th>
               <th className="whitespace-nowrap pb-2 pr-6">Email</th>
               <th className="whitespace-nowrap pb-2 pr-6">Phone</th>
@@ -39,9 +40,10 @@ export default async function AdminUsersPage() {
               <tr key={u.id} className="border-t border-gray-100">
                 <td className="whitespace-nowrap py-2 pr-6">
                   <Link href={`/admin/users/${u.id}`} className="font-medium text-brand hover:underline">
-                    {u.name}
+                    {u.first_name}
                   </Link>
                 </td>
+                <td className="whitespace-nowrap py-2 pr-6">{u.last_name}</td>
                 <td className="whitespace-nowrap py-2 pr-6 font-mono text-gray-500">{u.username}</td>
                 <td className="whitespace-nowrap py-2 pr-6 text-gray-500">{u.notification_email ?? "—"}</td>
                 <td className="whitespace-nowrap py-2 pr-6 text-gray-500">{u.phone ?? "—"}</td>

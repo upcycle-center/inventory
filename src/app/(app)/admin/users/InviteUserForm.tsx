@@ -17,15 +17,8 @@ export function InviteUserForm() {
       }}
       className="grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
     >
-      <input name="name" placeholder="Name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-      <select name="role" defaultValue="stand_lead" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-        <option value="stand_lead">Stand Lead</option>
-        <option value="warehouse">Warehouse</option>
-        <option value="kitchen">Kitchen</option>
-        <option value="catering">Catering</option>
-        <option value="ops">Operations</option>
-        <option value="admin">Admin</option>
-      </select>
+      <input name="first_name" placeholder="First name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+      <input name="last_name" placeholder="Last name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
       <input name="phone" placeholder="Phone (optional)" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
       <input
         name="notification_email"
@@ -33,6 +26,14 @@ export function InviteUserForm() {
         placeholder="Email (optional)"
         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
+      <select name="role" defaultValue="stand_lead" className="col-span-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+        <option value="stand_lead">Stand Lead</option>
+        <option value="warehouse">Warehouse</option>
+        <option value="kitchen">Kitchen</option>
+        <option value="catering">Catering</option>
+        <option value="ops">Operations</option>
+        <option value="admin">Admin</option>
+      </select>
       <input
         name="username"
         placeholder="Username (used to sign in)"

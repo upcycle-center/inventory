@@ -41,7 +41,8 @@ export async function inviteUser(formData: FormData): Promise<{ message: string 
   const notificationEmail = String(formData.get("notification_email") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
   const username = String(formData.get("username") || "").trim().toLowerCase();
-  const name = String(formData.get("name") || "").trim();
+  const firstName = String(formData.get("first_name") || "").trim();
+  const lastName = String(formData.get("last_name") || "").trim();
   const role = String(formData.get("role") || "stand_lead") as UserRole;
   const password = String(formData.get("password") || "").trim();
 
@@ -66,7 +67,7 @@ export async function inviteUser(formData: FormData): Promise<{ message: string 
     email: authEmail,
     password,
     email_confirm: true,
-    user_metadata: { name: name || username },
+    user_metadata: { first_name: firstName || username, last_name: lastName },
   });
 
   if (error || !created.user) {
@@ -77,7 +78,8 @@ export async function inviteUser(formData: FormData): Promise<{ message: string 
     .from("profiles")
     .update({
       role,
-      name: name || username,
+      first_name: firstName || username,
+      last_name: lastName,
       username,
       notification_email: notificationEmail || null,
       phone: phone || null,
