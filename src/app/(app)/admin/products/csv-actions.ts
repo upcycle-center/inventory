@@ -137,6 +137,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let firstError: string | null = null;
   let locationsAssigned = 0;
   let locationsUnmatched = 0;
+  const unmatchedLocationExamples = new Set<string>();
   let categoriesUnmatched = 0;
   let suppliersCreated = 0;
   let productTypesUnmatched = 0;
@@ -394,6 +395,13 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
 
     if (!locationId || !storageAreaId) {
       locationsUnmatched++;
+      if (unmatchedLocationExamples.size < 5) {
+        const rawLocation = locationIdx !== -1 ? cols[locationIdx]?.trim() : "";
+        const rawStorageArea = storageAreaIdx !== -1 ? cols[storageAreaIdx]?.trim() : "";
+        unmatchedLocationExamples.add(
+          `"${rawLocation || "(blank)"}"${!locationId ? " ✕" : ""} / "${rawStorageArea || "(blank)"}"${!storageAreaId ? " ✕" : ""}`
+        );
+      }
       continue;
     }
 
@@ -418,7 +426,9 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   revalidatePath("/admin/products/bulk-upload");
 
   const message = `Done: ${created} created, ${updated} updated, ${skipped} skipped${failed ? `, ${failed} failed` : ""}. Locations: ${locationsAssigned} assigned${
-    locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
+    locationsUnmatched
+      ? `, ${locationsUnmatched} unmatched (✕ = didn't match an active location/storage area) — e.g. ${Array.from(unmatchedLocationExamples).join("; ")}`
+      : ""
   }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}${
     suppliersCreated
       ? ` ${suppliersCreated} new supplier(s) auto-created and flagged for review — check Admin → Suppliers.`
