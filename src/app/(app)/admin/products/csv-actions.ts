@@ -262,11 +262,21 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     const eachCountable =
       eachCountableRaw !== undefined ? eachCountableRaw === "yes" || eachCountableRaw === "true" || eachCountableRaw === "1" : undefined;
 
-    const { data: existing } = await supabase
+    let { data: existing } = await supabase
       .from("products")
       .select("id, case_cost")
       .eq("sku", sku)
       .maybeSingle();
+
+    // A row's computed sku (e.g. freshly auto-generated once its category
+    // now matches) might not equal what's already on file for this exact
+    // product -- but UPC is unique per product, so a match there means
+    // "same item," and updating it (sku included) is what should happen
+    // instead of trying to insert a duplicate that collides on UPC.
+    if (!existing && upc) {
+      const { data: byUpc } = await supabase.from("products").select("id, case_cost").eq("upc", upc).maybeSingle();
+      existing = byUpc;
+    }
 
     let productId = existing?.id as string | undefined;
 
@@ -274,6 +284,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
       const { error } = await supabase
         .from("products")
         .update({
+          sku,
           description,
           ...(upc !== undefined ? { upc } : {}),
           ...(brand !== undefined ? { brand } : {}),
@@ -308,6 +319,15 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           source: "csv_upload",
           changedBy: user?.id ?? null,
         });
+      }
+      // sku can change here (a UPC-matched row correcting a placeholder
+      // sku) -- keep the registered barcodes in sync the same way the
+      // manual edit form does, so the corrected sku is scannable and the
+      // old one doesn't linger.
+      await supabase.from("product_barcodes").delete().eq("product_id", existing.id).neq("barcode", sku);
+      await supabase.from("product_barcodes").upsert({ product_id: existing.id, barcode: sku }, { onConflict: "barcode" });
+      if (upc) {
+        await supabase.from("product_barcodes").upsert({ product_id: existing.id, barcode: upc }, { onConflict: "barcode" });
       }
       productId = existing.id;
       updated++;
