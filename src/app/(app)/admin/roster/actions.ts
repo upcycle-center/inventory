@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
+import type { CertificationType } from "@/lib/supabase/types";
+import { addMonthsToDateString, governingCertificationType } from "@/lib/staff";
 
 export async function createStaff(formData: FormData) {
   await requireProfile(["admin"]);
@@ -31,19 +33,37 @@ export async function updateStaff(formData: FormData) {
   const lastName = String(formData.get("last_name") || "").trim();
   if (!id || !firstName || !lastName) return;
 
-  const expiresRaw = String(formData.get("certification_expires_at") || "").trim();
+  const mainRole = String(formData.get("main_role") || "").trim() || null;
+  const coverRole = String(formData.get("cover_role") || "").trim() || null;
+  const certifiedAt = String(formData.get("certified_at") || "").trim() || null;
+  const manualExpiresAt = String(formData.get("certification_expires_at") || "").trim() || null;
+
+  // If the governing certification for this person's role has a known
+  // duration, the expiration date is always derived from the issue date
+  // rather than typed in -- otherwise fall back to the manual field so
+  // certifications without a configured duration keep working as before.
+  const { data: certTypesRaw } = await supabase.from("certification_types").select("*").eq("active", true);
+  const governingType = governingCertificationType(
+    { main_role: mainRole, cover_role: coverRole },
+    (certTypesRaw as CertificationType[] | null) ?? []
+  );
+  const expiresAt =
+    certifiedAt && governingType?.validity_months != null
+      ? addMonthsToDateString(certifiedAt, governingType.validity_months)
+      : manualExpiresAt;
 
   await supabase
     .from("staff")
     .update({
       first_name: firstName,
       last_name: lastName,
-      main_role: String(formData.get("main_role") || "").trim() || null,
-      cover_role: String(formData.get("cover_role") || "").trim() || null,
+      main_role: mainRole,
+      cover_role: coverRole,
       phone: String(formData.get("phone") || "").trim() || null,
       email: String(formData.get("email") || "").trim() || null,
       certified: formData.get("certified") === "on",
-      certification_expires_at: expiresRaw || null,
+      certified_at: certifiedAt,
+      certification_expires_at: expiresAt,
       ready_to_work: formData.get("ready_to_work") === "on",
     })
     .eq("id", id);
@@ -99,6 +119,7 @@ export async function addCertificationType(formData: FormData) {
   await supabase.from("certification_types").insert({
     name,
     description: String(formData.get("description") || "").trim() || null,
+    validity_months: parseValidityMonths(formData),
     sort_order: count ?? 0,
     applicable_roles: applicableRoles.length ? applicableRoles : null,
   });
@@ -120,6 +141,7 @@ export async function updateCertificationType(formData: FormData) {
     .update({
       name,
       description: String(formData.get("description") || "").trim() || null,
+      validity_months: parseValidityMonths(formData),
       applicable_roles: applicableRoles.length ? applicableRoles : null,
     })
     .eq("id", id);
@@ -150,4 +172,11 @@ export async function deleteCertificationType(id: string): Promise<{ error: stri
   revalidatePath("/admin/roster");
   revalidatePath("/admin/users");
   redirect("/admin/roster");
+}
+
+function parseValidityMonths(formData: FormData): number | null {
+  const raw = String(formData.get("validity_months") || "").trim();
+  if (!raw) return null;
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }

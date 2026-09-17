@@ -30,11 +30,13 @@ export default async function AdminRosterPage() {
       <ActionForm
         action={createStaff}
         savedLabel="Staff added"
-        className="mb-8 grid max-w-2xl grid-cols-2 gap-3 rounded-md border border-gray-200 bg-white p-4 sm:grid-cols-3"
+        className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
       >
-        <input name="first_name" placeholder="First name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="last_name" placeholder="Last name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <select name="main_role" defaultValue="" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+        <input name="first_name" placeholder="First name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="last_name" placeholder="Last name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="phone" placeholder="Phone (optional)" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="email" type="email" placeholder="Email (optional)" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <select name="main_role" defaultValue="" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
           <option value="">Main role</option>
           {STAFF_MAIN_ROLE_OPTIONS.map((r) => (
             <option key={r} value={r}>
@@ -42,7 +44,7 @@ export default async function AdminRosterPage() {
             </option>
           ))}
         </select>
-        <select name="cover_role" defaultValue="" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+        <select name="cover_role" defaultValue="" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
           <option value="">Cover role (optional)</option>
           {STAFF_MAIN_ROLE_OPTIONS.map((r) => (
             <option key={r} value={r}>
@@ -50,9 +52,7 @@ export default async function AdminRosterPage() {
             </option>
           ))}
         </select>
-        <input name="phone" placeholder="Phone (optional)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="email" type="email" placeholder="Email (optional)" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <button type="submit" className="col-span-2 w-fit rounded-md bg-brand px-4 py-2 text-sm text-white sm:col-span-3">
+        <button type="submit" className="col-span-2 w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add
         </button>
       </ActionForm>
@@ -70,11 +70,21 @@ export default async function AdminRosterPage() {
               Add
             </button>
           </div>
-          <input
-            name="description"
-            placeholder="Description (optional) — what this certification is for"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
+          <div className="flex gap-3">
+            <input
+              name="description"
+              placeholder="Description (optional) — what this certification is for"
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            <input
+              name="validity_months"
+              type="number"
+              min={1}
+              step={1}
+              placeholder="Valid for (months)"
+              className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
           <div>
             <p className="mb-1 text-xs text-gray-500">Applies to (none checked = everyone)</p>
             <p className="mb-1 text-xs font-medium text-gray-400">Roster roles</p>
@@ -108,6 +118,9 @@ export default async function AdminRosterPage() {
                   ? t.applicable_roles.map((r) => ROLE_LABEL_BY_VALUE.get(r) ?? r).join(", ")
                   : "Everyone"}
               </span>
+              {t.validity_months != null && (
+                <span className="ml-2 text-xs text-gray-400">· valid {t.validity_months} mo</span>
+              )}
               {!t.active && <span className="ml-2 text-xs text-gray-400">(Inactive)</span>}
             </li>
           ))}

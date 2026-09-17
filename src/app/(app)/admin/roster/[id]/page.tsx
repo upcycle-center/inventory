@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { CertificationType, Staff } from "@/lib/supabase/types";
-import { STAFF_MAIN_ROLE_OPTIONS, requiredCertificationNames } from "@/lib/staff";
+import { STAFF_MAIN_ROLE_OPTIONS, requiredCertificationNames, governingCertificationType, formatValidityMonths } from "@/lib/staff";
 import { toggleStaffActive, updateStaff } from "../actions";
 import { DeleteStaffButton } from "./DeleteStaffButton";
 import { ActionForm } from "@/components/ActionForm";
@@ -18,8 +18,11 @@ export default async function StaffDetailPage({ params }: { params: { id: string
 
   if (!staffMember) notFound();
 
-  const requiredCerts = requiredCertificationNames(staffMember, (certTypesRaw as CertificationType[] | null) ?? []);
+  const activeCertTypes = (certTypesRaw as CertificationType[] | null) ?? [];
+  const requiredCerts = requiredCertificationNames(staffMember, activeCertTypes);
   const requiredCert = requiredCerts.length ? requiredCerts.join(", ") : null;
+  const governingType = governingCertificationType(staffMember, activeCertTypes);
+  const hasAutoExpiration = governingType?.validity_months != null;
 
   return (
     <div>
@@ -96,14 +99,34 @@ export default async function StaffDetailPage({ params }: { params: { id: string
               Certified{requiredCert ? ` (${requiredCert})` : ""}
             </label>
             <label className="text-sm text-gray-600">
+              Issued on
+              <input
+                name="certified_at"
+                type="date"
+                defaultValue={staffMember.certified_at ?? ""}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <div className="mt-3">
+            <label className="text-sm text-gray-600">
               Expiration date
               <input
                 name="certification_expires_at"
                 type="date"
                 defaultValue={staffMember.certification_expires_at ?? ""}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                readOnly={hasAutoExpiration}
+                className={`mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm ${
+                  hasAutoExpiration ? "bg-gray-50 text-gray-500" : ""
+                }`}
               />
             </label>
+            {hasAutoExpiration && (
+              <p className="mt-1 text-xs text-gray-400">
+                Auto-calculated: {governingType!.name} is valid for {formatValidityMonths(governingType!.validity_months!)}{" "}
+                from the issue date above.
+              </p>
+            )}
           </div>
         </div>
 

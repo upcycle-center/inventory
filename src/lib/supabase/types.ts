@@ -33,6 +33,9 @@ export interface CertificationType {
   description: string | null;
   active: boolean;
   sort_order: number;
+  // Months this certification stays valid after being issued -- null
+  // means no known duration, so expiration is entered manually.
+  validity_months: number | null;
   // A mix of system UserRole values (for real login Users) and Roster
   // role names (Bartender, Server Food, ...) can both appear here -- the
   // two vocabularies never collide, so a plain string keeps this shared
@@ -171,6 +174,7 @@ export interface Staff {
   phone: string | null;
   email: string | null;
   certified: boolean;
+  certified_at: string | null;
   certification_expires_at: string | null;
   ready_to_work: boolean;
   active: boolean;

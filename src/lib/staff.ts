@@ -12,13 +12,47 @@ export const STAFF_MAIN_ROLE_OPTIONS = ["Stand Lead", ...STAFF_ROLES];
 // applicable_roles includes their Main or Cover role. Informational only
 // -- surfaced as a warning when missing/expired, not enforced as a hard
 // block.
+export function matchingCertificationTypes(
+  staffMember: { main_role: string | null; cover_role: string | null },
+  certTypes: CertificationType[]
+): CertificationType[] {
+  const roles = [staffMember.main_role, staffMember.cover_role].filter((r): r is string => !!r);
+  if (!roles.length) return [];
+  return certTypes.filter((t) => t.applicable_roles?.some((r) => roles.includes(r)));
+}
+
 export function requiredCertificationNames(
   staffMember: { main_role: string | null; cover_role: string | null },
   certTypes: CertificationType[]
 ): string[] {
-  const roles = [staffMember.main_role, staffMember.cover_role].filter((r): r is string => !!r);
-  if (!roles.length) return [];
-  return certTypes.filter((t) => t.applicable_roles?.some((r) => roles.includes(r))).map((t) => t.name);
+  return matchingCertificationTypes(staffMember, certTypes).map((t) => t.name);
+}
+
+// The certification type whose duration governs the auto-calculated
+// expiration date -- the first matching type with a validity_months set,
+// falling back to the first match (still shown/tracked, just without an
+// auto-calculated expiration).
+export function governingCertificationType(
+  staffMember: { main_role: string | null; cover_role: string | null },
+  certTypes: CertificationType[]
+): CertificationType | null {
+  const matches = matchingCertificationTypes(staffMember, certTypes);
+  return matches.find((t) => t.validity_months != null) ?? matches[0] ?? null;
+}
+
+export function formatValidityMonths(months: number): string {
+  if (months % 12 === 0) {
+    const years = months / 12;
+    return `${years} year${years === 1 ? "" : "s"}`;
+  }
+  return `${months} month${months === 1 ? "" : "s"}`;
+}
+
+export function addMonthsToDateString(dateStr: string, months: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCMonth(date.getUTCMonth() + months);
+  return date.toISOString().slice(0, 10);
 }
 
 export function isCertificationExpired(expiresAt: string | null): boolean {

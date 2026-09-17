@@ -45,6 +45,22 @@ export default async function CertificationTypeDetailPage({ params }: { params: 
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
         </label>
+        <label className="text-sm text-gray-600">
+          Valid for (months)
+          <input
+            name="validity_months"
+            type="number"
+            min={1}
+            step={1}
+            defaultValue={certType.validity_months ?? ""}
+            placeholder="e.g. 36 for 3 years"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+          <span className="mt-1 block text-xs text-gray-400">
+            When set, a roster member&apos;s expiration date is calculated from their issue date instead of entered
+            by hand. Leave blank if this certification doesn&apos;t expire on a fixed schedule.
+          </span>
+        </label>
 
         <div>
           <p className="mb-1 text-sm font-medium">Applies to</p>
