@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { deleteStaff } from "./actions";
+import { deleteStaff } from "../actions";
 
 export function DeleteStaffButton({ staffId }: { staffId: string }) {
   const [message, setMessage] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export function DeleteStaffButton({ staffId }: { staffId: string }) {
         type="button"
         onClick={handleClick}
         disabled={isPending}
-        className="text-xs text-gray-400 hover:text-red-600 disabled:opacity-50"
+        className="w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
       >
         {isPending ? "Deleting…" : "Delete"}
       </button>

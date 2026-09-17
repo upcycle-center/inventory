@@ -94,12 +94,19 @@ export async function buildMonthEndCallOutsReport(
   // staff breakdowns below still only count real absences.
   const { data: callOutsRaw } = await supabase
     .from("shift_call_outs")
-    .select("event_id, location_id, role_name, call_out_type, staff_id, staff:staff(name)")
+    .select("event_id, location_id, role_name, call_out_type, staff_id, staff:staff(first_name, last_name)")
     .in("event_id", eventIds)
     .in("location_id", standLocationIds);
   const allEntries =
     (callOutsRaw as
-      | { event_id: string; location_id: string; role_name: string; call_out_type: string; staff_id: string | null; staff: { name: string } | null }[]
+      | {
+          event_id: string;
+          location_id: string;
+          role_name: string;
+          call_out_type: string;
+          staff_id: string | null;
+          staff: { first_name: string; last_name: string } | null;
+        }[]
       | null) ?? [];
   const summary = {
     callOuts: allEntries.filter((c) => c.call_out_type === "call_out").length,
@@ -118,7 +125,13 @@ export async function buildMonthEndCallOutsReport(
     const eventEntry = eventBreakdownMap.get(c.event_id) ?? { callOuts: 0, noShows: 0 };
     // Only entries where a Manager actually picked a staff member count
     // here -- there's no meaningful "unattributed" bucket to show.
-    const staffEntry = c.staff_id ? staffBreakdownMap.get(c.staff_id) ?? { name: c.staff?.name ?? "—", callOuts: 0, noShows: 0 } : null;
+    const staffEntry = c.staff_id
+      ? staffBreakdownMap.get(c.staff_id) ?? {
+          name: c.staff ? `${c.staff.first_name} ${c.staff.last_name}` : "—",
+          callOuts: 0,
+          noShows: 0,
+        }
+      : null;
     if (c.call_out_type === "no_show") {
       roleEntry.noShows += 1;
       locationEntry.noShows += 1;
@@ -191,7 +204,7 @@ export async function getLocationCallOutEntries(
   const { data } = await supabase
     .from("shift_call_outs")
     .select(
-      "id, role_name, call_out_type, note, created_at, event:events(name, event_date), staff:staff(name), reported_by_profile:profiles(name)"
+      "id, role_name, call_out_type, note, created_at, event:events(name, event_date), staff:staff(first_name, last_name), reported_by_profile:profiles(name)"
     )
     .eq("location_id", locationId)
     .in("event_id", events.map((e) => e.id))
@@ -206,7 +219,7 @@ export async function getLocationCallOutEntries(
     locationName: "",
     eventName: r.event?.name ?? "—",
     eventDate: r.event?.event_date ?? "",
-    staffName: r.staff?.name ?? null,
+    staffName: r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : null,
     reportedByName: r.reported_by_profile?.name ?? null,
   }));
 }
@@ -217,7 +230,9 @@ export async function getLocationCallOutEntries(
 export async function getEventCallOutEntries(supabase: SupabaseClient, eventId: string): Promise<CallOutLogEntry[]> {
   const { data } = await supabase
     .from("shift_call_outs")
-    .select("id, role_name, call_out_type, note, created_at, location:locations(name), staff:staff(name), reported_by_profile:profiles(name)")
+    .select(
+      "id, role_name, call_out_type, note, created_at, location:locations(name), staff:staff(first_name, last_name), reported_by_profile:profiles(name)"
+    )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
 
@@ -230,7 +245,7 @@ export async function getEventCallOutEntries(supabase: SupabaseClient, eventId: 
     locationName: r.location?.name ?? "—",
     eventName: "",
     eventDate: "",
-    staffName: r.staff?.name ?? null,
+    staffName: r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : null,
     reportedByName: r.reported_by_profile?.name ?? null,
   }));
 }
@@ -250,7 +265,7 @@ export async function getRoleCallOutEntries(
   const { data } = await supabase
     .from("shift_call_outs")
     .select(
-      "id, role_name, call_out_type, note, created_at, location:locations(name), event:events(name, event_date), staff:staff(name), reported_by_profile:profiles(name)"
+      "id, role_name, call_out_type, note, created_at, location:locations(name), event:events(name, event_date), staff:staff(first_name, last_name), reported_by_profile:profiles(name)"
     )
     .eq("role_name", roleName)
     .in("event_id", events.map((e) => e.id))
@@ -265,7 +280,7 @@ export async function getRoleCallOutEntries(
     locationName: r.location?.name ?? "—",
     eventName: r.event?.name ?? "—",
     eventDate: r.event?.event_date ?? "",
-    staffName: r.staff?.name ?? null,
+    staffName: r.staff ? `${r.staff.first_name} ${r.staff.last_name}` : null,
     reportedByName: r.reported_by_profile?.name ?? null,
   }));
 }

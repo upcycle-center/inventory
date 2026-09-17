@@ -41,12 +41,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
         .from("event_locations")
         .select("*, confirmed_by_profile:profiles(id, name)")
         .eq("event_id", params.id),
-      supabase.from("staff").select("*").eq("active", true).order("name"),
+      supabase.from("staff").select("*").eq("active", true).order("last_name").order("first_name"),
     ]);
 
   const { data: callOuts } = await supabase
     .from("shift_call_outs")
-    .select("*, reported_by_profile:profiles(id, name), staff:staff(id, name)")
+    .select("*, reported_by_profile:profiles(id, name), staff:staff(id, first_name, last_name)")
     .eq("event_id", params.id)
     .order("created_at", { ascending: false });
 
@@ -375,7 +375,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                                 <option value="">— Staff —</option>
                                 {staffList.map((s) => (
                                   <option key={s.id} value={s.id}>
-                                    {s.name}
+                                    {s.first_name} {s.last_name}
                                   </option>
                                 ))}
                               </select>

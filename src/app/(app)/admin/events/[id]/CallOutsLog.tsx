@@ -58,7 +58,7 @@ export function CallOutsLog({
                 <tr key={c.id} className="border-t border-gray-100">
                   <td className="py-2 pr-3">{locationNameById.get(c.location_id) ?? "—"}</td>
                   <td className="py-2 pr-3">{c.role_name}</td>
-                  <td className="py-2 pr-3 text-gray-500">{c.staff?.name ?? "—"}</td>
+                  <td className="py-2 pr-3 text-gray-500">{c.staff ? `${c.staff.first_name} ${c.staff.last_name}` : "—"}</td>
                   <td className="py-2 pr-3">
                     <ReasonBadge type={c.call_out_type} />
                   </td>

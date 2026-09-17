@@ -245,9 +245,10 @@ export default async function MonthEndCallOutsPage({
 
   if (searchParams.staff) {
     const [{ data: staffMember }, entries] = await Promise.all([
-      supabase.from("staff").select("id, name").eq("id", searchParams.staff).single(),
+      supabase.from("staff").select("id, first_name, last_name").eq("id", searchParams.staff).single(),
       getStaffCallOutEntries(supabase, year, month, searchParams.staff),
     ]);
+    const staffName = staffMember ? `${staffMember.first_name} ${staffMember.last_name}` : null;
 
     return (
       <div>
@@ -256,13 +257,13 @@ export default async function MonthEndCallOutsPage({
             { label: "Admin", href: "/admin" },
             { label: "Month-End Reports", href: "/admin/month-end-reports" },
             { label: "Workforce Attendance", href: `${basePath}?${monthQuery}` },
-            { label: staffMember?.name ?? "Staff" },
+            { label: staffName ?? "Staff" },
           ]}
         />
         <Link href={`${basePath}?${monthQuery}`} className="mb-2 inline-block text-sm text-brand hover:underline">
           ← Back to Workforce Attendance
         </Link>
-        <h1 className="mb-1 text-lg font-semibold">{staffMember?.name ?? "Staff"}</h1>
+        <h1 className="mb-1 text-lg font-semibold">{staffName ?? "Staff"}</h1>
         <p className="mb-6 text-sm text-gray-500">
           Every Call-Out, No-Show, and Adjustment logged for this person during {MONTH_NAMES[month - 1]} {year}.
         </p>

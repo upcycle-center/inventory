@@ -159,8 +159,14 @@ export interface ShiftCallOut {
 
 export interface Staff {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
+  main_role: string | null;
+  cover_role: string | null;
+  phone: string | null;
+  email: string | null;
   certified: boolean;
+  certification_expires_at: string | null;
   ready_to_work: boolean;
   active: boolean;
   created_at: string;
