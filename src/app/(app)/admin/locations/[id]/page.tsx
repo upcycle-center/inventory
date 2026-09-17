@@ -227,63 +227,63 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         </div>
       </div>
 
-      <p className="mb-3 text-sm font-medium">Base staffing needs</p>
-      <p className="mb-3 text-sm text-gray-500">Positions needed to run this location.</p>
-
-      <ActionForm
-        action={updateDefaultLead}
-        savedLabel="Default Lead saved"
-        className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-      >
-        <input type="hidden" name="id" value={location.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Default Lead</label>
-          <select name="default_lead_user_id" defaultValue={location.default_lead_user_id ?? ""} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">— Unassigned —</option>
-            {profileList.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Save
-        </button>
-        <p className="w-full text-xs text-gray-400">
-          Pre-fills the Lead dropdown on Event Details for this location when an event doesn&apos;t
-          have its own assignment yet.
-        </p>
-      </ActionForm>
-
-      <ActionForm
-        action={updateBackupLead}
-        savedLabel="Backup Lead saved"
-        className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-      >
-        <input type="hidden" name="id" value={location.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Backup Lead</label>
-          <select name="backup_lead_user_id" defaultValue={location.backup_lead_user_id ?? ""} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">— Unassigned —</option>
-            {profileList.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Save
-        </button>
-        <p className="w-full text-xs text-gray-400">
-          Can open and submit counts for this stand at any event, without needing a separate
-          per-event assignment — covers for the assigned Lead when needed.
-        </p>
-      </ActionForm>
-
       {location.type === "stand" && (
         <>
+          <p className="mb-3 text-sm font-medium">Base staffing needs</p>
+          <p className="mb-3 text-sm text-gray-500">Positions needed to run this location.</p>
+
+          <ActionForm
+            action={updateDefaultLead}
+            savedLabel="Default Lead saved"
+            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+          >
+            <input type="hidden" name="id" value={location.id} />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Default Lead</label>
+              <select name="default_lead_user_id" defaultValue={location.default_lead_user_id ?? ""} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">— Unassigned —</option>
+                {profileList.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+              Save
+            </button>
+            <p className="w-full text-xs text-gray-400">
+              Pre-fills the Lead dropdown on Event Details for this location when an event
+              doesn&apos;t have its own assignment yet.
+            </p>
+          </ActionForm>
+
+          <ActionForm
+            action={updateBackupLead}
+            savedLabel="Backup Lead saved"
+            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+          >
+            <input type="hidden" name="id" value={location.id} />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Backup Lead</label>
+              <select name="backup_lead_user_id" defaultValue={location.backup_lead_user_id ?? ""} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                <option value="">— Unassigned —</option>
+                {profileList.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+              Save
+            </button>
+            <p className="w-full text-xs text-gray-400">
+              Can open and submit counts for this stand at any event, without needing a separate
+              per-event assignment — covers for the assigned Lead when needed.
+            </p>
+          </ActionForm>
+
           <ActionForm
             action={addStaffRole}
             savedLabel="Role added"
