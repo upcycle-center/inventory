@@ -97,7 +97,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const [{ data: locations }, { data: storageAreas }, { data: categories }, { data: suppliers }] = await Promise.all([
     supabase.from("locations").select("id, name, yellow_dog_code").eq("active", true),
     supabase.from("storage_areas").select("id, code, name").eq("active", true),
-    supabase.from("product_categories").select("id, name"),
+    supabase.from("product_categories").select("id, name, gl_code"),
     supabase.from("suppliers").select("id, name"),
   ]);
 
@@ -112,8 +112,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     storageAreaByKey.set(a.name.toLowerCase(), a.id);
   }
   const categoryByName = new Map<string, string>();
-  for (const c of (categories as { id: string; name: string }[] | null) ?? []) {
+  const categoryGlCodeByName = new Map<string, string | null>();
+  for (const c of (categories as { id: string; name: string; gl_code: string | null }[] | null) ?? []) {
     categoryByName.set(c.name.toLowerCase(), c.id);
+    categoryGlCodeByName.set(c.name.toLowerCase(), c.gl_code);
   }
   const supplierByName = new Map<string, string>();
   for (const s of (suppliers as { id: string; name: string }[] | null) ?? []) {
@@ -132,9 +134,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let productTypesUnmatched = 0;
 
   for (const cols of rows.slice(1)) {
-    const sku = cols[skuIdx]?.trim();
     const description = cols[descIdx]?.trim();
-    if (!sku || !description) {
+    if (!description) {
       skipped++;
       continue;
     }
@@ -143,6 +144,23 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // description-only refresh shouldn't silently wipe an existing UPC.
     const upcRaw = upcIdx !== -1 ? cols[upcIdx]?.trim() : undefined;
     const upc = upcRaw !== undefined ? upcRaw || null : undefined;
+    const categoryRaw = categoryIdx !== -1 ? cols[categoryIdx]?.trim() : undefined;
+
+    // Same auto-fill as the manual New Product form: GL Code + the last 6
+    // UPC digits, when sku is left blank and both are available.
+    let sku = cols[skuIdx]?.trim();
+    if (!sku) {
+      const glCode = categoryRaw ? categoryGlCodeByName.get(categoryRaw.toLowerCase()) : undefined;
+      const digits = (upc ?? "").replace(/\D/g, "");
+      if (glCode && digits.length >= 6) {
+        sku = `${glCode}-${digits.slice(-6)}`;
+      }
+    }
+    if (!sku) {
+      skipped++;
+      continue;
+    }
+
     // Same "only touch when present" rule as category/supplier -- a routine
     // price refresh shouldn't silently wipe an existing Brand.
     const brandRaw = brandIdx !== -1 ? cols[brandIdx]?.trim() : undefined;
@@ -156,9 +174,6 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
       productType = isProductTypeValue(productTypeRaw) ? productTypeRaw : undefined;
       if (!productType) productTypesUnmatched++;
     }
-    // Same "only touch when the column is present" rule as product_type --
-    // a routine price refresh shouldn't silently wipe GL Code categorization.
-    const categoryRaw = categoryIdx !== -1 ? cols[categoryIdx]?.trim() : undefined;
     let categoryId: string | null | undefined;
     if (categoryRaw !== undefined) {
       if (!categoryRaw) {
