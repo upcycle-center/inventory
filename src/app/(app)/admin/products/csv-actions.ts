@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { isProductTypeValue } from "@/lib/productType";
 import { SUB_UNIT_LABEL } from "@/lib/subUnit";
+import { logCostChange } from "@/lib/productCostLog";
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -261,7 +262,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
 
     const { data: existing } = await supabase
       .from("products")
-      .select("id")
+      .select("id, case_cost")
       .eq("sku", sku)
       .maybeSingle();
 
@@ -296,6 +297,15 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         failed++;
         firstError ??= `${sku}: ${error.message}`;
         continue;
+      }
+      if (caseCost !== undefined) {
+        await logCostChange(supabase, {
+          productId: existing.id,
+          previousCost: existing.case_cost,
+          newCost: caseCost,
+          source: "csv_upload",
+          changedBy: user?.id ?? null,
+        });
       }
       productId = existing.id;
       updated++;

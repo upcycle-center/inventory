@@ -45,6 +45,9 @@ export default async function AdminProductsPage({
           <Link href="/admin/products/bulk-upload" className="text-sm text-brand hover:underline">
             Bulk upload from CSV
           </Link>
+          <Link href="/admin/products/cost-log" className="text-sm text-brand hover:underline">
+            Cost variance log
+          </Link>
           <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">
             View inactive
           </Link>

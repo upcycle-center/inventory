@@ -225,6 +225,18 @@ export interface Product {
   created_at: string;
 }
 
+export interface ProductCostLog {
+  id: string;
+  product_id: string;
+  previous_cost: number | null;
+  new_cost: number;
+  variance: number | null;
+  variance_pct: number | null;
+  source: "manual_edit" | "csv_upload";
+  changed_by: string | null;
+  created_at: string;
+}
+
 export interface ProductCategory {
   id: string;
   name: string;

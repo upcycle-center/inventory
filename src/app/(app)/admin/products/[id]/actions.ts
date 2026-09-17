@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isProductTypeValue } from "@/lib/productType";
+import { logCostChange } from "@/lib/productCostLog";
 
 export async function updateProduct(formData: FormData) {
   const supabase = createClient();
@@ -11,6 +12,8 @@ export async function updateProduct(formData: FormData) {
   const sku = String(formData.get("sku") || "").trim();
   const description = String(formData.get("description") || "").trim();
   if (!id || !sku || !description) return;
+
+  const { data: existing } = await supabase.from("products").select("case_cost").eq("id", id).single();
 
   const upc = String(formData.get("upc") || "").trim() || null;
   const productTypeRaw = String(formData.get("product_type") || "");
@@ -45,6 +48,8 @@ export async function updateProduct(formData: FormData) {
     }
   }
 
+  const newCaseCost = caseCostRaw ? Number(caseCostRaw) : null;
+
   await supabase
     .from("products")
     .update({
@@ -55,7 +60,7 @@ export async function updateProduct(formData: FormData) {
       supplier_id: supplierId,
       brand,
       category_id: categoryId,
-      case_cost: caseCostRaw ? Number(caseCostRaw) : null,
+      case_cost: newCaseCost,
       sale_price: salePriceRaw ? Number(salePriceRaw) : null,
       unit_of_measure: unitOfMeasure,
       case_size: caseSizeRaw ? Number(caseSizeRaw) : null,
@@ -69,6 +74,17 @@ export async function updateProduct(formData: FormData) {
       ...(photoUrl ? { photo_url: photoUrl } : {}),
     })
     .eq("id", id);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await logCostChange(supabase, {
+    productId: id,
+    previousCost: existing?.case_cost ?? null,
+    newCost: newCaseCost,
+    source: "manual_edit",
+    changedBy: user?.id ?? null,
+  });
 
   // Keep the auto-registered barcodes in sync: the SKU-based one always
   // stays, the UPC-based one (if any) is reset to match the current UPC.
