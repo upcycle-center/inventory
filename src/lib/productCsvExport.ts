@@ -13,7 +13,7 @@ export async function buildProductExportRows(
   const [{ data: products }, { data: categories }, { data: suppliers }, { data: locations }, { data: storageAreas }, { data: locationProducts }, { data: thresholds }] =
     await Promise.all([
       productsQuery,
-      supabase.from("product_categories").select("id, name"),
+      supabase.from("product_categories").select("id, name, gl_code"),
       supabase.from("suppliers").select("id, name"),
       supabase.from("locations").select("id, name, yellow_dog_code"),
       supabase.from("storage_areas").select("id, code"),
@@ -21,7 +21,10 @@ export async function buildProductExportRows(
       supabase.from("inventory_thresholds").select("product_id, location_id, reorder_threshold"),
     ]);
 
-  const categoryNameById = new Map(((categories as { id: string; name: string }[] | null) ?? []).map((c) => [c.id, c.name]));
+  const categoryNameById = new Map(((categories as { id: string; name: string; gl_code: string | null }[] | null) ?? []).map((c) => [c.id, c.name]));
+  const categoryGlCodeById = new Map(
+    ((categories as { id: string; name: string; gl_code: string | null }[] | null) ?? []).map((c) => [c.id, c.gl_code])
+  );
   const supplierNameById = new Map(((suppliers as { id: string; name: string }[] | null) ?? []).map((s) => [s.id, s.name]));
   const locationById = new Map(
     ((locations as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? []).map((l) => [l.id, l])
@@ -45,8 +48,11 @@ export async function buildProductExportRows(
     "sku",
     "description",
     "brand",
+    "photo_url",
     "product_type",
+    "active",
     "category",
+    "gl_code",
     "supplier",
     "upc",
     "case_cost",
@@ -71,8 +77,13 @@ export async function buildProductExportRows(
       p.sku,
       p.description,
       p.brand ?? "",
+      p.photo_url ?? "",
       p.product_type,
+      p.active ? "yes" : "no",
       p.category_id ? categoryNameById.get(p.category_id) ?? "" : "",
+      // Read-only for reporting -- comes from the category, not the
+      // product, so it's ignored on re-upload even if left in the file.
+      p.category_id ? categoryGlCodeById.get(p.category_id) ?? "" : "",
       p.supplier_id ? supplierNameById.get(p.supplier_id) ?? "" : "",
       p.upc ?? "",
       p.case_cost ?? "",

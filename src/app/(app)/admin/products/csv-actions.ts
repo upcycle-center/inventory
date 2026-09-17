@@ -82,6 +82,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   const middleUnitSizeIdx = header.indexOf("middle_unit_size");
   const eachCountableIdx = header.indexOf("each_countable");
   const posSquareIdx = header.indexOf("pos_square");
+  const activeIdx = header.indexOf("active");
+  const photoUrlIdx = header.indexOf("photo_url");
   const locationIdx = header.indexOf("location");
   const storageAreaIdx = header.indexOf("storage_area");
   const thresholdIdx = header.indexOf("reorder_threshold");
@@ -165,6 +167,11 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // price refresh shouldn't silently wipe an existing Brand.
     const brandRaw = brandIdx !== -1 ? cols[brandIdx]?.trim() : undefined;
     const brand = brandRaw !== undefined ? brandRaw || null : undefined;
+    // A pre-hosted image URL -- there's no file to attach in a CSV, so this
+    // just points straight at an already-uploaded photo instead of going
+    // through the manual form's Storage upload step.
+    const photoUrlRaw = photoUrlIdx !== -1 ? cols[photoUrlIdx]?.trim() : undefined;
+    const photoUrl = photoUrlRaw !== undefined ? photoUrlRaw || null : undefined;
     // Only set on update when the column is actually present -- otherwise
     // a re-upload without product_type (e.g. a routine cost refresh)
     // would silently flip an existing product back to Chargeable.
@@ -236,6 +243,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // Square data map.
     const posSquareRaw = posSquareIdx !== -1 ? cols[posSquareIdx]?.trim().toLowerCase() : undefined;
     const posSquare = posSquareRaw !== undefined ? posSquareRaw === "yes" || posSquareRaw === "true" || posSquareRaw === "1" : undefined;
+    // Same "only touch when present" rule -- a routine refresh shouldn't
+    // silently reactivate/deactivate a product that wasn't meant to change.
+    const activeRaw = activeIdx !== -1 ? cols[activeIdx]?.trim().toLowerCase() : undefined;
+    const active = activeRaw !== undefined ? activeRaw === "yes" || activeRaw === "true" || activeRaw === "1" : undefined;
     // Same "only touch when present" rule -- omitting these on a routine
     // refresh shouldn't silently drop a product's Count counting tier.
     // Sub-Unit is a uniform unit ("Count") rather than a named container --
@@ -263,6 +274,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           description,
           ...(upc !== undefined ? { upc } : {}),
           ...(brand !== undefined ? { brand } : {}),
+          ...(photoUrl !== undefined ? { photo_url: photoUrl } : {}),
+          ...(active !== undefined ? { active } : {}),
           ...(productType ? { product_type: productType } : {}),
           ...(categoryId !== undefined ? { category_id: categoryId } : {}),
           ...(supplierRaw !== undefined ? (rowSupplierId !== undefined ? { supplier_id: rowSupplierId } : {}) : { supplier_id: supplierId }),
@@ -294,6 +307,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           upc: upc ?? null,
           description,
           brand: brand ?? null,
+          photo_url: photoUrl ?? null,
+          ...(active !== undefined ? { active } : {}),
           product_type: productType ?? "chargeable",
           category_id: categoryId ?? null,
           supplier_id: supplierRaw !== undefined ? rowSupplierId ?? null : supplierId,
