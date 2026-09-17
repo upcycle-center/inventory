@@ -139,7 +139,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
       continue;
     }
 
-    const upc = upcIdx !== -1 && cols[upcIdx]?.trim() ? cols[upcIdx].trim() : null;
+    // Same "only touch when present" rule as category/supplier -- a routine
+    // description-only refresh shouldn't silently wipe an existing UPC.
+    const upcRaw = upcIdx !== -1 ? cols[upcIdx]?.trim() : undefined;
+    const upc = upcRaw !== undefined ? upcRaw || null : undefined;
     // Same "only touch when present" rule as category/supplier -- a routine
     // price refresh shouldn't silently wipe an existing Brand.
     const brandRaw = brandIdx !== -1 ? cols[brandIdx]?.trim() : undefined;
@@ -179,13 +182,23 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         if (!rowSupplierId) suppliersUnmatched++;
       }
     }
-    const caseCost = costIdx !== -1 && cols[costIdx]?.trim() ? Number(cols[costIdx]) : null;
-    const salePrice = salePriceIdx !== -1 && cols[salePriceIdx]?.trim() ? Number(cols[salePriceIdx]) : null;
-    const unitOfMeasure = uomIdx !== -1 && cols[uomIdx]?.trim() ? cols[uomIdx].trim() : "each";
-    const caseSize = caseSizeIdx !== -1 && cols[caseSizeIdx]?.trim() ? Number(cols[caseSizeIdx]) : null;
-    const bottleSizeMl = bottleSizeIdx !== -1 && cols[bottleSizeIdx]?.trim() ? Number(cols[bottleSizeIdx]) : null;
-    const pourSizeOz = pourSizeIdx !== -1 && cols[pourSizeIdx]?.trim() ? Number(cols[pourSizeIdx]) : null;
-    const pourPrice = pourPriceIdx !== -1 && cols[pourPriceIdx]?.trim() ? Number(cols[pourPriceIdx]) : null;
+    // Same "only touch when present" rule as Brand/Category -- a routine
+    // Brand/Category-only refresh shouldn't silently wipe cost, price,
+    // sizing, or unit_of_measure on products that already have them set.
+    const caseCostRaw = costIdx !== -1 ? cols[costIdx]?.trim() : undefined;
+    const caseCost = caseCostRaw !== undefined ? (caseCostRaw ? Number(caseCostRaw) : null) : undefined;
+    const salePriceRaw = salePriceIdx !== -1 ? cols[salePriceIdx]?.trim() : undefined;
+    const salePrice = salePriceRaw !== undefined ? (salePriceRaw ? Number(salePriceRaw) : null) : undefined;
+    const uomRaw = uomIdx !== -1 ? cols[uomIdx]?.trim() : undefined;
+    const unitOfMeasure = uomRaw !== undefined ? uomRaw || "each" : undefined;
+    const caseSizeRaw = caseSizeIdx !== -1 ? cols[caseSizeIdx]?.trim() : undefined;
+    const caseSize = caseSizeRaw !== undefined ? (caseSizeRaw ? Number(caseSizeRaw) : null) : undefined;
+    const bottleSizeRaw = bottleSizeIdx !== -1 ? cols[bottleSizeIdx]?.trim() : undefined;
+    const bottleSizeMl = bottleSizeRaw !== undefined ? (bottleSizeRaw ? Number(bottleSizeRaw) : null) : undefined;
+    const pourSizeRaw = pourSizeIdx !== -1 ? cols[pourSizeIdx]?.trim() : undefined;
+    const pourSizeOz = pourSizeRaw !== undefined ? (pourSizeRaw ? Number(pourSizeRaw) : null) : undefined;
+    const pourPriceRaw = pourPriceIdx !== -1 ? cols[pourPriceIdx]?.trim() : undefined;
+    const pourPrice = pourPriceRaw !== undefined ? (pourPriceRaw ? Number(pourPriceRaw) : null) : undefined;
     // Same "only touch when the column is present" rule as product_type --
     // a routine price refresh shouldn't silently drop a product from the
     // Square data map.
@@ -216,18 +229,18 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         .from("products")
         .update({
           description,
-          upc,
+          ...(upc !== undefined ? { upc } : {}),
           ...(brand !== undefined ? { brand } : {}),
           ...(productType ? { product_type: productType } : {}),
           ...(categoryId !== undefined ? { category_id: categoryId } : {}),
           ...(supplierRaw !== undefined ? (rowSupplierId !== undefined ? { supplier_id: rowSupplierId } : {}) : { supplier_id: supplierId }),
-          case_cost: caseCost,
-          sale_price: salePrice,
-          unit_of_measure: unitOfMeasure,
-          case_size: caseSize,
-          bottle_size_ml: bottleSizeMl,
-          pour_size_oz: pourSizeOz,
-          pour_price: pourPrice,
+          ...(caseCost !== undefined ? { case_cost: caseCost } : {}),
+          ...(salePrice !== undefined ? { sale_price: salePrice } : {}),
+          ...(unitOfMeasure !== undefined ? { unit_of_measure: unitOfMeasure } : {}),
+          ...(caseSize !== undefined ? { case_size: caseSize } : {}),
+          ...(bottleSizeMl !== undefined ? { bottle_size_ml: bottleSizeMl } : {}),
+          ...(pourSizeOz !== undefined ? { pour_size_oz: pourSizeOz } : {}),
+          ...(pourPrice !== undefined ? { pour_price: pourPrice } : {}),
           ...(middleUnitLabel !== undefined ? { middle_unit_label: middleUnitLabel } : {}),
           ...(middleUnitSize !== undefined ? { middle_unit_size: middleUnitSize } : {}),
           ...(eachCountable !== undefined ? { each_countable: eachCountable } : {}),
@@ -246,19 +259,19 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
         .from("products")
         .insert({
           sku,
-          upc,
+          upc: upc ?? null,
           description,
           brand: brand ?? null,
           product_type: productType ?? "chargeable",
           category_id: categoryId ?? null,
           supplier_id: supplierRaw !== undefined ? rowSupplierId ?? null : supplierId,
-          case_cost: caseCost,
-          sale_price: salePrice,
-          unit_of_measure: unitOfMeasure,
-          case_size: caseSize,
-          bottle_size_ml: bottleSizeMl,
-          pour_size_oz: pourSizeOz,
-          pour_price: pourPrice,
+          case_cost: caseCost ?? null,
+          sale_price: salePrice ?? null,
+          unit_of_measure: unitOfMeasure ?? "each",
+          case_size: caseSize ?? null,
+          bottle_size_ml: bottleSizeMl ?? null,
+          pour_size_oz: pourSizeOz ?? null,
+          pour_price: pourPrice ?? null,
           middle_unit_label: middleUnitLabel ?? null,
           middle_unit_size: middleUnitSize ?? null,
           each_countable: eachCountable ?? true,
