@@ -12,7 +12,18 @@ export async function GET() {
     return new Response("Forbidden", { status: 403 });
   }
 
-  await logCsvEvent(createClient(), { direction: "download", kind: "template", performedBy: profile.id });
+  const supabase = createClient();
+  await logCsvEvent(supabase, { direction: "download", kind: "template", performedBy: profile.id });
+
+  // The example rows show a real category (and its real GL Code) instead
+  // of a made-up placeholder -- copying "Liquor" into the category column
+  // when the actual category is named "Concession Liquor" is exactly the
+  // kind of mismatch that silently fails to match on upload.
+  const { data: categoriesRaw } = await supabase.from("product_categories").select("name, gl_code").order("name");
+  const categories = (categoriesRaw as { name: string; gl_code: string | null }[] | null) ?? [];
+  const pourExampleCategory = categories.find((c) => /liquor|wine/i.test(c.name)) ?? categories[0] ?? null;
+  const exampleCategoryName = pourExampleCategory?.name ?? "";
+  const exampleGlCode = pourExampleCategory?.gl_code ?? "";
 
   const csv = toCsv([
     [
@@ -44,7 +55,7 @@ export async function GET() {
     ["EX-001", "Example Product", "", "", "chargeable", "yes", "", "", "", "012345678905", "24.00", "6.00", "each", "24", "", "", "", "", "", "yes", "yes", "023", "LC", "12"],
     ["EX-001", "Example Product", "", "", "chargeable", "yes", "", "", "", "012345678905", "24.00", "6.00", "each", "24", "", "", "", "", "", "yes", "yes", "VIP In Seat", "WF", "6"],
     ["EX-002", "16oz Plastic Cup", "", "", "disposable", "yes", "", "", "", "", "18.00", "", "each", "10", "", "", "", "Count", "50", "yes", "no", "023", "OTH", "1000"],
-    ["EX-003", "Well Vodka 750ml", "", "", "non_chargeable_bottle", "yes", "Liquor", "5010", "", "", "18.00", "", "each", "1", "750", "1.5", "9.00", "", "", "yes", "no", "023", "LC", "6"],
+    ["EX-003", "Well Vodka 750ml", "", "", "non_chargeable_bottle", "yes", exampleCategoryName, exampleGlCode, "", "", "18.00", "", "each", "1", "750", "1.5", "9.00", "", "", "yes", "no", "023", "LC", "6"],
     ["EX-004", "Dinner Napkins", "", "", "disposable", "yes", "", "", "", "", "22.00", "", "each", "12", "", "", "", "Count", "500", "no", "no", "023", "OTH", "2000"],
   ]);
 

@@ -135,6 +135,8 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let categoriesUnmatched = 0;
   let suppliersCreated = 0;
   let productTypesUnmatched = 0;
+  let fallbackSkuCount = 0;
+  const runTimestamp = Date.now();
 
   for (const cols of rows.slice(1)) {
     const description = cols[descIdx]?.trim();
@@ -150,18 +152,21 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     const categoryRaw = categoryIdx !== -1 ? cols[categoryIdx]?.trim() : undefined;
 
     // Same auto-fill as the manual New Product form: GL Code + the last 6
-    // UPC digits, when sku is left blank and both are available.
+    // UPC digits, when sku is left blank and both are available. Neither
+    // on hand (no UPC, or no matching category) -- fall back to a
+    // clearly-synthetic placeholder so the row still gets created instead
+    // of silently skipped; runTimestamp+counter keeps it unique both
+    // within this run and across separate uploads.
     let sku = cols[skuIdx]?.trim();
     if (!sku) {
       const glCode = categoryRaw ? categoryGlCodeByName.get(categoryRaw.toLowerCase()) : undefined;
       const digits = (upc ?? "").replace(/\D/g, "");
       if (glCode && digits.length >= 6) {
         sku = `${glCode}-${digits.slice(-6)}`;
+      } else {
+        fallbackSkuCount++;
+        sku = `${glCode ?? "NEW"}-${runTimestamp}${String(fallbackSkuCount).padStart(3, "0")}`;
       }
-    }
-    if (!sku) {
-      skipped++;
-      continue;
     }
 
     // Same "only touch when present" rule as category/supplier -- a routine
@@ -390,6 +395,10 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   }${
     productTypesUnmatched
       ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
+      : ""
+  }${
+    fallbackSkuCount
+      ? ` ${fallbackSkuCount} row(s) had no sku and no way to auto-generate a real one (no UPC/category match) — they got a placeholder SKU instead; give them a real one under Admin → Products when you can.`
       : ""
   }${failed ? ` First error: ${firstError}` : ""}`;
 
