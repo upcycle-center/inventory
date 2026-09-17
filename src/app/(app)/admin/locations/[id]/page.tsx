@@ -228,12 +228,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       </div>
 
       <p className="mb-3 text-sm font-medium">Base staffing needs</p>
-      <p className="mb-3 text-sm text-gray-500">
-        Positions needed to run this location.
-        {location.type === "stand" && (
-          <> Stand Lead is a default role for Stand locations and always shows first below.</>
-        )}
-      </p>
+      <p className="mb-3 text-sm text-gray-500">Positions needed to run this location.</p>
 
       <ActionForm
         action={updateDefaultLead}
@@ -287,132 +282,118 @@ export default async function LocationDetailPage({ params }: { params: { id: str
         </p>
       </ActionForm>
 
-      <ActionForm
-        action={addStaffRole}
-        savedLabel="Role added"
-        className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-      >
-        <input type="hidden" name="location_id" value={location.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Role</label>
-          <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {STAFF_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
+      {location.type === "stand" && (
+        <>
+          <ActionForm
+            action={addStaffRole}
+            savedLabel="Role added"
+            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+          >
+            <input type="hidden" name="location_id" value={location.id} />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Role</label>
+              <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                {STAFF_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Base count</label>
+              <input name="base_count" type="number" min={0} step={1} defaultValue={1} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+              Add role
+            </button>
+          </ActionForm>
+
+          <ul className="mb-8 space-y-1">
+            <li className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
+              <span>
+                (1) Stand Lead
+                <span className="ml-2 text-xs text-gray-400">default for Stand locations</span>
+              </span>
+            </li>
+            {roles.map((r) => (
+              <li key={r.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
+                <span>
+                  ({r.base_count}) {r.role_name}
+                </span>
+                <form action={removeStaffRole}>
+                  <input type="hidden" name="id" value={r.id} />
+                  <input type="hidden" name="location_id" value={location.id} />
+                  <button type="submit" className="text-red-600 hover:underline">
+                    Remove
+                  </button>
+                </form>
+              </li>
             ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Base count</label>
-          <input name="base_count" type="number" min={0} step={1} defaultValue={1} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Add role
-        </button>
-      </ActionForm>
+            {!roles.length && <li className="text-sm text-gray-400">No staffing roles set yet.</li>}
+          </ul>
 
-      <ul className="mb-8 space-y-1">
-        {location.type === "stand" && (
-          <li className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
-            <span>
-              (1) Stand Lead
-              <span className="ml-2 text-xs text-gray-400">default for Stand locations</span>
-            </span>
-          </li>
-        )}
-        {roles.map((r) => (
-          <li key={r.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
-            <span>
-              ({r.base_count}) {r.role_name}
-            </span>
-            <form action={removeStaffRole}>
-              <input type="hidden" name="id" value={r.id} />
-              <input type="hidden" name="location_id" value={location.id} />
-              <button type="submit" className="text-red-600 hover:underline">
-                Remove
-              </button>
-            </form>
-          </li>
-        ))}
-        {!roles.length && <li className="text-sm text-gray-400">No staffing roles set yet.</li>}
-      </ul>
+          <p className="mb-3 text-sm font-medium">Attendance tiers</p>
+          <p className="mb-3 text-sm text-gray-500">
+            Override a role&apos;s count for a given attendance range (e.g. fewer In Seat Servers
+            for a smaller show). Leave max blank for &ldquo;and up&rdquo;.
+          </p>
 
-      <p className="mb-3 text-sm font-medium">Attendance tiers</p>
-      <p className="mb-3 text-sm text-gray-500">
-        Override a role&apos;s count for a given attendance range (e.g. fewer In Seat Servers for
-        a smaller show). Leave max blank for &ldquo;and up&rdquo;.
-      </p>
+          <ActionForm
+            action={addStaffTier}
+            savedLabel="Tier added"
+            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+          >
+            <input type="hidden" name="location_id" value={location.id} />
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Role</label>
+              <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                {STAFF_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Min attendance</label>
+              <input name="min_attendance" type="number" min={0} step={1} defaultValue={0} className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Max attendance</label>
+              <input name="max_attendance" type="number" min={0} step={1} placeholder="and up" className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Count</label>
+              <input name="count" type="number" min={0} step={1} required className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+              Add tier
+            </button>
+          </ActionForm>
 
-      <ActionForm
-        action={addStaffTier}
-        savedLabel="Tier added"
-        className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-      >
-        <input type="hidden" name="location_id" value={location.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Role</label>
-          <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {STAFF_ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
+          <ul className="mb-8 space-y-1">
+            {tiers.map((t) => (
+              <li key={t.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
+                <span>
+                  {t.role_name}: {t.min_attendance}
+                  {t.max_attendance ? `–${t.max_attendance}` : "+"} attendance → ({t.count})
+                </span>
+                <form action={removeStaffTier}>
+                  <input type="hidden" name="id" value={t.id} />
+                  <input type="hidden" name="location_id" value={location.id} />
+                  <button type="submit" className="text-red-600 hover:underline">
+                    Remove
+                  </button>
+                </form>
+              </li>
             ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Min attendance</label>
-          <input name="min_attendance" type="number" min={0} step={1} defaultValue={0} className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Max attendance</label>
-          <input name="max_attendance" type="number" min={0} step={1} placeholder="and up" className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Count</label>
-          <input name="count" type="number" min={0} step={1} required className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Add tier
-        </button>
-      </ActionForm>
-
-      <ul className="mb-8 space-y-1">
-        {tiers.map((t) => (
-          <li key={t.id} className="flex items-center justify-between rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
-            <span>
-              {t.role_name}: {t.min_attendance}
-              {t.max_attendance ? `–${t.max_attendance}` : "+"} attendance → ({t.count})
-            </span>
-            <form action={removeStaffTier}>
-              <input type="hidden" name="id" value={t.id} />
-              <input type="hidden" name="location_id" value={location.id} />
-              <button type="submit" className="text-red-600 hover:underline">
-                Remove
-              </button>
-            </form>
-          </li>
-        ))}
-        {!tiers.length && <li className="text-sm text-gray-400">No attendance tiers set yet.</li>}
-      </ul>
+            {!tiers.length && <li className="text-sm text-gray-400">No attendance tiers set yet.</li>}
+          </ul>
+        </>
+      )}
 
       <p className="mb-3 text-sm font-medium">Assigned Items</p>
-      <p className="mb-3 text-sm text-gray-500">
-        Only products checked for this location show up on its Count Sheet. Edit which locations
-        carry a product from that product&apos;s own page. moEND shows the calculated value from
-        the latest count sheet this month — post a physical count to lock in the real number and
-        flag any discrepancy; moSTART carries forward from last month&apos;s posted (or
-        calculated) moEND. Set a Threshold to flag low On-Hand (shown in red) and to include the
-        item in the daily low-stock report. To flag something for restock, use the{" "}
-        <Link href="/request" className="text-brand hover:underline">
-          Request
-        </Link>{" "}
-        page — it shows up in the{" "}
-        <Link href="/restock-requests" className="text-brand hover:underline">
-          RequestQ
-        </Link>{" "}
-        queue the same way.
-      </p>
       <div className="max-w-6xl overflow-x-auto">
         {productsByArea.map(({ area, products }) => (
           <div key={area.id} className="mb-6">
