@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { Location, StorageArea } from "@/lib/supabase/types";
 import { bulkUploadProducts } from "./csv-actions";
 
-export function CsvUploadForm({ locations, storageAreas }: { locations: Location[]; storageAreas: StorageArea[] }) {
+export function CsvUploadForm() {
   const [result, setResult] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -19,33 +18,6 @@ export function CsvUploadForm({ locations, storageAreas }: { locations: Location
       className="grid gap-3 rounded-md border border-gray-200 bg-white p-4"
     >
       <input name="csv" type="file" accept=".csv,text/csv" required className="text-sm" />
-
-      <div className="grid grid-cols-2 gap-3">
-        <label className="text-xs text-gray-500">
-          Default location (only used for rows without their own <code>location</code>)
-          <select name="default_location_id" defaultValue="" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">None</option>
-            {locations.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.yellow_dog_code ? `${l.yellow_dog_code} ` : ""}
-                {l.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs text-gray-500">
-          Default storage area (only used for rows without their own <code>storage_area</code>)
-          <select name="default_storage_area_id" defaultValue="" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="">None</option>
-            {storageAreas.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.code} {a.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
       <div className="flex items-start justify-between gap-4">
         <button
           type="submit"
@@ -102,10 +74,7 @@ export function CsvUploadForm({ locations, storageAreas }: { locations: Location
               <code>storage_area</code> (its code or name) columns, plus an optional{" "}
               <code>reorder_threshold</code>. A product going to more than one location needs one
               row per location — repeat the sku/description on each, just changing{" "}
-              <code>location</code>/<code>storage_area</code>/<code>reorder_threshold</code>. If
-              the whole file is for one location, use the Default location/storage area dropdowns
-              above instead of repeating the same columns on every row — a row&apos;s own{" "}
-              <code>location</code>/<code>storage_area</code> still wins if it has one.
+              <code>location</code>/<code>storage_area</code>/<code>reorder_threshold</code>.
             </p>
           </div>
         </details>

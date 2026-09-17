@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Location, ProductCsvEvent, StorageArea } from "@/lib/supabase/types";
+import type { ProductCsvEvent } from "@/lib/supabase/types";
 import { CsvUploadForm } from "../CsvUploadForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { easternDateTimeString } from "@/lib/easternTime";
@@ -13,15 +13,11 @@ const KIND_LABEL: Record<string, string> = {
 
 export default async function BulkUploadProductsPage() {
   const supabase = createClient();
-  const [{ data: eventsRaw }, { data: locations }, { data: storageAreas }] = await Promise.all([
-    supabase
-      .from("product_csv_events")
-      .select("*, performed_by_profile:profiles(id, name)")
-      .order("created_at", { ascending: false })
-      .limit(50),
-    supabase.from("locations").select("*").eq("active", true).order("name"),
-    supabase.from("storage_areas").select("*").eq("active", true).order("sort_order"),
-  ]);
+  const { data: eventsRaw } = await supabase
+    .from("product_csv_events")
+    .select("*, performed_by_profile:profiles(id, name)")
+    .order("created_at", { ascending: false })
+    .limit(50);
 
   const events = (eventsRaw as (ProductCsvEvent & { performed_by_profile: { name: string } | null })[] | null) ?? [];
   const downloadUrlByPath = new Map<string, string>();
@@ -58,7 +54,7 @@ export default async function BulkUploadProductsPage() {
             <DownloadIcon />
           </Link>
         </div>
-        <CsvUploadForm locations={(locations as Location[] | null) ?? []} storageAreas={(storageAreas as StorageArea[] | null) ?? []} />
+        <CsvUploadForm />
       </div>
 
       <details className="mt-6 max-w-3xl rounded-md border border-gray-200 bg-white p-4">
