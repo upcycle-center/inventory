@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
-import { createSupplier, deleteSupplier } from "./actions";
+import { createSupplier, deleteSupplier, markSupplierReviewed } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -10,11 +10,18 @@ export default async function AdminSuppliersPage() {
     .from("suppliers")
     .select("*")
     .order("name");
+  const needsReviewCount = ((suppliers as Supplier[] | null) ?? []).filter((s) => s.needs_review).length;
 
   return (
     <div>
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Suppliers" }]} />
-      <h1 className="mb-6 text-lg font-semibold">Suppliers</h1>
+      <h1 className="mb-2 text-lg font-semibold">Suppliers</h1>
+      {needsReviewCount > 0 && (
+        <p className="mb-4 text-sm text-amber-700">
+          {needsReviewCount} supplier{needsReviewCount === 1 ? "" : "s"} auto-created from a CSV upload need
+          {needsReviewCount === 1 ? "s" : ""} review — check for typos/duplicates below.
+        </p>
+      )}
 
       <ActionForm action={createSupplier} savedLabel="Supplier added" className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
         <p className="text-sm font-medium">Add a supplier</p>
@@ -34,6 +41,7 @@ export default async function AdminSuppliersPage() {
           <tr>
             <th className="pb-2">Name</th>
             <th className="pb-2">Contact</th>
+            <th className="pb-2">Status</th>
             <th className="pb-2"></th>
           </tr>
         </thead>
@@ -44,19 +52,36 @@ export default async function AdminSuppliersPage() {
               <td className="py-2 text-gray-500">
                 {[s.contact_name, s.contact_email, s.contact_phone].filter(Boolean).join(" · ") || "—"}
               </td>
+              <td className="py-2">
+                {s.needs_review ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Needs review</span>
+                ) : (
+                  <span className="text-gray-300">—</span>
+                )}
+              </td>
               <td className="py-2 text-right">
-                <form action={deleteSupplier}>
-                  <input type="hidden" name="id" value={s.id} />
-                  <button type="submit" className="text-red-600 hover:underline">
-                    Delete
-                  </button>
-                </form>
+                <div className="flex items-center justify-end gap-3">
+                  {s.needs_review && (
+                    <form action={markSupplierReviewed}>
+                      <input type="hidden" name="id" value={s.id} />
+                      <button type="submit" className="text-brand hover:underline">
+                        Mark reviewed
+                      </button>
+                    </form>
+                  )}
+                  <form action={deleteSupplier}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <button type="submit" className="text-red-600 hover:underline">
+                      Delete
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
           ))}
           {!suppliers?.length && (
             <tr>
-              <td colSpan={3} className="py-4 text-gray-400">
+              <td colSpan={4} className="py-4 text-gray-400">
                 No suppliers yet.
               </td>
             </tr>

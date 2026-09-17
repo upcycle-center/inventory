@@ -128,7 +128,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
   let locationsAssigned = 0;
   let locationsUnmatched = 0;
   let categoriesUnmatched = 0;
-  let suppliersUnmatched = 0;
+  let suppliersCreated = 0;
   let productTypesUnmatched = 0;
 
   for (const cols of rows.slice(1)) {
@@ -171,15 +171,32 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // Per-row supplier (matched by name) takes over from the single
     // form-wide dropdown when a "supplier" column is present -- otherwise
     // that one dropdown value would get stamped onto every row, clobbering
-    // whatever supplier each product already had on file.
+    // whatever supplier each product already had on file. A name that
+    // doesn't match an existing supplier gets created on the spot, flagged
+    // needs_review so a typo doesn't silently become an unnoticed
+    // duplicate -- supplierByName is updated immediately so repeat
+    // mentions of the same new name later in the same CSV reuse it
+    // instead of creating a second row.
     const supplierRaw = supplierIdx !== -1 ? cols[supplierIdx]?.trim() : undefined;
     let rowSupplierId: string | null | undefined;
     if (supplierRaw !== undefined) {
       if (!supplierRaw) {
         rowSupplierId = null;
       } else {
-        rowSupplierId = supplierByName.get(supplierRaw.toLowerCase());
-        if (!rowSupplierId) suppliersUnmatched++;
+        const supplierKey = supplierRaw.toLowerCase();
+        rowSupplierId = supplierByName.get(supplierKey);
+        if (!rowSupplierId) {
+          const { data: newSupplier } = await supabase
+            .from("suppliers")
+            .insert({ name: supplierRaw, needs_review: true })
+            .select("id")
+            .single();
+          if (newSupplier) {
+            rowSupplierId = newSupplier.id;
+            supplierByName.set(supplierKey, newSupplier.id);
+            suppliersCreated++;
+          }
+        }
       }
     }
     // Same "only touch when present" rule as Brand/Category -- a routine
@@ -329,7 +346,9 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     message: `Done: ${created} created, ${updated} updated, ${skipped} skipped${failed ? `, ${failed} failed` : ""}. Locations: ${locationsAssigned} assigned${
       locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
     }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}${
-      suppliersUnmatched ? ` ${suppliersUnmatched} supplier name(s) didn't match — check Admin → Suppliers.` : ""
+      suppliersCreated
+        ? ` ${suppliersCreated} new supplier(s) auto-created and flagged for review — check Admin → Suppliers.`
+        : ""
     }${
       productTypesUnmatched
         ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`

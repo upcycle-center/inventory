@@ -192,6 +192,10 @@ export interface Supplier {
   contact_name: string | null;
   contact_email: string | null;
   contact_phone: string | null;
+  // True for a supplier auto-created by a bulk product CSV upload whose
+  // supplier name didn't match an existing one -- cleared once someone
+  // reviews it (catches typo'd names before they become duplicates).
+  needs_review: boolean;
   created_at: string;
 }
 

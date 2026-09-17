@@ -24,3 +24,10 @@ export async function deleteSupplier(formData: FormData) {
   await supabase.from("suppliers").delete().eq("id", id);
   revalidatePath("/admin/suppliers");
 }
+
+export async function markSupplierReviewed(formData: FormData) {
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  await supabase.from("suppliers").update({ needs_review: false }).eq("id", id);
+  revalidatePath("/admin/suppliers");
+}
