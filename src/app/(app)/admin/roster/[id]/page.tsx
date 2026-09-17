@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Staff } from "@/lib/supabase/types";
-import { STAFF_MAIN_ROLE_OPTIONS, requiredCertificationLabel } from "@/lib/staff";
+import type { CertificationType, Staff } from "@/lib/supabase/types";
+import { STAFF_MAIN_ROLE_OPTIONS, requiredCertificationNames } from "@/lib/staff";
 import { toggleStaffActive, updateStaff } from "../actions";
 import { DeleteStaffButton } from "./DeleteStaffButton";
 import { ActionForm } from "@/components/ActionForm";
@@ -10,19 +10,23 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function StaffDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const { data: staffRaw } = await supabase.from("staff").select("*").eq("id", params.id).single();
+  const [{ data: staffRaw }, { data: certTypesRaw }] = await Promise.all([
+    supabase.from("staff").select("*").eq("id", params.id).single(),
+    supabase.from("certification_types").select("*").eq("active", true).order("sort_order"),
+  ]);
   const staffMember = staffRaw as Staff | null;
 
   if (!staffMember) notFound();
 
-  const requiredCert = requiredCertificationLabel(staffMember.main_role) ?? requiredCertificationLabel(staffMember.cover_role);
+  const requiredCerts = requiredCertificationNames(staffMember, (certTypesRaw as CertificationType[] | null) ?? []);
+  const requiredCert = requiredCerts.length ? requiredCerts.join(", ") : null;
 
   return (
     <div>
       <Breadcrumbs
         items={[
           { label: "Admin", href: "/admin" },
-          { label: "Staff", href: "/admin/staff" },
+          { label: "Roster", href: "/admin/roster" },
           { label: `${staffMember.first_name} ${staffMember.last_name}` },
         ]}
       />

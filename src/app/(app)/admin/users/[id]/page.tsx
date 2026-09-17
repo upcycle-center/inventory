@@ -231,7 +231,7 @@ export default async function UserDetailPage({ params }: { params: { id: string 
           <p className="text-sm text-gray-400">
             {certTypes?.length
               ? "No certification types apply to this role."
-              : "No certification types set up yet. Add one under Admin → Users."}
+              : "No certification types set up yet. Add one under Admin → Roster."}
           </p>
         )}
       </div>

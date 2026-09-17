@@ -1,3 +1,4 @@
+import type { CertificationType } from "./supabase/types";
 import { STAFF_ROLES } from "./staffRoles";
 
 // Main Role / Cover Role draw from the same canonical role vocabulary
@@ -5,17 +6,19 @@ import { STAFF_ROLES } from "./staffRoles";
 // since a staff member can hold that role too.
 export const STAFF_MAIN_ROLE_OPTIONS = ["Stand Lead", ...STAFF_ROLES];
 
-// Bartender requires T.E.A.M certification (alcohol service); Server
-// Food requires ServeSafe. Informational only -- surfaced as a warning
-// when missing/expired, not currently enforced as a hard block.
-const REQUIRED_CERTIFICATION_BY_ROLE: Record<string, string> = {
-  Bartender: "T.E.A.M",
-  "Server Food": "ServeSafe",
-};
-
-export function requiredCertificationLabel(role: string | null | undefined): string | null {
-  if (!role) return null;
-  return REQUIRED_CERTIFICATION_BY_ROLE[role] ?? null;
+// Which certification(s) a roster member needs is driven by the shared
+// certification_types catalog (managed on this same Roster page) rather
+// than a fixed map -- a type "applies" to a roster member when its
+// applicable_roles includes their Main or Cover role. Informational only
+// -- surfaced as a warning when missing/expired, not enforced as a hard
+// block.
+export function requiredCertificationNames(
+  staffMember: { main_role: string | null; cover_role: string | null },
+  certTypes: CertificationType[]
+): string[] {
+  const roles = [staffMember.main_role, staffMember.cover_role].filter((r): r is string => !!r);
+  if (!roles.length) return [];
+  return certTypes.filter((t) => t.applicable_roles?.some((r) => roles.includes(r))).map((t) => t.name);
 }
 
 export function isCertificationExpired(expiresAt: string | null): boolean {

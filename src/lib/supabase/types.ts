@@ -30,9 +30,14 @@ export interface Profile {
 export interface CertificationType {
   id: string;
   name: string;
+  description: string | null;
   active: boolean;
   sort_order: number;
-  applicable_roles: UserRole[] | null;
+  // A mix of system UserRole values (for real login Users) and Roster
+  // role names (Bartender, Server Food, ...) can both appear here -- the
+  // two vocabularies never collide, so a plain string keeps this shared
+  // across both audiences without a union type.
+  applicable_roles: string[] | null;
   created_at: string;
 }
 
