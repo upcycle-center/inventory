@@ -39,6 +39,7 @@ export async function toggleUserActive(formData: FormData) {
 export async function inviteUser(formData: FormData): Promise<{ message: string }> {
   await requireProfile(["admin"]);
   const notificationEmail = String(formData.get("notification_email") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
   const username = String(formData.get("username") || "").trim().toLowerCase();
   const name = String(formData.get("name") || "").trim();
   const role = String(formData.get("role") || "stand_lead") as UserRole;
@@ -74,7 +75,13 @@ export async function inviteUser(formData: FormData): Promise<{ message: string 
 
   await admin
     .from("profiles")
-    .update({ role, name: name || username, username, notification_email: notificationEmail || null })
+    .update({
+      role,
+      name: name || username,
+      username,
+      notification_email: notificationEmail || null,
+      phone: phone || null,
+    })
     .eq("id", created.user.id);
 
   revalidatePath("/admin/users");
