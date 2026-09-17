@@ -17,7 +17,7 @@ export default async function AdminProductsPage({
 
   let query = supabase
     .from("products")
-    .select("*, supplier:suppliers(id, name)")
+    .select("*")
     .eq("active", true)
     .eq("product_type", type)
     .order("description");
@@ -117,10 +117,9 @@ export default async function AdminProductsPage({
             <tr>
               <th className="px-4 py-2"></th>
               <th className="px-4 py-2 whitespace-nowrap">IC</th>
-              <th className="px-4 py-2">Product</th>
+              <th className="w-full px-4 py-2">Product</th>
               <th className="px-4 py-2 whitespace-nowrap"><span className="sr-only">Case Size</span></th>
               <th className="px-4 py-2"></th>
-              <th className="px-4 py-2 whitespace-nowrap">Supplier</th>
             </tr>
           </thead>
           <tbody>
@@ -139,7 +138,7 @@ export default async function AdminProductsPage({
                   </div>
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.sku}</td>
-                <td className="px-4 py-2 whitespace-nowrap">
+                <td className="px-4 py-2">
                   <Link href={`/admin/products/${p.id}`} className="font-medium text-brand hover:underline">
                     {p.description}
                   </Link>
@@ -157,12 +156,11 @@ export default async function AdminProductsPage({
                     <DuplicateIcon />
                   </Link>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.supplier?.name ?? "—"}</td>
               </tr>
             ))}
             {!products?.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                   No products match these filters.
                 </td>
               </tr>
