@@ -36,6 +36,14 @@ export function CsvUploadForm() {
               re-apply the same value they already had, so nothing else gets overwritten.
             </p>
             <p className="mt-3">
+              Each of the four templates above only has the columns that product type actually
+              uses — e.g. Chargeable has <code>sale_price</code> but no pour columns;
+              Non-Chargeable – Bottles has <code>bottle_size_ml</code>/<code>pour_size_oz</code>/
+              <code>pour_price</code> but no <code>sale_price</code>; Mixers and
+              Disposables/Cleaning have neither, since they&apos;re never billed on their own.
+              Use whichever template matches the product you&apos;re creating.
+            </p>
+            <p className="mt-3">
               Columns required: <code>sku</code>, <code>description</code>. Optional:{" "}
               <code>brand</code>, <code>photo_url</code>, <code>product_type</code> (
               <code>chargeable</code>, <code>non_chargeable_bottle</code>,{" "}

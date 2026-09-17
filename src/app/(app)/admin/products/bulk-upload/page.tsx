@@ -4,6 +4,7 @@ import type { ProductCsvEvent } from "@/lib/supabase/types";
 import { CsvUploadForm } from "../CsvUploadForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { easternDateTimeString } from "@/lib/easternTime";
+import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
 
 const KIND_LABEL: Record<string, string> = {
   bulk_upload: "Upload",
@@ -45,12 +46,21 @@ export default async function BulkUploadProductsPage() {
       </div>
 
       <div className="max-w-md">
-        <div className="mb-6 flex gap-4">
-          <Link href="/api/products/csv-template" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
-            CSV template
-            <DownloadIcon />
-          </Link>
-          <Link href="/api/products/csv-export" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
+        <div className="mb-6">
+          <p className="mb-2 text-xs font-medium text-gray-500">New product templates (only that type&apos;s columns)</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {PRODUCT_TYPE_OPTIONS.map((t) => (
+              <Link
+                key={t.value}
+                href={`/api/products/csv-template?type=${t.value}`}
+                className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+              >
+                {t.shortLabel}
+                <DownloadIcon />
+              </Link>
+            ))}
+          </div>
+          <Link href="/api/products/csv-export" className="mt-3 inline-flex items-center gap-1 text-sm text-brand hover:underline">
             CATALOG
             <DownloadIcon />
           </Link>
