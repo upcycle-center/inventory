@@ -46,8 +46,9 @@ export default async function BulkUploadProductsPage() {
 
       <div className="max-w-md">
         <div className="mb-6 flex gap-4">
-          <Link href="/api/products/csv-template" className="inline-block text-sm text-brand hover:underline">
-            Download CSV template
+          <Link href="/api/products/csv-template" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
+            CSV template
+            <DownloadIcon />
           </Link>
           <Link href="/api/products/csv-export" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
             CATALOG
