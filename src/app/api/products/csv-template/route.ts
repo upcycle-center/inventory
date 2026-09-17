@@ -1,5 +1,7 @@
 import { getCurrentProfile } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { toCsv } from "@/lib/csv";
+import { logCsvEvent } from "@/lib/productCsvEvents";
 
 // A starter file for the bulk upload form -- headers plus one example row
 // showing the one-row-per-location convention (two rows, same SKU, two
@@ -9,6 +11,8 @@ export async function GET() {
   if (!profile || profile.role !== "admin") {
     return new Response("Forbidden", { status: 403 });
   }
+
+  await logCsvEvent(createClient(), { direction: "download", kind: "template", performedBy: profile.id });
 
   const csv = toCsv([
     [

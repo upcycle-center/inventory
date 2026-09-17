@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isProductTypeValue } from "@/lib/productType";
 import { SUB_UNIT_LABEL } from "@/lib/subUnit";
 import { logCostChange } from "@/lib/productCostLog";
+import { logCsvEvent } from "@/lib/productCsvEvents";
 
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -382,17 +383,36 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
 
   revalidatePath("/admin/products");
   revalidatePath("/admin/locations");
-  return {
-    message: `Done: ${created} created, ${updated} updated, ${skipped} skipped${failed ? `, ${failed} failed` : ""}. Locations: ${locationsAssigned} assigned${
-      locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
-    }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}${
-      suppliersCreated
-        ? ` ${suppliersCreated} new supplier(s) auto-created and flagged for review — check Admin → Suppliers.`
-        : ""
-    }${
-      productTypesUnmatched
-        ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
-        : ""
-    }${failed ? ` First error: ${firstError}` : ""}`,
-  };
+  revalidatePath("/admin/products/bulk-upload");
+
+  const message = `Done: ${created} created, ${updated} updated, ${skipped} skipped${failed ? `, ${failed} failed` : ""}. Locations: ${locationsAssigned} assigned${
+    locationsUnmatched ? `, ${locationsUnmatched} unmatched (check location/storage_area names)` : ""
+  }.${categoriesUnmatched ? ` ${categoriesUnmatched} category name(s) didn't match — check Admin → Categories.` : ""}${
+    suppliersCreated
+      ? ` ${suppliersCreated} new supplier(s) auto-created and flagged for review — check Admin → Suppliers.`
+      : ""
+  }${
+    productTypesUnmatched
+      ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
+      : ""
+  }${failed ? ` First error: ${firstError}` : ""}`;
+
+  // Keep a copy of exactly what was uploaded, so a later question about
+  // "what did this run actually contain" can be answered without relying
+  // on someone still having the original file.
+  const storagePath = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+  const { error: uploadStorageError } = await supabase.storage
+    .from("product-csv-uploads")
+    .upload(storagePath, file, { contentType: file.type || "text/csv", upsert: false });
+
+  await logCsvEvent(supabase, {
+    direction: "upload",
+    kind: "bulk_upload",
+    filename: file.name,
+    storagePath: uploadStorageError ? null : storagePath,
+    resultMessage: message,
+    performedBy: user?.id ?? null,
+  });
+
+  return { message };
 }

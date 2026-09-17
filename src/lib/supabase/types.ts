@@ -199,6 +199,17 @@ export interface Supplier {
   created_at: string;
 }
 
+export interface ProductCsvEvent {
+  id: string;
+  direction: "upload" | "download";
+  kind: "bulk_upload" | "template" | "export";
+  filename: string | null;
+  storage_path: string | null;
+  result_message: string | null;
+  performed_by: string | null;
+  created_at: string;
+}
+
 export interface Product {
   id: string;
   sku: string;

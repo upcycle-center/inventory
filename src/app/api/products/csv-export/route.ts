@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { toCsv } from "@/lib/csv";
 import { exportFilename } from "@/lib/exportFilename";
 import { buildProductExportRows } from "@/lib/productCsvExport";
+import { logCsvEvent } from "@/lib/productCsvEvents";
 
 // A real export of every product's current values, in the exact column
 // layout bulkUploadProducts expects -- download, edit only what needs to
@@ -20,6 +21,8 @@ export async function GET() {
   const supabase = createClient();
   const rows = await buildProductExportRows(supabase);
   const csv = toCsv(rows);
+
+  await logCsvEvent(supabase, { direction: "download", kind: "export", performedBy: profile.id });
 
   return new Response(csv, {
     headers: {
