@@ -169,6 +169,7 @@ export function ProductQtyGrid({
                     <input
                       type="number"
                       inputMode="decimal"
+                      step="0.01"
                       min={0}
                       value={field.value}
                       onChange={(e) => field.setValue(e.target.value)}
@@ -187,6 +188,7 @@ export function ProductQtyGrid({
                     <input
                       type="number"
                       inputMode="decimal"
+                      step="0.01"
                       min={0}
                       value={draftWaste}
                       onChange={(e) => setDraftWaste(e.target.value)}
@@ -200,6 +202,7 @@ export function ProductQtyGrid({
                     <input
                       type="number"
                       inputMode="decimal"
+                      step="0.01"
                       min={0}
                       value={draftComp}
                       onChange={(e) => setDraftComp(e.target.value)}
