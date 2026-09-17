@@ -53,6 +53,8 @@ function parseCsv(text: string): string[][] {
 export async function bulkUploadProducts(formData: FormData): Promise<{ message: string }> {
   const supabase = createClient();
   const file = formData.get("csv");
+  const defaultLocationId = String(formData.get("default_location_id") || "") || null;
+  const defaultStorageAreaId = String(formData.get("default_storage_area_id") || "") || null;
 
   if (!(file instanceof File) || file.size === 0) {
     return { message: "Choose a CSV file first." };
@@ -374,12 +376,16 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
 
     if (!productId) continue;
 
+    // A row's own location/storage_area always wins; the form-wide
+    // defaults only fill in for a row that doesn't specify one -- handy
+    // when the whole file is for a single location, instead of repeating
+    // the same two columns on every row.
     const locationKey = locationIdx !== -1 ? cols[locationIdx]?.trim().toLowerCase() : "";
     const storageAreaKey = storageAreaIdx !== -1 ? cols[storageAreaIdx]?.trim().toLowerCase() : "";
-    if (!locationKey && !storageAreaKey) continue;
+    if (!locationKey && !storageAreaKey && !defaultLocationId && !defaultStorageAreaId) continue;
 
-    const locationId = locationKey ? locationByKey.get(locationKey) : undefined;
-    const storageAreaId = storageAreaKey ? storageAreaByKey.get(storageAreaKey) : undefined;
+    const locationId = locationKey ? locationByKey.get(locationKey) : defaultLocationId ?? undefined;
+    const storageAreaId = storageAreaKey ? storageAreaByKey.get(storageAreaKey) : defaultStorageAreaId ?? undefined;
 
     if (!locationId || !storageAreaId) {
       locationsUnmatched++;
