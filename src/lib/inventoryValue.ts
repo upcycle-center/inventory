@@ -46,7 +46,9 @@ type PourProduct = {
 //   (the historical, only behavior before Type grew pour/mixer variants)
 // - non_chargeable_bottle: poured rather than sold whole (liquor/wine) --
 //   projected as (pours per bottle, minus a waste allowance) x price per
-//   pour, falling back to sale_price if any pour field is missing
+//   pour; zero (not sale_price -- the UI disables that field for this
+//   type, so it must never be treated as a usable fallback) when pour
+//   details aren't fully filled in yet
 // - non_chargeable_mixer / disposable: cocktail ingredients and supplies,
 //   never billed on their own -- no retail value
 export function retailUnitPrices(product: PourProduct) {
@@ -56,7 +58,10 @@ export function retailUnitPrices(product: PourProduct) {
     return { perEach: 0, perCase: 0 };
   }
 
-  if (product.product_type === "non_chargeable_bottle" && product.bottle_size_ml && product.pour_size_oz && product.pour_price) {
+  if (product.product_type === "non_chargeable_bottle") {
+    if (!product.bottle_size_ml || !product.pour_size_oz || !product.pour_price) {
+      return { perEach: 0, perCase: 0 };
+    }
     const bottleSizeOz = product.bottle_size_ml / ML_PER_OZ;
     const poursPerBottle = Math.floor((bottleSizeOz / product.pour_size_oz) * (1 - POUR_WASTE_PCT));
     const perEach = poursPerBottle * product.pour_price;

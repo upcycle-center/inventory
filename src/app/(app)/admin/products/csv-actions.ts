@@ -7,6 +7,11 @@ import { SUB_UNIT_LABEL } from "@/lib/subUnit";
 import { logCostChange } from "@/lib/productCostLog";
 import { logCsvEvent } from "@/lib/productCsvEvents";
 
+// Retail (sale_price) is disabled in the UI for these types -- pour_price
+// carries the retail value instead -- so a CSV can't be allowed to sneak a
+// value back into sale_price for them either.
+const NON_CHARGEABLE_TYPES = new Set(["non_chargeable_bottle", "non_chargeable_mixer"]);
+
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -264,7 +269,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
 
     let { data: existing } = await supabase
       .from("products")
-      .select("id, case_cost")
+      .select("id, case_cost, product_type")
       .eq("sku", sku)
       .maybeSingle();
 
@@ -274,11 +279,17 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
     // "same item," and updating it (sku included) is what should happen
     // instead of trying to insert a duplicate that collides on UPC.
     if (!existing && upc) {
-      const { data: byUpc } = await supabase.from("products").select("id, case_cost").eq("upc", upc).maybeSingle();
+      const { data: byUpc } = await supabase.from("products").select("id, case_cost, product_type").eq("upc", upc).maybeSingle();
       existing = byUpc;
     }
 
     let productId = existing?.id as string | undefined;
+
+    // The type actually taking effect for this row, whether or not the CSV
+    // specified product_type -- decides whether sale_price is allowed to be
+    // set at all, so a stray value in an old export can't reintroduce it.
+    const effectiveProductType = productType ?? existing?.product_type ?? "chargeable";
+    const effectiveSalePrice = NON_CHARGEABLE_TYPES.has(effectiveProductType) ? null : salePrice;
 
     if (existing) {
       const { error } = await supabase
@@ -294,7 +305,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           ...(categoryId !== undefined ? { category_id: categoryId } : {}),
           ...(rowSupplierId !== undefined ? { supplier_id: rowSupplierId } : {}),
           ...(caseCost !== undefined ? { case_cost: caseCost } : {}),
-          ...(salePrice !== undefined ? { sale_price: salePrice } : {}),
+          ...(effectiveSalePrice !== undefined ? { sale_price: effectiveSalePrice } : {}),
           ...(unitOfMeasure !== undefined ? { unit_of_measure: unitOfMeasure } : {}),
           ...(caseSize !== undefined ? { case_size: caseSize } : {}),
           ...(bottleSizeMl !== undefined ? { bottle_size_ml: bottleSizeMl } : {}),
@@ -345,7 +356,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
           category_id: categoryId ?? null,
           supplier_id: rowSupplierId ?? null,
           case_cost: caseCost ?? null,
-          sale_price: salePrice ?? null,
+          sale_price: NON_CHARGEABLE_TYPES.has(effectiveProductType) ? null : (salePrice ?? null),
           unit_of_measure: unitOfMeasure ?? "each",
           case_size: caseSize ?? null,
           bottle_size_ml: bottleSizeMl ?? null,
