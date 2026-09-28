@@ -287,6 +287,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <ActionForm
             action={addStaffRole}
             savedLabel="Role added"
+            resetOnSuccess
             className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
           >
             <input type="hidden" name="location_id" value={location.id} />
@@ -342,6 +343,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           <ActionForm
             action={addStaffTier}
             savedLabel="Tier added"
+            resetOnSuccess
             className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
           >
             <input type="hidden" name="location_id" value={location.id} />

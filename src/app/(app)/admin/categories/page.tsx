@@ -22,6 +22,7 @@ export default async function AdminCategoriesPage() {
       <ActionForm
         action={createCategory}
         savedLabel="Category added"
+        resetOnSuccess
         className="mb-8 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <div>

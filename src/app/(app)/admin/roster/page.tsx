@@ -30,6 +30,7 @@ export default async function AdminRosterPage() {
       <ActionForm
         action={createStaff}
         savedLabel="Staff added"
+        resetOnSuccess
         className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
       >
         <input name="first_name" placeholder="First name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
@@ -62,6 +63,7 @@ export default async function AdminRosterPage() {
         <ActionForm
           action={addCertificationType}
           savedLabel="Added"
+          resetOnSuccess
           className="mb-3 grid gap-3 rounded-md border border-gray-200 bg-white p-4"
         >
           <div className="flex gap-3">

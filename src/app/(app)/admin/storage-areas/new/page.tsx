@@ -34,6 +34,7 @@ export default async function NewStorageAreaPage({
       <ActionForm
         action={createStorageArea}
         savedLabel="Storage area saved"
+        resetOnSuccess
         className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <label className="text-sm text-gray-600">

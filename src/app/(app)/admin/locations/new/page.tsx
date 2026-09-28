@@ -35,6 +35,7 @@ export default async function NewLocationPage({
       <ActionForm
         action={createLocation}
         savedLabel="Location saved"
+        resetOnSuccess
         className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <label className="text-sm text-gray-600">

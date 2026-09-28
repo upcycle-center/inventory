@@ -21,7 +21,7 @@ export default async function AdminLocationsPage() {
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Locations" }]} />
       <h1 className="mb-6 text-lg font-semibold">Locations</h1>
 
-      <ActionForm action={createLocation} savedLabel="Location added" className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
+      <ActionForm action={createLocation} savedLabel="Location added" resetOnSuccess className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
         <p className="text-sm font-medium">Add a location</p>
         <input name="name" placeholder="Name (e.g. Main Bar)" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
         <select name="type" defaultValue="stand" className="rounded-md border border-gray-300 px-3 py-2 text-sm">
