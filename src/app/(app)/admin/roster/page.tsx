@@ -164,6 +164,9 @@ export default async function AdminRosterPage() {
                   <td className="py-2 pr-3 text-gray-500">{s.email ?? "—"}</td>
                   <td className="py-2 pr-3">
                     {(() => {
+                      // Onboarding pipeline: Orientation (nothing on file yet) ->
+                      // Certification (certified, awaiting the ready-to-work
+                      // sign-off) -> ABI Ready (fully cleared to work a stand).
                       if (!s.active) {
                         return (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
@@ -175,16 +178,25 @@ export default async function AdminRosterPage() {
                       const reasons: string[] = [];
                       if (missingCert) reasons.push(expired ? `${requiredCertLabel} expired` : `Missing ${requiredCertLabel}`);
                       if (!s.ready_to_work) reasons.push("Not marked ready to work");
-                      const clearedToWork = !reasons.length;
+
+                      if (!reasons.length) {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                            <span className="h-2 w-2 rounded-full bg-green-500" />
+                            ABI Ready
+                          </span>
+                        );
+                      }
+                      const inCertification = !missingCert;
                       return (
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                            clearedToWork ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                            inCertification ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"
                           }`}
-                          title={reasons.join(" · ") || undefined}
+                          title={reasons.join(" · ")}
                         >
-                          <span className={`h-2 w-2 rounded-full ${clearedToWork ? "bg-green-500" : "bg-amber-500"}`} />
-                          {clearedToWork ? "Cleared to work" : reasons.join(" · ")}
+                          <span className={`h-2 w-2 rounded-full ${inCertification ? "bg-amber-500" : "bg-gray-400"}`} />
+                          {inCertification ? "Certification" : "Orientation"}
                         </span>
                       );
                     })()}
