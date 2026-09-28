@@ -1,8 +1,7 @@
 import { DonutChart } from "@/components/DonutChart";
-import { LocationLabel } from "@/components/LocationLabel";
 import { fmtCurrency } from "@/lib/format";
-import type { MonthEndValueLocationGroup } from "@/lib/monthEndValue";
-import { locationDisplayName } from "@/lib/locationLabel";
+import type { MonthEndGroupBy, MonthEndValueGroup, MonthEndValueLine } from "@/lib/monthEndValue";
+import { bucketLocationTypes, locationTotals } from "@/lib/monthEndValue";
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
@@ -13,26 +12,36 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-// Location -> Storage Area -> product-line drill-down, shared by the
-// moEND TOT Inventory Value and moEND TOT Retail Value reports.
+// Group -> Subgroup -> product-line drill-down, shared by the moEND TOT
+// Inventory Value and moEND TOT Retail Value reports -- whichever
+// dimension the person grouped by on screen (Location, Storage Area,
+// Category, or Vendor -- Product skips the subgroup level, it's already
+// the finest grain) renders through this one view.
 export function MonthEndValueReportView({
-  locations,
-  buckets,
+  lines,
+  groups,
+  grandTotal,
+  groupBy,
   centerLabel,
 }: {
-  locations: MonthEndValueLocationGroup[];
-  buckets: { warehouse: number; liquorRoom: number; kitchen: number; stands: number };
+  lines: MonthEndValueLine[];
+  groups: MonthEndValueGroup[];
+  grandTotal: number;
+  groupBy: MonthEndGroupBy;
   centerLabel: string;
 }) {
-  const donutSlices = locations.map((l) => ({ label: locationDisplayName(l), value: l.total }));
+  const buckets = bucketLocationTypes(lines);
+  const donutSlices = locationTotals(lines).map((l) => ({ label: l.name, value: l.total }));
+  const showSubgroupHeader = groupBy !== "product";
 
   return (
     <>
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="TOT $Warehouse" value={fmtCurrency(buckets.warehouse)} />
         <StatCard label="TOT $Liquor Room" value={fmtCurrency(buckets.liquorRoom)} />
         <StatCard label="TOT $Kitchen" value={fmtCurrency(buckets.kitchen)} />
         <StatCard label="TOT $Stands" value={fmtCurrency(buckets.stands)} />
+        <StatCard label="Grand Total" value={fmtCurrency(grandTotal)} />
       </div>
       <div className="mb-6 rounded-md border border-gray-200 bg-white p-4">
         <p className="mb-3 text-xs font-medium text-gray-500">By location</p>
@@ -40,20 +49,18 @@ export function MonthEndValueReportView({
       </div>
 
       <div className="space-y-3">
-        {locations.map((loc) => (
-          <details key={loc.id} className="rounded-md border border-gray-200 bg-white">
+        {groups.map((group) => (
+          <details key={group.id} className="rounded-md border border-gray-200 bg-white">
             <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium">
-              <span>
-                <LocationLabel location={loc} />
-              </span>
-              <span className="text-gray-500">{fmtCurrency(loc.total)}</span>
+              <span>{group.name}</span>
+              <span className="text-gray-500">{fmtCurrency(group.subtotal)}</span>
             </summary>
             <div className="space-y-3 border-t border-gray-100 px-4 py-3">
-              {loc.areas.map((area) => (
-                <details key={area.id} className="rounded-md border border-gray-100 bg-gray-50">
+              {group.subgroups.map((subgroup) => (
+                <details key={subgroup.id} className="rounded-md border border-gray-100 bg-gray-50">
                   <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm">
-                    <span>{area.name}</span>
-                    <span className="text-gray-500">{fmtCurrency(area.subtotal)}</span>
+                    <span>{showSubgroupHeader ? subgroup.name : ""}</span>
+                    <span className="text-gray-500">{fmtCurrency(subgroup.subtotal)}</span>
                   </summary>
                   <div className="overflow-x-auto border-t border-gray-200">
                     <table className="w-full whitespace-nowrap text-left text-sm">
@@ -68,8 +75,8 @@ export function MonthEndValueReportView({
                         </tr>
                       </thead>
                       <tbody>
-                        {area.lines.map((line) => (
-                          <tr key={line.productId} className="border-t border-gray-100">
+                        {subgroup.lines.map((line) => (
+                          <tr key={`${line.productId}:${line.locationId}`} className="border-t border-gray-100">
                             <td className="px-3 py-2 font-mono text-gray-500">{line.sku}</td>
                             <td className="px-3 py-2">{line.description}</td>
                             <td className="px-3 py-2 text-gray-500">{line.qtyEach ?? "—"}</td>
@@ -88,7 +95,7 @@ export function MonthEndValueReportView({
             </div>
           </details>
         ))}
-        {!locations.length && (
+        {!groups.length && (
           <p className="rounded-md border border-gray-200 bg-white px-4 py-6 text-center text-sm text-gray-400">
             No month-end counts posted for this month yet.
           </p>
