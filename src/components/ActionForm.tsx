@@ -11,12 +11,17 @@ export const ActionForm = forwardRef<
     savedLabel?: string;
     id?: string;
     encType?: string;
+    // For an "Add X" form that should clear itself and be ready for the
+    // next entry once saved -- never set on an edit form, where resetting
+    // to defaultValue would visibly undo the save just made.
+    resetOnSuccess?: boolean;
   }
->(function ActionForm({ action, children, className, savedLabel = "Saved", id, encType }, ref) {
+>(function ActionForm({ action, children, className, savedLabel = "Saved", id, encType, resetOnSuccess = false }, ref) {
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -26,7 +31,11 @@ export const ActionForm = forwardRef<
 
   return (
     <form
-      ref={ref}
+      ref={(node) => {
+        formRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) (ref as { current: HTMLFormElement | null }).current = node;
+      }}
       id={id}
       encType={encType}
       className={className}
@@ -49,6 +58,7 @@ export const ActionForm = forwardRef<
               setStatus("error");
             } else {
               setStatus("saved");
+              if (resetOnSuccess) formRef.current?.reset();
             }
           } catch (err) {
             // Server Actions signal redirect()/notFound() via a thrown error

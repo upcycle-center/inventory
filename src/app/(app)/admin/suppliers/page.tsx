@@ -27,6 +27,7 @@ export default async function AdminSuppliersPage() {
       <ActionForm
         action={createSupplier}
         savedLabel="Supplier added"
+        resetOnSuccess
         className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
       >
         <p className="col-span-2 text-sm font-medium">Add a supplier</p>
