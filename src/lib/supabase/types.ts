@@ -27,6 +27,9 @@ export interface Profile {
   role: UserRole;
   phone: string | null;
   active: boolean;
+  // Onboarding gate for the annual season reset, same as staff.ready_to_work
+  // -- not meaningful for admin/ops, which skip the onboarding pipeline.
+  ready_to_work: boolean;
   notification_categories: string[];
   notification_email: string | null;
   created_at: string;

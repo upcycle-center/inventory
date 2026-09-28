@@ -8,7 +8,7 @@ export function DeleteCertificationTypeButton({ certificationTypeId }: { certifi
   const [isPending, startTransition] = useTransition();
 
   function handleClick() {
-    if (!confirm("Delete this certification type? This also removes it from every person's certification records. This can't be undone.")) return;
+    if (!confirm("Delete this compliance requirement? This also removes it from every person's certification records. This can't be undone.")) return;
     setMessage(null);
     startTransition(async () => {
       const res = await deleteCertificationType(certificationTypeId);

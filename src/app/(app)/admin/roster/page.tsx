@@ -6,6 +6,7 @@ import { USER_ROLE_OPTIONS, ROSTER_ROLE_OPTIONS, ROLE_LABEL_BY_VALUE } from "@/l
 import { createStaff, addCertificationType } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { OnboardingStatusBadge } from "@/components/OnboardingStatusBadge";
 
 export default async function AdminRosterPage() {
   const supabase = createClient();
@@ -24,7 +25,7 @@ export default async function AdminRosterPage() {
       <p className="mb-6 text-sm text-gray-500">
         Staff who work stands but aren&apos;t necessarily system users — this roster is what the Call-Out/No-Show
         picker on an event&apos;s page draws from. Which certification each person needs is driven by their Main/Cover
-        role, via the certification types below.
+        role, via the compliance requirements below.
       </p>
 
       <ActionForm
@@ -59,7 +60,7 @@ export default async function AdminRosterPage() {
       </ActionForm>
 
       <div className="mb-8 max-w-2xl">
-        <p className="mb-3 text-sm font-medium">Certification types</p>
+        <p className="mb-3 text-sm font-medium">Compliance Requirements</p>
         <ActionForm
           action={addCertificationType}
           savedLabel="Added"
@@ -126,7 +127,7 @@ export default async function AdminRosterPage() {
               {!t.active && <span className="ml-2 text-xs text-gray-400">(Inactive)</span>}
             </li>
           ))}
-          {!certTypes.length && <li className="text-sm text-gray-400">No certification types yet.</li>}
+          {!certTypes.length && <li className="text-sm text-gray-400">No compliance requirements yet.</li>}
         </ul>
       </div>
 
@@ -164,46 +165,16 @@ export default async function AdminRosterPage() {
                   <td className="py-2 pr-3 text-gray-500">{s.email ?? "—"}</td>
                   <td className="py-2 pr-3">
                     {(() => {
-                      // Onboarding pipeline: Orientation (nothing on file yet) ->
-                      // Certification (certified, awaiting the ready-to-work
-                      // sign-off) -> ABI Ready (fully cleared to work a stand).
-                      if (!s.active) {
-                        return (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                            <span className="h-2 w-2 rounded-full bg-gray-400" />
-                            Inactive
-                          </span>
-                        );
-                      }
                       const reasons: string[] = [];
                       if (missingCert) reasons.push(expired ? `${requiredCertLabel} expired` : `Missing ${requiredCertLabel}`);
                       if (!s.ready_to_work) reasons.push("Not marked ready to work");
-
-                      if (!reasons.length) {
-                        return (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                            <span className="h-2 w-2 rounded-full bg-green-500" />
-                            ABI Ready
-                          </span>
-                        );
-                      }
                       // Once someone has ever been certified, an expired
                       // certification still reads as "Certification" (needs
                       // renewal), not a regression all the way back to
                       // Orientation -- that's reserved for never having been
                       // certified at all when their role requires one.
-                      const inCertification = s.certified || !requiredCertLabel;
-                      return (
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                            inCertification ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"
-                          }`}
-                          title={reasons.join(" · ")}
-                        >
-                          <span className={`h-2 w-2 rounded-full ${inCertification ? "bg-amber-500" : "bg-gray-400"}`} />
-                          {inCertification ? "Certification" : "Orientation"}
-                        </span>
-                      );
+                      const hasStartedCertification = s.certified || !requiredCertLabel;
+                      return <OnboardingStatusBadge active={s.active} reasons={reasons} hasStartedCertification={hasStartedCertification} />;
                     })()}
                   </td>
                   <td className="py-2">

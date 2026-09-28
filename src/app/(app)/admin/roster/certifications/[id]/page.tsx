@@ -23,7 +23,7 @@ export default async function CertificationTypeDetailPage({ params }: { params: 
           { label: certType.name },
         ]}
       />
-      <h1 className="mb-6 text-lg font-semibold">Edit certification type</h1>
+      <h1 className="mb-6 text-lg font-semibold">Edit compliance requirement</h1>
 
       <ActionForm
         id="edit-cert-type-form"

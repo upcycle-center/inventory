@@ -124,7 +124,7 @@ export default async function StaffDetailPage({ params }: { params: { id: string
                 ? `Auto-calculated: ${governingType!.name} is valid for ${formatValidityMonths(
                     governingType!.validity_months!
                   )} from the issue date above.`
-                : "Set automatically once a required certification type with a validity period is on file for this role."}
+                : "Set automatically once a required compliance requirement with a validity period is on file for this role."}
             </p>
           </div>
         </div>
