@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
-import { createSupplier, deleteSupplier, markSupplierReviewed } from "./actions";
-import { ActionForm } from "@/components/ActionForm";
+import { deleteSupplier, markSupplierReviewed } from "./actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function AdminSuppliersPage() {
@@ -16,7 +15,12 @@ export default async function AdminSuppliersPage() {
   return (
     <div>
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Suppliers" }]} />
-      <h1 className="mb-2 text-lg font-semibold">Suppliers</h1>
+      <div className="mb-2 flex items-center justify-between">
+        <h1 className="text-lg font-semibold">Suppliers</h1>
+        <Link href="/admin/suppliers/new" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+          Add New Supplier
+        </Link>
+      </div>
       {needsReviewCount > 0 && (
         <p className="mb-4 text-sm text-amber-700">
           {needsReviewCount} supplier{needsReviewCount === 1 ? "" : "s"} auto-created from a CSV upload need
@@ -24,37 +28,7 @@ export default async function AdminSuppliersPage() {
         </p>
       )}
 
-      <ActionForm
-        action={createSupplier}
-        savedLabel="Supplier added"
-        resetOnSuccess
-        className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
-      >
-        <p className="col-span-2 text-sm font-medium">Add a supplier</p>
-        <input name="name" placeholder="Company" required className="col-span-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="representative_first_name" placeholder="Acct Rep First Name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="representative_last_name" placeholder="Acct Rep Last Name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input
-          name="representative_email"
-          type="email"
-          placeholder="Acct Rep Email"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <input
-          name="representative_phone"
-          placeholder="Acct Rep Mobile"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <p className="col-span-2 text-xs text-gray-400">
-          Account #, Website, Office Number, Billing contact, Delivery schedule, and Logistics notes can be added
-          after saving.
-        </p>
-        <button type="submit" className="col-span-2 w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Add supplier
-        </button>
-      </ActionForm>
-
-      <table className="w-full text-left text-sm">
+      <table className="mt-6 w-full text-left text-sm">
         <thead className="text-gray-500">
           <tr>
             <th className="pb-2">Name</th>
