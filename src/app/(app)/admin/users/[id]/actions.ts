@@ -28,6 +28,7 @@ export async function updateUserProfile(formData: FormData): Promise<{ error: st
       phone: phone || null,
       role,
       notification_email: notificationEmail || null,
+      ready_to_work: formData.get("ready_to_work") === "on",
     })
     .eq("id", id);
 

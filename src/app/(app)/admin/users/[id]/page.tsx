@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { CertificationType, UserCertification } from "@/lib/supabase/types";
 import { certificationStatus } from "@/lib/certifications";
+import { roleTracksOnboarding, userOnboardingReasons } from "@/lib/userOnboarding";
 import { NOTIFICATION_CATEGORIES } from "@/lib/notifications";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { OnboardingStatusBadge } from "@/components/OnboardingStatusBadge";
 import { updateUserProfile, setUserCertification, adminSetPassword, updateUserNotifications } from "./actions";
 import { toggleUserActive } from "../actions";
 import { DeleteUserButton } from "./DeleteUserButton";
@@ -106,6 +108,12 @@ export default async function UserDetailPage({ params }: { params: { id: string 
             Leave blank if this person doesn&apos;t have one.
           </span>
         </label>
+        {roleTracksOnboarding(user.role) && (
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input type="checkbox" name="ready_to_work" defaultChecked={user.ready_to_work} className="h-4 w-4" />
+            Ready to work
+          </label>
+        )}
       </ActionForm>
 
       <div className="mb-8 mt-3 flex items-center gap-3">
@@ -192,7 +200,14 @@ export default async function UserDetailPage({ params }: { params: { id: string 
         )}
       </ActionForm>
 
-      <p className="mb-3 text-sm font-medium">Certifications</p>
+      <div className="mb-3 flex items-center gap-3">
+        <p className="text-sm font-medium">Certifications</p>
+        {roleTracksOnboarding(user.role) &&
+          (() => {
+            const { reasons, hasStartedCertification } = userOnboardingReasons(certByTypeId, types, user.ready_to_work);
+            return <OnboardingStatusBadge active={user.active} reasons={reasons} hasStartedCertification={hasStartedCertification} />;
+          })()}
+      </div>
       <p className="mb-3 text-sm text-gray-500">
         Only certifications relevant to this user&apos;s role are shown. Check a certification,
         set when it was earned and when it expires — the dot turns orange if it isn&apos;t on
