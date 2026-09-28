@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ProductQtyGrid } from "@/components/ProductQtyGrid";
 import { submitMonthEndCount, type MonthEndLineInput, type MonthEndNewItemInput } from "./actions";
@@ -15,11 +15,14 @@ interface ProductForMonthEnd {
   case_size: number | null;
   middle_unit_label: string | null;
   each_countable: boolean;
+  supplier_id: string;
+  supplier_name: string;
+  storage_area_id: string;
+  storage_area_name: string;
 }
 
-export interface StorageAreaGroup {
+export interface CategoryGroup {
   id: string;
-  code: string;
   name: string;
   products: ProductForMonthEnd[];
 }
@@ -43,7 +46,7 @@ export function MonthEndForm({
   defaultMonth,
 }: {
   locations: Location[];
-  productsByLocation: Record<string, StorageAreaGroup[]>;
+  productsByLocation: Record<string, CategoryGroup[]>;
   defaultYear: number;
   defaultMonth: number;
 }) {
@@ -52,13 +55,44 @@ export function MonthEndForm({
   const [year, setYear] = useState(defaultYear);
   const [month, setMonth] = useState(defaultMonth);
   const [openArea, setOpenArea] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [vendorFilter, setVendorFilter] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
   const [qty, setQty] = useState<QtyState>({});
   const [newItems, setNewItems] = useState<ReturnType<typeof blankNewItem>[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const groups = productsByLocation[locationId] ?? [];
+  const groups = useMemo(() => productsByLocation[locationId] ?? [], [productsByLocation, locationId]);
+
+  const { vendorOptions, areaOptions } = useMemo(() => {
+    const vendors = new Map<string, string>();
+    const areas = new Map<string, string>();
+    for (const g of groups) {
+      for (const p of g.products) {
+        vendors.set(p.supplier_id, p.supplier_name);
+        areas.set(p.storage_area_id, p.storage_area_name);
+      }
+    }
+    return {
+      vendorOptions: Array.from(vendors, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name)),
+      areaOptions: Array.from(areas, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name)),
+    };
+  }, [groups]);
+
+  const visibleGroups = useMemo(() => {
+    return groups
+      .filter((g) => !categoryFilter || g.id === categoryFilter)
+      .map((g) => ({
+        ...g,
+        products: g.products.filter(
+          (p) => (!vendorFilter || p.supplier_id === vendorFilter) && (!areaFilter || p.storage_area_id === areaFilter)
+        ),
+      }))
+      .filter((g) => g.products.length > 0);
+  }, [groups, categoryFilter, vendorFilter, areaFilter]);
+
   const filledCount = Object.values(qty).filter((v) => v.each.trim() || v.cases.trim() || v.middle?.trim()).length;
 
   function updateNewItem(key: string, field: keyof ReturnType<typeof blankNewItem>, value: string) {
@@ -126,6 +160,9 @@ export function MonthEndForm({
               setLocationId(e.target.value);
               setQty({});
               setOpenArea(null);
+              setCategoryFilter("");
+              setVendorFilter("");
+              setAreaFilter("");
             }}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           >
@@ -166,6 +203,54 @@ export function MonthEndForm({
         <p className="text-sm text-gray-500">Select a location to begin.</p>
       ) : (
         <>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <label className="block text-sm text-gray-600">
+              Category
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">All categories</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm text-gray-600">
+              Vendor
+              <select
+                value={vendorFilter}
+                onChange={(e) => setVendorFilter(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">All vendors</option>
+                {vendorOptions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm text-gray-600">
+              Storage Area
+              <select
+                value={areaFilter}
+                onChange={(e) => setAreaFilter(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">All storage areas</option>
+                {areaOptions.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-gray-500">
               {MONTH_NAMES[month - 1]} {year} — physical count
@@ -173,7 +258,9 @@ export function MonthEndForm({
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-500">{filledCount} item{filledCount === 1 ? "" : "s"} entered</span>
               <a
-                href={`/api/month-end/pdf?location=${locationId}&year=${year}&month=${month}`}
+                href={`/api/month-end/pdf?location=${locationId}&year=${year}&month=${month}${
+                  categoryFilter ? `&category=${categoryFilter}` : ""
+                }${vendorFilter ? `&vendor=${vendorFilter}` : ""}${areaFilter ? `&storage_area=${areaFilter}` : ""}`}
                 className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
               >
                 Download PDF
@@ -182,7 +269,7 @@ export function MonthEndForm({
           </div>
 
           <div className="space-y-3">
-            {groups.map((group) => {
+            {visibleGroups.map((group) => {
               const isOpen = openArea === group.id;
               const groupFilled = group.products.filter(
                 (p) => qty[p.id]?.each.trim() || qty[p.id]?.cases.trim() || qty[p.id]?.middle?.trim()
@@ -195,9 +282,7 @@ export function MonthEndForm({
                     onClick={() => setOpenArea(isOpen ? null : group.id)}
                     className="flex w-full items-center justify-between px-4 py-3 text-left"
                   >
-                    <span className="font-medium">
-                      {group.code} — {group.name}
-                    </span>
+                    <span className="font-medium">{group.name}</span>
                     <span className="text-sm text-gray-400">
                       {groupFilled}/{group.products.length} {isOpen ? "▲" : "▼"}
                     </span>
@@ -217,8 +302,10 @@ export function MonthEndForm({
                 </div>
               );
             })}
-            {!groups.length && (
-              <p className="text-sm text-gray-500">No products are assigned to this location.</p>
+            {!visibleGroups.length && (
+              <p className="text-sm text-gray-500">
+                {groups.length ? "No products match these filters." : "No products are assigned to this location."}
+              </p>
             )}
           </div>
 
