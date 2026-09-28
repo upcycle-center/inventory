@@ -190,11 +190,14 @@ export interface Supplier {
   id: string;
   name: string;
   account_number: string | null;
-  representative_name: string | null;
+  representative_first_name: string | null;
+  representative_last_name: string | null;
   representative_email: string | null;
   representative_phone: string | null;
   website: string | null;
-  billing_name: string | null;
+  office_phone: string | null;
+  billing_first_name: string | null;
+  billing_last_name: string | null;
   billing_email: string | null;
   billing_phone: string | null;
   delivery_schedule: string | null;

@@ -31,27 +31,61 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
         <input type="hidden" name="id" value={supplier.id} />
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm text-gray-600">
-            Name
+            Company
             <input name="name" defaultValue={supplier.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm text-gray-600">
-            Account #
+            Acct #
             <input name="account_number" defaultValue={supplier.account_number ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </label>
         </div>
 
-        <p className="mt-2 text-sm font-medium">Representative</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm text-gray-600">
-            Name
+            Website
+            <input name="website" defaultValue={supplier.website ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+          <label className="text-sm text-gray-600">
+            Office Number
             <input
-              name="representative_name"
-              defaultValue={supplier.representative_name ?? ""}
+              name="office_phone"
+              defaultValue={supplier.office_phone ?? ""}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+
+        <p className="mt-2 text-sm font-medium">Acct Rep</p>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm text-gray-600">
+            First Name
+            <input
+              name="representative_first_name"
+              defaultValue={supplier.representative_first_name ?? ""}
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </label>
           <label className="text-sm text-gray-600">
-            Phone
+            Last Name
+            <input
+              name="representative_last_name"
+              defaultValue={supplier.representative_last_name ?? ""}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm text-gray-600">
+            Email
+            <input
+              name="representative_email"
+              type="email"
+              defaultValue={supplier.representative_email ?? ""}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            Mobile
             <input
               name="representative_phone"
               defaultValue={supplier.representative_phone ?? ""}
@@ -59,33 +93,38 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
             />
           </label>
         </div>
-        <label className="text-sm text-gray-600">
-          Email
-          <input
-            name="representative_email"
-            type="email"
-            defaultValue={supplier.representative_email ?? ""}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
 
-        <label className="text-sm text-gray-600">
-          Website
-          <input name="website" defaultValue={supplier.website ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
-
-        <p className="mt-2 text-sm font-medium">Billing</p>
+        <p className="mt-2 text-sm font-medium">Billing Contact</p>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm text-gray-600">
-            Name
+            First Name
             <input
-              name="billing_name"
-              defaultValue={supplier.billing_name ?? ""}
+              name="billing_first_name"
+              defaultValue={supplier.billing_first_name ?? ""}
               className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </label>
           <label className="text-sm text-gray-600">
-            Phone
+            Last Name
+            <input
+              name="billing_last_name"
+              defaultValue={supplier.billing_last_name ?? ""}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="text-sm text-gray-600">
+            Email
+            <input
+              name="billing_email"
+              type="email"
+              defaultValue={supplier.billing_email ?? ""}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            Mobile
             <input
               name="billing_phone"
               defaultValue={supplier.billing_phone ?? ""}
@@ -93,15 +132,6 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
             />
           </label>
         </div>
-        <label className="text-sm text-gray-600">
-          Email
-          <input
-            name="billing_email"
-            type="email"
-            defaultValue={supplier.billing_email ?? ""}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
 
         <label className="text-sm text-gray-600">
           Delivery Schedule

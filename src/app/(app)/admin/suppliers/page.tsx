@@ -31,17 +31,23 @@ export default async function AdminSuppliersPage() {
         className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
       >
         <p className="col-span-2 text-sm font-medium">Add a supplier</p>
-        <input name="name" placeholder="Name" required className="col-span-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="representative_name" placeholder="Representative name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="representative_phone" placeholder="Representative phone" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="name" placeholder="Company" required className="col-span-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="representative_first_name" placeholder="Acct Rep First Name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="representative_last_name" placeholder="Acct Rep Last Name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
         <input
           name="representative_email"
           type="email"
-          placeholder="Representative email"
-          className="col-span-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          placeholder="Acct Rep Email"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+        <input
+          name="representative_phone"
+          placeholder="Acct Rep Mobile"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <p className="col-span-2 text-xs text-gray-400">
-          Account #, Website, Billing contact, Delivery schedule, and Logistics notes can be added after saving.
+          Account #, Website, Office Number, Billing contact, Delivery schedule, and Logistics notes can be added
+          after saving.
         </p>
         <button type="submit" className="col-span-2 w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add supplier
@@ -66,7 +72,13 @@ export default async function AdminSuppliersPage() {
                 </Link>
               </td>
               <td className="py-2 text-gray-500">
-                {[s.representative_name, s.representative_email, s.representative_phone].filter(Boolean).join(" · ") || "—"}
+                {[
+                  [s.representative_first_name, s.representative_last_name].filter(Boolean).join(" ") || null,
+                  s.representative_email,
+                  s.representative_phone,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
               </td>
               <td className="py-2">
                 {s.needs_review ? (
