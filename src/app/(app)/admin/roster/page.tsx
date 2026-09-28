@@ -187,7 +187,12 @@ export default async function AdminRosterPage() {
                           </span>
                         );
                       }
-                      const inCertification = !missingCert;
+                      // Once someone has ever been certified, an expired
+                      // certification still reads as "Certification" (needs
+                      // renewal), not a regression all the way back to
+                      // Orientation -- that's reserved for never having been
+                      // certified at all when their role requires one.
+                      const inCertification = s.certified || !requiredCertLabel;
                       return (
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
