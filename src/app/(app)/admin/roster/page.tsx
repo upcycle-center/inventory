@@ -140,8 +140,6 @@ export default async function AdminRosterPage() {
               <th className="pb-2 pr-3">Cover Role</th>
               <th className="pb-2 pr-3">Phone</th>
               <th className="pb-2 pr-3">Email</th>
-              <th className="pb-2 pr-3">Certified</th>
-              <th className="pb-2 pr-3">Ready to Work</th>
               <th className="pb-2 pr-3">Status</th>
               <th className="pb-2"></th>
             </tr>
@@ -165,26 +163,32 @@ export default async function AdminRosterPage() {
                   <td className="py-2 pr-3 text-gray-500">{s.phone ?? "—"}</td>
                   <td className="py-2 pr-3 text-gray-500">{s.email ?? "—"}</td>
                   <td className="py-2 pr-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        s.certified && !expired ? "bg-green-100 text-green-700" : missingCert ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-500"
-                      }`}
-                      title={requiredCertLabel ? `Requires ${requiredCertLabel}` : undefined}
-                    >
-                      {expired ? "Expired" : s.certified ? "Certified" : "Not yet"}
-                      {requiredCertLabel ? ` (${requiredCertLabel})` : ""}
-                    </span>
+                    {(() => {
+                      if (!s.active) {
+                        return (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                            <span className="h-2 w-2 rounded-full bg-gray-400" />
+                            Inactive
+                          </span>
+                        );
+                      }
+                      const reasons: string[] = [];
+                      if (missingCert) reasons.push(expired ? `${requiredCertLabel} expired` : `Missing ${requiredCertLabel}`);
+                      if (!s.ready_to_work) reasons.push("Not marked ready to work");
+                      const clearedToWork = !reasons.length;
+                      return (
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            clearedToWork ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                          }`}
+                          title={reasons.join(" · ") || undefined}
+                        >
+                          <span className={`h-2 w-2 rounded-full ${clearedToWork ? "bg-green-500" : "bg-amber-500"}`} />
+                          {clearedToWork ? "Cleared to work" : reasons.join(" · ")}
+                        </span>
+                      );
+                    })()}
                   </td>
-                  <td className="py-2 pr-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        s.ready_to_work ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {s.ready_to_work ? "Ready" : "Pending"}
-                    </span>
-                  </td>
-                  <td className="py-2 pr-3 text-gray-500">{s.active ? "Active" : "Inactive"}</td>
                   <td className="py-2">
                     <Link href={`/admin/month-end-reports/call-outs?staff=${s.id}`} className="text-xs text-brand hover:underline">
                       View log →
@@ -195,7 +199,7 @@ export default async function AdminRosterPage() {
             })}
             {!staff.length && (
               <tr>
-                <td colSpan={10} className="py-4 text-gray-400">
+                <td colSpan={8} className="py-4 text-gray-400">
                   No staff added yet.
                 </td>
               </tr>
