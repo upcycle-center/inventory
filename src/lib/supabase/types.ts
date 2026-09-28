@@ -203,7 +203,10 @@ export interface Supplier {
   billing_last_name: string | null;
   billing_email: string | null;
   billing_phone: string | null;
-  delivery_schedule: string | null;
+  // Three-letter day abbreviations (Sun..Sat) -- which day(s) an order
+  // needs to be placed by, and which day(s) it actually arrives.
+  order_by_days: string[];
+  delivery_days: string[];
   logistics_notes: string | null;
   // True for a supplier auto-created by a bulk product CSV upload whose
   // supplier name didn't match an existing one -- cleared once someone

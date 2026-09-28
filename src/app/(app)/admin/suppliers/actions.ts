@@ -24,7 +24,8 @@ export async function createSupplier(formData: FormData): Promise<{ error: strin
     billing_last_name: field("billing_last_name"),
     billing_phone: field("billing_phone"),
     billing_email: field("billing_email"),
-    delivery_schedule: field("delivery_schedule"),
+    order_by_days: formData.getAll("order_by_days").map(String),
+    delivery_days: formData.getAll("delivery_days").map(String),
     logistics_notes: field("logistics_notes"),
   });
 
@@ -57,7 +58,8 @@ export async function updateSupplier(formData: FormData) {
       billing_last_name: field("billing_last_name"),
       billing_phone: field("billing_phone"),
       billing_email: field("billing_email"),
-      delivery_schedule: field("delivery_schedule"),
+      order_by_days: formData.getAll("order_by_days").map(String),
+      delivery_days: formData.getAll("delivery_days").map(String),
       logistics_notes: field("logistics_notes"),
     })
     .eq("id", id);

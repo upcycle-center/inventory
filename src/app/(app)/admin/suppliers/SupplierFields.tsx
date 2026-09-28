@@ -1,5 +1,28 @@
 import type { Supplier } from "@/lib/supabase/types";
 
+const DAYS = [
+  { value: "Sun", label: "Su" },
+  { value: "Mon", label: "M" },
+  { value: "Tue", label: "Tu" },
+  { value: "Wed", label: "W" },
+  { value: "Thu", label: "Th" },
+  { value: "Fri", label: "F" },
+  { value: "Sat", label: "Sa" },
+];
+
+function DayCheckboxes({ name, defaultChecked }: { name: string; defaultChecked: string[] }) {
+  return (
+    <div className="flex gap-3">
+      {DAYS.map((d) => (
+        <label key={d.value} className="flex flex-col items-center gap-1 text-xs text-gray-600">
+          <input type="checkbox" name={name} value={d.value} defaultChecked={defaultChecked.includes(d.value)} className="h-4 w-4" />
+          {d.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
 // Shared by the New and Edit supplier pages -- same fields, same order,
 // just a different set of defaultValues (none for a brand-new supplier).
 export function SupplierFields({ supplier }: { supplier?: Partial<Supplier> }) {
@@ -113,16 +136,19 @@ export function SupplierFields({ supplier }: { supplier?: Partial<Supplier> }) {
         </label>
       </div>
 
-      <label className="text-sm text-gray-600">
-        Delivery Schedule
-        <textarea
-          name="delivery_schedule"
-          defaultValue={supplier?.delivery_schedule ?? ""}
-          rows={2}
-          placeholder="e.g. Mondays and Thursdays, order by noon the day before"
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-      </label>
+      <div>
+        <p className="mb-1 text-sm font-medium">Delivery Schedule</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="mb-1 text-xs text-gray-500">Order by</p>
+            <DayCheckboxes name="order_by_days" defaultChecked={supplier?.order_by_days ?? []} />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-gray-500">Deliver on</p>
+            <DayCheckboxes name="delivery_days" defaultChecked={supplier?.delivery_days ?? []} />
+          </div>
+        </div>
+      </div>
       <label className="text-sm text-gray-600">
         Logistics Notes
         <textarea

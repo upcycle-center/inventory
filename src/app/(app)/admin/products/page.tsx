@@ -5,6 +5,7 @@ import { PRODUCT_TYPE_OPTIONS, isProductTypeValue } from "@/lib/productType";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { CaseSizeLabel } from "@/components/CaseSizeLabel";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { DownloadIcon } from "@/components/DownloadIcon";
 
 export default async function AdminProductsPage({
   searchParams,
@@ -42,8 +43,9 @@ export default async function AdminProductsPage({
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Products</h1>
         <div className="flex items-center gap-4">
-          <Link href="/admin/products/bulk-upload" className="text-sm text-brand hover:underline">
-            Data Map CSV
+          <Link href="/admin/products/bulk-upload" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
+            CSV
+            <DownloadIcon />
           </Link>
           <Link href="/admin/products/cost-log" className="text-sm text-brand hover:underline">
             Cost variance log
