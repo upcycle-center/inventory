@@ -39,6 +39,14 @@ export default async function NewProductPage({
   const defaultProductType =
     from?.product_type ?? (searchParams.type && isProductTypeValue(searchParams.type) ? searchParams.type : "chargeable");
 
+  // Non-Chargeable – Bottles (liquor/wine) always lives in the Liquor
+  // Room's Dry Storage area with a reorder threshold of 12 -- pre-select
+  // that here so the form shows the default before saving; createProduct
+  // also enforces it server-side regardless of what's checked.
+  const isNewNonChargeableBottle = !from && defaultProductType === "non_chargeable_bottle";
+  const liquorRoomId = ((locations as Location[] | null) ?? []).find((l) => l.yellow_dog_code === "100")?.id;
+  const dryStorageAreaId = areas.find((a) => a.code === "DRY")?.id ?? defaultAreaId;
+
   return (
     <div>
       <Breadcrumbs
@@ -93,7 +101,9 @@ export default async function NewProductPage({
           <p className="mb-3 text-sm text-gray-500">
             {from
               ? "Pre-checked to match the source product — review and adjust before saving."
-              : "Every location is checked (stocked) by default. Uncheck a location if this product isn't stocked there."}
+              : isNewNonChargeableBottle
+                ? "Non-Chargeable – Bottles default to Liquor Room / Dry Storage with a reorder threshold of 12 — adjust under Admin → Locations after saving if needed."
+                : "Every location is checked (stocked) by default. Uncheck a location if this product isn't stocked there."}
           </p>
           <table className="w-full text-left text-sm">
             <thead className="text-gray-500">
@@ -112,7 +122,13 @@ export default async function NewProductPage({
                       <input
                         type="checkbox"
                         name={`sold_${l.id}`}
-                        defaultChecked={from ? storageAreaIdByLocationId.has(l.id) : true}
+                        defaultChecked={
+                          from
+                            ? storageAreaIdByLocationId.has(l.id)
+                            : isNewNonChargeableBottle
+                              ? l.id === liquorRoomId
+                              : true
+                        }
                         className="h-4 w-4"
                       />
                     </td>
@@ -122,7 +138,10 @@ export default async function NewProductPage({
                     <td className="py-2">
                       <select
                         name={`area_${l.id}`}
-                        defaultValue={existingAreaId ?? defaultAreaId}
+                        defaultValue={
+                          existingAreaId ??
+                          (isNewNonChargeableBottle && l.id === liquorRoomId ? dryStorageAreaId : defaultAreaId)
+                        }
                         className="rounded-md border border-gray-300 px-2 py-1 text-sm"
                       >
                         {areas.map((a) => (

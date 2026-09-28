@@ -107,6 +107,30 @@ export async function createProduct(formData: FormData): Promise<{ error: string
     await supabase.from("location_products").insert(locationProductRows);
   }
 
+  // Non-Chargeable – Bottles (liquor/wine) always lives in the Liquor
+  // Room's Dry Storage area with a standard reorder threshold -- applied
+  // automatically so it doesn't need re-entering on every new bottle.
+  if (productType === "non_chargeable_bottle") {
+    const [{ data: liquorRoom }, { data: dryStorage }] = await Promise.all([
+      supabase.from("locations").select("id").eq("yellow_dog_code", "100").maybeSingle(),
+      supabase.from("storage_areas").select("id").eq("code", "DRY").maybeSingle(),
+    ]);
+    if (liquorRoom && dryStorage) {
+      await supabase
+        .from("location_products")
+        .upsert(
+          { location_id: liquorRoom.id, product_id: product.id, storage_area_id: dryStorage.id },
+          { onConflict: "location_id,product_id" }
+        );
+      await supabase
+        .from("inventory_thresholds")
+        .upsert(
+          { location_id: liquorRoom.id, product_id: product.id, reorder_threshold: 12 },
+          { onConflict: "product_id,location_id" }
+        );
+    }
+  }
+
   revalidatePath("/admin/products");
   redirect(`/admin/products?type=${productType}`);
 }
