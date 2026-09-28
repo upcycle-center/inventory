@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
 import { createSupplier, deleteSupplier, markSupplierReviewed } from "./actions";
@@ -23,15 +24,25 @@ export default async function AdminSuppliersPage() {
         </p>
       )}
 
-      <ActionForm action={createSupplier} savedLabel="Supplier added" className="mb-8 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
-        <p className="text-sm font-medium">Add a supplier</p>
-        <input name="name" placeholder="Name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <div className="grid grid-cols-2 gap-3">
-          <input name="contact_name" placeholder="Contact name" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          <input name="contact_phone" placeholder="Contact phone" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </div>
-        <input name="contact_email" type="email" placeholder="Contact email" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+      <ActionForm
+        action={createSupplier}
+        savedLabel="Supplier added"
+        className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
+      >
+        <p className="col-span-2 text-sm font-medium">Add a supplier</p>
+        <input name="name" placeholder="Name" required className="col-span-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="representative_name" placeholder="Representative name" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input name="representative_phone" placeholder="Representative phone" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input
+          name="representative_email"
+          type="email"
+          placeholder="Representative email"
+          className="col-span-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+        <p className="col-span-2 text-xs text-gray-400">
+          Account #, Website, Billing contact, Delivery schedule, and Logistics notes can be added after saving.
+        </p>
+        <button type="submit" className="col-span-2 w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add supplier
         </button>
       </ActionForm>
@@ -48,9 +59,13 @@ export default async function AdminSuppliersPage() {
         <tbody>
           {(suppliers as Supplier[] | null)?.map((s) => (
             <tr key={s.id} className="border-t border-gray-100">
-              <td className="py-2">{s.name}</td>
+              <td className="py-2">
+                <Link href={`/admin/suppliers/${s.id}`} className="font-medium text-brand hover:underline">
+                  {s.name}
+                </Link>
+              </td>
               <td className="py-2 text-gray-500">
-                {[s.contact_name, s.contact_email, s.contact_phone].filter(Boolean).join(" · ") || "—"}
+                {[s.representative_name, s.representative_email, s.representative_phone].filter(Boolean).join(" · ") || "—"}
               </td>
               <td className="py-2">
                 {s.needs_review ? (
