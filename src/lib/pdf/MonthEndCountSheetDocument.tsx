@@ -1,11 +1,31 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
+  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
+  titleCol: { flex: 1, paddingRight: 12 },
   title: { fontSize: 16, marginBottom: 2, fontFamily: "Helvetica-Bold" },
-  subtitle: { fontSize: 14, marginBottom: 12, color: "#555555" },
+  subtitle: { fontSize: 14, marginBottom: 4, color: "#555555" },
+  qrRow: { flexDirection: "row", alignItems: "flex-start" },
+  qrImage: { width: 80, height: 80, marginLeft: 8 },
+  qrStepsBox: {
+    width: 178,
+    borderWidth: 1,
+    borderColor: "#000000",
+    padding: 6,
+  },
+  qrStepsTitle: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    textDecoration: "underline",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  qrStepLine: { fontSize: 7, lineHeight: 1.5 },
+  qrStepEmphasis: { fontFamily: "Helvetica-Bold", textDecoration: "underline" },
   headerBox: {
     flexDirection: "row",
+    marginTop: 12,
     marginBottom: 16,
     paddingBottom: 8,
     borderBottomWidth: 1,
@@ -21,6 +41,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     backgroundColor: "#f0f0f0",
     padding: 4,
+  },
+  vendorTitle: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    marginTop: 8,
+    marginBottom: 3,
+    color: "#555555",
   },
   thRow: {
     flexDirection: "row",
@@ -72,6 +99,44 @@ const styles = StyleSheet.create({
 type MonthEndProduct = { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean };
 type MonthEndCategory = { name: string; products: MonthEndProduct[] };
 
+function QrBox({ qrCodeDataUri, generic }: { qrCodeDataUri: string | null; generic?: boolean }) {
+  if (!qrCodeDataUri) return null;
+  return (
+    <View style={styles.qrRow}>
+      <View style={styles.qrStepsBox}>
+        <Text style={styles.qrStepsTitle}>{generic ? "SCAN QR TO ENTER THIS COUNT" : "SCAN QR FOR LOCATION ACCESS"}</Text>
+        {generic ? (
+          <>
+            <Text style={styles.qrStepLine}>
+              1) Opens the <Text style={styles.qrStepEmphasis}>MONTH-END COUNT</Text> entry form.
+            </Text>
+            <Text style={styles.qrStepLine}>
+              2) SELECT the <Text style={styles.qrStepEmphasis}>LOCATION</Text> this sheet is for.
+            </Text>
+            <Text style={styles.qrStepLine}>3) Enter quantities from this sheet, then SUBMIT.</Text>
+            <Text style={styles.qrStepLine}>
+              4) RETURN <Text style={styles.qrStepEmphasis}>PAPER COPY</Text> to the office.
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.qrStepLine}>Opens this location&apos;s check-in hub.</Text>
+            <Text style={styles.qrStepLine}>
+              1) Select <Text style={styles.qrStepEmphasis}>MONTH-END COUNT</Text> from there.
+            </Text>
+            <Text style={styles.qrStepLine}>2) Enter quantities from this sheet, then SUBMIT.</Text>
+            <Text style={styles.qrStepLine}>
+              3) RETURN <Text style={styles.qrStepEmphasis}>PAPER COPY</Text> to the office.
+            </Text>
+          </>
+        )}
+      </View>
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/alt-text -- react-pdf's Image has no alt prop */}
+      <Image src={qrCodeDataUri} style={styles.qrImage} />
+    </View>
+  );
+}
+
 // The blank worksheet page for one location -- exported on its own so a
 // combined all-locations PDF can render one per location inside a single
 // Document, instead of duplicating this layout.
@@ -80,21 +145,28 @@ export function MonthEndCountSheetPage({
   yellowDogCode,
   monthLabel,
   categories,
+  qrCodeDataUri = null,
   newItemRows = 8,
 }: {
   locationName: string;
   yellowDogCode: string | null;
   monthLabel: string;
   categories: MonthEndCategory[];
+  qrCodeDataUri?: string | null;
   newItemRows?: number;
 }) {
   return (
     <Page size="LETTER" style={styles.page}>
-      <Text style={styles.title}>Month-End Count Sheet</Text>
-      <Text style={styles.subtitle}>
-        {yellowDogCode ? `${yellowDogCode} — ` : ""}
-        {locationName} · {monthLabel}
-      </Text>
+      <View style={styles.topRow}>
+        <View style={styles.titleCol}>
+          <Text style={styles.title}>Month-End Count Sheet</Text>
+          <Text style={styles.subtitle}>
+            {yellowDogCode ? `${yellowDogCode} — ` : ""}
+            {locationName} · {monthLabel}
+          </Text>
+        </View>
+        <QrBox qrCodeDataUri={qrCodeDataUri} />
+      </View>
 
       <View style={styles.headerBox}>
         <View style={styles.headerCol}>
@@ -165,6 +237,7 @@ export function MonthEndCountSheetDocument(props: {
   yellowDogCode: string | null;
   monthLabel: string;
   categories: MonthEndCategory[];
+  qrCodeDataUri?: string | null;
   newItemRows?: number;
 }) {
   return (
@@ -182,7 +255,7 @@ export function AllMonthEndCountSheetsDocument({
   locations,
 }: {
   monthLabel: string;
-  locations: { locationName: string; yellowDogCode: string | null; categories: MonthEndCategory[] }[];
+  locations: { locationName: string; yellowDogCode: string | null; categories: MonthEndCategory[]; qrCodeDataUri: string | null }[];
 }) {
   return (
     <Document>
@@ -193,7 +266,78 @@ export function AllMonthEndCountSheetsDocument({
           yellowDogCode={loc.yellowDogCode}
           monthLabel={monthLabel}
           categories={loc.categories}
+          qrCodeDataUri={loc.qrCodeDataUri}
         />
+      ))}
+    </Document>
+  );
+}
+
+type VendorGroup = { name: string; products: MonthEndProduct[] };
+type TypeSection = { typeLabel: string; vendors: VendorGroup[] };
+
+// The generic/blank sheet -- not tied to any one location, so instead of
+// Category sections it's organized Product Type -> Vendor -> Product
+// (alphabetical), one Type per page so a clear break separates each as
+// they're handed to different people/stations to count.
+export function GenericMonthEndCountSheetDocument({
+  monthLabel,
+  typeSections,
+  qrCodeDataUri = null,
+}: {
+  monthLabel: string;
+  typeSections: TypeSection[];
+  qrCodeDataUri?: string | null;
+}) {
+  return (
+    <Document>
+      {typeSections.map((section) => (
+        <Page key={section.typeLabel} size="LETTER" style={styles.page}>
+          <View style={styles.topRow}>
+            <View style={styles.titleCol}>
+              <Text style={styles.title}>Month-End Count Sheet</Text>
+              <Text style={styles.subtitle}>
+                Blank — {section.typeLabel} · {monthLabel}
+              </Text>
+            </View>
+            <QrBox qrCodeDataUri={qrCodeDataUri} generic />
+          </View>
+
+          <View style={styles.headerBox}>
+            <View style={styles.headerCol}>
+              <Text style={styles.headerLabel}>LOCATION</Text>
+              <View style={styles.blankLine} />
+            </View>
+            <View style={styles.headerCol}>
+              <Text style={styles.headerLabel}>COUNTED BY</Text>
+              <View style={styles.blankLine} />
+            </View>
+            <View style={styles.headerCol}>
+              <Text style={styles.headerLabel}>DATE</Text>
+              <View style={styles.blankLine} />
+            </View>
+          </View>
+
+          {section.vendors.map((vendor) => (
+            <View key={vendor.name}>
+              <Text style={styles.vendorTitle}>{vendor.name}</Text>
+              <View style={styles.thRow}>
+                <Text style={styles.colProduct}>Product</Text>
+                <Text style={styles.colBox}>Cases</Text>
+                <Text style={styles.colBox}>Middle Unit</Text>
+                <Text style={styles.colBox}>Each</Text>
+              </View>
+              {vendor.products.map((p) => (
+                <View key={p.sku} style={styles.tr}>
+                  <Text style={styles.colProduct}>{p.description}</Text>
+                  <Text style={styles.colBox}></Text>
+                  <Text style={styles.colBox}>{p.middle_unit_label ? `(${p.middle_unit_label})` : ""}</Text>
+                  <Text style={styles.colBox}>{p.each_countable === false ? "N/A" : ""}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </Page>
       ))}
     </Document>
   );

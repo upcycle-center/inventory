@@ -14,3 +14,11 @@ export async function checkinQrDataUri(origin: string, locationId: string, width
   const buffer = await checkinQrBuffer(origin, locationId, width);
   return `data:image/png;base64,${buffer.toString("base64")}`;
 }
+
+// For a QR that isn't tied to a specific location -- e.g. a blank/generic
+// count sheet's QR, which sends whoever scans it to the entry form itself
+// so they can pick which location the sheet is for.
+export async function urlQrDataUri(url: string, width = 240): Promise<string> {
+  const buffer = await QRCode.toBuffer(url, { type: "png", width, margin: 2 });
+  return `data:image/png;base64,${buffer.toString("base64")}`;
+}

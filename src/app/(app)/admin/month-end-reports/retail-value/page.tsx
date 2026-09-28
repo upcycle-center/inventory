@@ -52,6 +52,13 @@ export default async function MonthEndRetailValuePage({ searchParams }: { search
             Count Sheet
             <DownloadIcon />
           </Link>
+          <Link
+            href={`/api/month-end/pdf/blank?year=${params.year}&month=${params.month}`}
+            className="inline-flex items-center gap-1 text-brand hover:underline"
+          >
+            Blank Sheet
+            <DownloadIcon />
+          </Link>
         </div>
       </div>
       <p className="mb-6 text-sm text-gray-500">

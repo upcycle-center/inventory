@@ -5,6 +5,7 @@ import { sortCategoryGroups } from "@/lib/productCategories";
 import { AllMonthEndCountSheetsDocument } from "@/lib/pdf/MonthEndCountSheetDocument";
 import { exportFilename } from "@/lib/exportFilename";
 import { easternDateString } from "@/lib/easternTime";
+import { checkinQrDataUri } from "@/lib/checkinQr";
 
 const UNCATEGORIZED = { id: "uncategorized", name: "Uncategorized" };
 
@@ -51,18 +52,26 @@ export async function GET(request: Request) {
   }
 
   const monthLabel = new Date(Date.UTC(year, month - 1, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  const { origin } = new URL(request.url);
 
-  const locationPages = ((locations as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? [])
-    .map((location) => {
-      const categoryMap = categoryMapByLocationId.get(location.id);
-      if (!categoryMap || !categoryMap.size) return null;
-      const categories = sortCategoryGroups(Array.from(categoryMap.entries()).map(([id, e]) => ({ id, ...e }))).map((c) => ({
-        name: c.name,
-        products: c.products.slice().sort((a, b) => a.description.localeCompare(b.description)),
-      }));
-      return { locationName: location.name, yellowDogCode: location.yellow_dog_code, categories };
-    })
-    .filter((l): l is NonNullable<typeof l> => l !== null);
+  const locationPages = (
+    await Promise.all(
+      ((locations as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? []).map(async (location) => {
+        const categoryMap = categoryMapByLocationId.get(location.id);
+        if (!categoryMap || !categoryMap.size) return null;
+        const categories = sortCategoryGroups(Array.from(categoryMap.entries()).map(([id, e]) => ({ id, ...e }))).map((c) => ({
+          name: c.name,
+          products: c.products.slice().sort((a, b) => a.description.localeCompare(b.description)),
+        }));
+        return {
+          locationName: location.name,
+          yellowDogCode: location.yellow_dog_code,
+          categories,
+          qrCodeDataUri: await checkinQrDataUri(origin, location.id),
+        };
+      })
+    )
+  ).filter((l): l is NonNullable<typeof l> => l !== null);
 
   if (!locationPages.length) return new Response("No products assigned to any active location", { status: 404 });
 

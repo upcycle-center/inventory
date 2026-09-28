@@ -5,6 +5,7 @@ import { sortCategoryGroups } from "@/lib/productCategories";
 import { MonthEndCountSheetDocument } from "@/lib/pdf/MonthEndCountSheetDocument";
 import { monthEndCountSheetFilename } from "@/lib/exportFilename";
 import { easternDateString } from "@/lib/easternTime";
+import { checkinQrDataUri } from "@/lib/checkinQr";
 
 const UNCATEGORIZED = { id: "uncategorized", name: "Uncategorized" };
 
@@ -67,6 +68,8 @@ export async function GET(request: Request) {
   }));
 
   const monthLabel = new Date(Date.UTC(year, month - 1, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  const { origin } = new URL(request.url);
+  const qrCodeDataUri = await checkinQrDataUri(origin, locationId);
 
   const buffer = await renderToBuffer(
     (
@@ -75,6 +78,7 @@ export async function GET(request: Request) {
         yellowDogCode={location.yellow_dog_code}
         monthLabel={monthLabel}
         categories={categories}
+        qrCodeDataUri={qrCodeDataUri}
       />
     ) as any
   );
