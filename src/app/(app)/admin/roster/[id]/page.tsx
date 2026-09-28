@@ -115,18 +115,17 @@ export default async function StaffDetailPage({ params }: { params: { id: string
                 name="certification_expires_at"
                 type="date"
                 defaultValue={staffMember.certification_expires_at ?? ""}
-                readOnly={hasAutoExpiration}
-                className={`mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm ${
-                  hasAutoExpiration ? "bg-gray-50 text-gray-500" : ""
-                }`}
+                readOnly
+                className="mt-1 w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-500"
               />
             </label>
-            {hasAutoExpiration && (
-              <p className="mt-1 text-xs text-gray-400">
-                Auto-calculated: {governingType!.name} is valid for {formatValidityMonths(governingType!.validity_months!)}{" "}
-                from the issue date above.
-              </p>
-            )}
+            <p className="mt-1 text-xs text-gray-400">
+              {hasAutoExpiration
+                ? `Auto-calculated: ${governingType!.name} is valid for ${formatValidityMonths(
+                    governingType!.validity_months!
+                  )} from the issue date above.`
+                : "Set automatically once a required certification type with a validity period is on file for this role."}
+            </p>
           </div>
         </div>
 
