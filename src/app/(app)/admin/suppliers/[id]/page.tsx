@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Supplier } from "@/lib/supabase/types";
@@ -41,6 +42,9 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
         >
           Save
         </button>
+        <Link href="/admin/suppliers" className="w-fit rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300">
+          Cancel
+        </Link>
         <form action={deleteSupplier}>
           <input type="hidden" name="id" value={supplier.id} />
           <button type="submit" className="w-fit rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">

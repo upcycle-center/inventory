@@ -29,41 +29,35 @@ export default async function AdminSuppliersPage() {
       )}
 
       <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-        <table className="w-full table-fixed text-left text-sm">
+        <table className="w-full whitespace-nowrap text-left text-sm">
           <thead className="border-b border-gray-100 text-xs font-medium uppercase tracking-wide text-gray-500">
             <tr>
-              <th className="w-[20%] px-4 py-3">Company</th>
-              <th className="w-[10%] px-4 py-3">Acct #</th>
-              <th className="w-[16%] px-4 py-3">Acct Rep</th>
-              <th className="w-[22%] px-4 py-3">Email</th>
-              <th className="w-[12%] px-4 py-3">Mobile</th>
-              <th className="w-[10%] px-4 py-3">Status</th>
-              <th className="w-[10%] px-4 py-3"></th>
+              <th className="px-4 py-3">Company</th>
+              <th className="px-4 py-3">Acct #</th>
+              <th className="px-4 py-3">Acct Rep</th>
+              <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3">Mobile</th>
+              <th className="px-4 py-3">Website</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody>
             {(suppliers as Supplier[] | null)?.map((s) => (
-              <tr key={s.id} className="border-t border-gray-100 align-top">
+              <tr key={s.id} className="border-t border-gray-100">
                 <td className="px-4 py-3">
                   <Link href={`/admin/suppliers/${s.id}`} className="font-medium text-brand hover:underline">
                     {s.name}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-500">{s.account_number || "—"}</td>
-                <td className="break-words px-4 py-3 text-gray-500">
+                <td className="px-4 py-3 text-gray-500">
                   {[s.representative_first_name, s.representative_last_name].filter(Boolean).join(" ") || "—"}
                 </td>
-                <td className="break-words px-4 py-3 text-gray-500">{s.representative_email || "—"}</td>
+                <td className="px-4 py-3 text-gray-500">{s.representative_email || "—"}</td>
                 <td className="px-4 py-3 text-gray-500">{s.representative_phone || "—"}</td>
-                <td className="px-4 py-3">
-                  {s.needs_review ? (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Needs review</span>
-                  ) : (
-                    <span className="text-gray-300">—</span>
-                  )}
-                </td>
+                <td className="px-4 py-3 text-gray-500">{s.website || "—"}</td>
                 <td className="px-4 py-3 text-right">
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex items-center justify-end gap-3">
                     {s.needs_review && (
                       <form action={markSupplierReviewed}>
                         <input type="hidden" name="id" value={s.id} />

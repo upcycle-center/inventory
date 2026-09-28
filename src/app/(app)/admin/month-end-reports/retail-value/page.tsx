@@ -42,6 +42,9 @@ export default async function MonthEndRetailValuePage({ searchParams }: { search
           <Link href={`/api/month-end-reports/retail-value/pdf?${pdfQuery}`} className="text-brand hover:underline">
             Download PDF
           </Link>
+          <Link href={`/api/month-end/pdf/all?year=${params.year}&month=${params.month}`} className="text-brand hover:underline">
+            Download moEND Count Sheet
+          </Link>
         </div>
       </div>
       <p className="mb-6 text-sm text-gray-500">
