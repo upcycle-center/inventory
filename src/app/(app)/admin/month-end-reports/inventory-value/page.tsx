@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { DownloadIcon } from "@/components/DownloadIcon";
 import { MonthEndReportFilters } from "@/components/MonthEndReportFilters";
 import { MonthEndValueReportView } from "@/components/MonthEndValueReportView";
 import { buildMonthEndValueLines, filterMonthEndValueLines, groupMonthEndValueLines } from "@/lib/monthEndValue";
@@ -33,17 +34,23 @@ export default async function MonthEndInventoryValuePage({ searchParams }: { sea
           { label: "TOT Inventory Value" },
         ]}
       />
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className="text-lg font-semibold">moEND TOT Inventory Value</h1>
-        <div className="flex items-center gap-4 text-sm">
-          <Link href={`/api/month-end-reports/inventory-value/export?${csvQuery}`} className="text-brand hover:underline">
-            Export CSV
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          <Link href={`/api/month-end-reports/inventory-value/export?${csvQuery}`} className="inline-flex items-center gap-1 text-brand hover:underline">
+            CSV
+            <DownloadIcon />
           </Link>
-          <Link href={`/api/month-end-reports/inventory-value/pdf?${pdfQuery}`} className="text-brand hover:underline">
-            Download PDF
+          <Link href={`/api/month-end-reports/inventory-value/pdf?${pdfQuery}`} className="inline-flex items-center gap-1 text-brand hover:underline">
+            PDF
+            <DownloadIcon />
           </Link>
-          <Link href={`/api/month-end/pdf/all?year=${params.year}&month=${params.month}`} className="text-brand hover:underline">
-            Download moEND Count Sheet
+          <Link
+            href={`/api/month-end/pdf/all?year=${params.year}&month=${params.month}`}
+            className="inline-flex items-center gap-1 text-brand hover:underline"
+          >
+            Count Sheet
+            <DownloadIcon />
           </Link>
         </div>
       </div>
