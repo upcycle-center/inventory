@@ -6,7 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import { isProductTypeValue } from "@/lib/productType";
 import { logCostChange } from "@/lib/productCostLog";
 
-export async function updateProduct(formData: FormData) {
+// One combined form/action drives the whole Edit Product page -- core
+// fields, photo, and the per-location Stock/Storage-Area table -- so
+// there's a single Save button instead of two independent ones.
+export async function updateProductAndLocations(formData: FormData) {
   const supabase = createClient();
   const id = String(formData.get("id"));
   const sku = String(formData.get("sku") || "").trim();
@@ -100,28 +103,18 @@ export async function updateProduct(formData: FormData) {
     );
   }
 
-  revalidatePath(`/admin/products/${id}`);
-  revalidatePath("/admin/products");
-}
-
-// One combined form drives all locations at once: a location is "sold
-// here" (shows on that location's count sheet) exactly when its checkbox
-// is checked, which upserts a location_products row with the chosen
-// storage area; unchecked removes the row.
-export async function syncProductLocations(formData: FormData) {
-  const supabase = createClient();
-  const productId = String(formData.get("product_id"));
-  if (!productId) return;
-
+  // A location is "sold here" (shows on that location's count sheet)
+  // exactly when its checkbox is checked, which upserts a
+  // location_products row with the chosen storage area; unchecked
+  // removes the row.
   const { data: locations } = await supabase.from("locations").select("id").eq("active", true);
-
   for (const loc of locations ?? []) {
     const sold = formData.get(`sold_${loc.id}`) === "on";
     const storageAreaId = String(formData.get(`area_${loc.id}`) || "");
 
     if (sold && storageAreaId) {
       await supabase.from("location_products").upsert(
-        { location_id: loc.id, product_id: productId, storage_area_id: storageAreaId },
+        { location_id: loc.id, product_id: id, storage_area_id: storageAreaId },
         { onConflict: "location_id,product_id" }
       );
     } else {
@@ -129,11 +122,12 @@ export async function syncProductLocations(formData: FormData) {
         .from("location_products")
         .delete()
         .eq("location_id", loc.id)
-        .eq("product_id", productId);
+        .eq("product_id", id);
     }
   }
 
-  revalidatePath(`/admin/products/${productId}`);
+  revalidatePath(`/admin/products/${id}`);
+  revalidatePath("/admin/products");
 }
 
 export async function deleteProduct(id: string): Promise<{ error: string } | void> {
