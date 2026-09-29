@@ -1,16 +1,17 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { sortStorageAreas } from "@/lib/storageAreas";
+import { PRODUCT_TYPE_OPTIONS, middleUnitColumnLabel } from "@/lib/productType";
 import { AllMonthEndCountSheetsDocument } from "@/lib/pdf/MonthEndCountSheetDocument";
 import { exportFilename } from "@/lib/exportFilename";
 import { easternDateString } from "@/lib/easternTime";
 import { checkinQrDataUri } from "@/lib/checkinQr";
 
 // One combined blank Month-End Count Sheet covering every active
-// location, each grouped by Storage Area (alphabetical, Other last) --
-// for printing the whole venue's packet at once instead of downloading
-// one location's sheet at a time from /month-end.
+// location, each grouped by Product Type (Chargeable, Non-Chargeable --
+// Bottles, Non-Chargeable -- Mixers, Disposables/Cleaning) then
+// alphabetically -- same grouping as the Blank sheet, for consistency,
+// instead of downloading one location's sheet at a time from /month-end.
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "admin") {
@@ -29,22 +30,22 @@ export async function GET(request: Request) {
     supabase
       .from("location_products")
       .select(
-        "location_id, product:products(sku, description, active, middle_unit_label, each_countable), storage_area:storage_areas(id, code, name)"
+        "location_id, product:products(sku, description, active, middle_unit_label, each_countable, product_type), storage_area:storage_areas(id)"
       )
       .eq("active", true),
   ]);
 
-  const areaMapByLocationId = new Map<
+  const typeMapByLocationId = new Map<
     string,
-    Map<string, { area: { id: string; code: string; name: string }; products: { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean }[] }>
+    Map<string, { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean }[]>
   >();
   for (const row of (locationProducts as any[]) ?? []) {
     if (!row.product?.active || !row.storage_area) continue;
-    const areaMap = areaMapByLocationId.get(row.location_id) ?? new Map();
-    const entry = areaMap.get(row.storage_area.id) ?? { area: row.storage_area, products: [] as any[] };
-    entry.products.push(row.product);
-    areaMap.set(row.storage_area.id, entry);
-    areaMapByLocationId.set(row.location_id, areaMap);
+    const typeMap = typeMapByLocationId.get(row.location_id) ?? new Map();
+    const products = typeMap.get(row.product.product_type) ?? [];
+    products.push(row.product);
+    typeMap.set(row.product.product_type, products);
+    typeMapByLocationId.set(row.location_id, typeMap);
   }
 
   const monthLabel = new Date(Date.UTC(year, month - 1, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -53,19 +54,22 @@ export async function GET(request: Request) {
   const locationPages = (
     await Promise.all(
       ((locations as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? []).map(async (location) => {
-        const areaMap = areaMapByLocationId.get(location.id);
-        if (!areaMap || !areaMap.size) return null;
-        const areas = sortStorageAreas(Array.from(areaMap.values()).map((e) => e.area)).map((area) => {
-          const entry = areaMap.get(area.id)!;
+        const typeMap = typeMapByLocationId.get(location.id);
+        if (!typeMap || !typeMap.size) return null;
+        const typeGroups = PRODUCT_TYPE_OPTIONS.map((t) => {
+          const products = typeMap.get(t.value);
+          if (!products?.length) return null;
           return {
-            name: area.name,
-            products: entry.products.slice().sort((a, b) => a.description.localeCompare(b.description)),
+            name: t.shortLabel,
+            middleUnitLabel: middleUnitColumnLabel(t.value),
+            products: products.slice().sort((a, b) => a.description.localeCompare(b.description)),
           };
-        });
+        }).filter((g): g is NonNullable<typeof g> => g !== null);
+        if (!typeGroups.length) return null;
         return {
           locationName: location.name,
           yellowDogCode: location.yellow_dog_code,
-          areas,
+          typeGroups,
           qrCodeDataUri: await checkinQrDataUri(origin, location.id),
         };
       })

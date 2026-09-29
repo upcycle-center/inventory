@@ -98,7 +98,10 @@ const styles = StyleSheet.create({
 });
 
 type MonthEndProduct = { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean };
-type MonthEndArea = { name: string; products: MonthEndProduct[] };
+// middleUnitLabel is null for a Type with no middle-unit concept
+// (Chargeable, Non-Chargeable -- Mixers) -- the column is dropped rather
+// than shown empty. Bottles/Disposables rename it to Partials/Pack-Sleeve.
+type MonthEndTypeGroup = { name: string; middleUnitLabel: string | null; products: MonthEndProduct[] };
 
 function QrBox({ qrCodeDataUri, generic }: { qrCodeDataUri: string | null; generic?: boolean }) {
   if (!qrCodeDataUri) return null;
@@ -145,14 +148,14 @@ export function MonthEndCountSheetPage({
   locationName,
   yellowDogCode,
   monthLabel,
-  areas,
+  typeGroups,
   qrCodeDataUri = null,
   newItemRows = 8,
 }: {
   locationName: string;
   yellowDogCode: string | null;
   monthLabel: string;
-  areas: MonthEndArea[];
+  typeGroups: MonthEndTypeGroup[];
   qrCodeDataUri?: string | null;
   newItemRows?: number;
 }) {
@@ -181,20 +184,20 @@ export function MonthEndCountSheetPage({
         </View>
       </View>
 
-      {areas.map((area) => (
-        <View key={area.name}>
-          <Text style={styles.areaTitle}>{area.name}</Text>
+      {typeGroups.map((group) => (
+        <View key={group.name}>
+          <Text style={styles.areaTitle}>{group.name}</Text>
           <View style={styles.thRow}>
             <Text style={styles.colProduct}>Product</Text>
             <Text style={styles.colBox}>Cases</Text>
-            <Text style={styles.colBox}>Middle Unit</Text>
+            {group.middleUnitLabel && <Text style={styles.colBox}>{group.middleUnitLabel}</Text>}
             <Text style={styles.colBox}>Each</Text>
           </View>
-          {area.products.map((p) => (
+          {group.products.map((p) => (
             <View key={p.sku} style={styles.tr}>
               <Text style={styles.colProduct}>{p.description}</Text>
               <Text style={styles.colBox}></Text>
-              <Text style={styles.colBox}>{p.middle_unit_label ? `(${p.middle_unit_label})` : ""}</Text>
+              {group.middleUnitLabel && <Text style={styles.colBox}></Text>}
               <Text style={styles.colBox}>{p.each_countable === false ? "N/A" : ""}</Text>
             </View>
           ))}
@@ -238,7 +241,7 @@ export function MonthEndCountSheetDocument(props: {
   locationName: string;
   yellowDogCode: string | null;
   monthLabel: string;
-  areas: MonthEndArea[];
+  typeGroups: MonthEndTypeGroup[];
   qrCodeDataUri?: string | null;
   newItemRows?: number;
 }) {
@@ -250,14 +253,14 @@ export function MonthEndCountSheetDocument(props: {
 }
 
 // One combined download covering every active location -- each gets its
-// own page, same blank Storage-Area-grouped layout as the single-location
+// own page, same blank Product-Type-grouped layout as the single-location
 // sheet, instead of downloading one location at a time.
 export function AllMonthEndCountSheetsDocument({
   monthLabel,
   locations,
 }: {
   monthLabel: string;
-  locations: { locationName: string; yellowDogCode: string | null; areas: MonthEndArea[]; qrCodeDataUri: string | null }[];
+  locations: { locationName: string; yellowDogCode: string | null; typeGroups: MonthEndTypeGroup[]; qrCodeDataUri: string | null }[];
 }) {
   return (
     <Document>
@@ -267,7 +270,7 @@ export function AllMonthEndCountSheetsDocument({
           locationName={loc.locationName}
           yellowDogCode={loc.yellowDogCode}
           monthLabel={monthLabel}
-          areas={loc.areas}
+          typeGroups={loc.typeGroups}
           qrCodeDataUri={loc.qrCodeDataUri}
         />
       ))}
