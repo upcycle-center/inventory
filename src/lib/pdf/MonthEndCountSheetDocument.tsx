@@ -4,8 +4,9 @@ const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
   topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   titleCol: { flex: 1, paddingRight: 12 },
-  title: { fontSize: 16, marginBottom: 2, fontFamily: "Helvetica-Bold" },
-  subtitle: { fontSize: 14, marginBottom: 4, color: "#555555" },
+  title: { fontSize: 16, marginBottom: 4, fontFamily: "Helvetica-Bold" },
+  monthLine: { fontSize: 15, marginBottom: 2, fontFamily: "Helvetica-Bold", color: "#000000" },
+  locationLine: { fontSize: 12, color: "#555555" },
   qrRow: { flexDirection: "row", alignItems: "flex-start" },
   qrImage: { width: 80, height: 80, marginLeft: 8 },
   qrStepsBox: {
@@ -160,9 +161,10 @@ export function MonthEndCountSheetPage({
       <View style={styles.topRow}>
         <View style={styles.titleCol}>
           <Text style={styles.title}>Month-End Count Sheet</Text>
-          <Text style={styles.subtitle}>
+          <Text style={styles.monthLine}>{monthLabel}</Text>
+          <Text style={styles.locationLine}>
             {yellowDogCode ? `${yellowDogCode} — ` : ""}
-            {locationName} · {monthLabel}
+            {locationName}
           </Text>
         </View>
         <QrBox qrCodeDataUri={qrCodeDataUri} />
@@ -296,9 +298,8 @@ export function GenericMonthEndCountSheetDocument({
           <View style={styles.topRow}>
             <View style={styles.titleCol}>
               <Text style={styles.title}>Month-End Count Sheet</Text>
-              <Text style={styles.subtitle}>
-                Blank — {section.typeLabel} · {monthLabel}
-              </Text>
+              <Text style={styles.monthLine}>{monthLabel}</Text>
+              <Text style={styles.locationLine}>Blank — {section.typeLabel}</Text>
             </View>
             <QrBox qrCodeDataUri={qrCodeDataUri} generic />
           </View>
