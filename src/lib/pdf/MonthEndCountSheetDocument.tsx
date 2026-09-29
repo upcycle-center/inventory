@@ -141,9 +141,39 @@ function QrBox({ qrCodeDataUri, generic }: { qrCodeDataUri: string | null; gener
   );
 }
 
-// The blank worksheet page for one location -- exported on its own so a
-// combined all-locations PDF can render one per location inside a single
-// Document, instead of duplicating this layout.
+function LocationHeader({
+  locationName,
+  yellowDogCode,
+  monthLabel,
+  qrCodeDataUri,
+}: {
+  locationName: string;
+  yellowDogCode: string | null;
+  monthLabel: string;
+  qrCodeDataUri: string | null;
+}) {
+  return (
+    <View style={styles.topRow}>
+      <View style={styles.titleCol}>
+        <Text style={styles.title}>Month-End Count Sheet</Text>
+        <Text style={styles.monthLine}>{monthLabel}</Text>
+        <Text style={styles.locationLine}>
+          {yellowDogCode ? `${yellowDogCode} — ` : ""}
+          {locationName}
+        </Text>
+      </View>
+      <QrBox qrCodeDataUri={qrCodeDataUri} />
+    </View>
+  );
+}
+
+// One location's worksheet, split across two physical pages so a table
+// never breaks mid-row across a page boundary: the product tables first,
+// then New/Unlisted Items + Comments on their own page -- each page
+// repeats the same title/month/location header so the location is still
+// identifiable if the pages get separated when printed. Exported on its
+// own so a combined all-locations PDF can render one location's pair of
+// pages inside a single Document, instead of duplicating this layout.
 export function MonthEndCountSheetPage({
   locationName,
   yellowDogCode,
@@ -160,80 +190,76 @@ export function MonthEndCountSheetPage({
   newItemRows?: number;
 }) {
   return (
-    <Page size="LETTER" style={styles.page}>
-      <View style={styles.topRow}>
-        <View style={styles.titleCol}>
-          <Text style={styles.title}>Month-End Count Sheet</Text>
-          <Text style={styles.monthLine}>{monthLabel}</Text>
-          <Text style={styles.locationLine}>
-            {yellowDogCode ? `${yellowDogCode} — ` : ""}
-            {locationName}
-          </Text>
-        </View>
-        <QrBox qrCodeDataUri={qrCodeDataUri} />
-      </View>
+    <>
+      <Page size="LETTER" style={styles.page}>
+        <LocationHeader locationName={locationName} yellowDogCode={yellowDogCode} monthLabel={monthLabel} qrCodeDataUri={qrCodeDataUri} />
 
-      <View style={styles.headerBox}>
-        <View style={styles.headerCol}>
-          <Text style={styles.headerLabel}>COUNTED BY</Text>
-          <View style={styles.blankLine} />
-        </View>
-        <View style={styles.headerCol}>
-          <Text style={styles.headerLabel}>DATE</Text>
-          <View style={styles.blankLine} />
-        </View>
-      </View>
-
-      {typeGroups.map((group) => (
-        <View key={group.name}>
-          <Text style={styles.areaTitle}>{group.name}</Text>
-          <View style={styles.thRow}>
-            <Text style={styles.colProduct}>Product</Text>
-            <Text style={styles.colBox}>Cases</Text>
-            {group.middleUnitLabel && <Text style={styles.colBox}>{group.middleUnitLabel}</Text>}
-            <Text style={styles.colBox}>Each</Text>
+        <View style={styles.headerBox}>
+          <View style={styles.headerCol}>
+            <Text style={styles.headerLabel}>COUNTED BY</Text>
+            <View style={styles.blankLine} />
           </View>
-          {group.products.map((p) => (
-            <View key={p.sku} style={styles.tr}>
-              <Text style={styles.colProduct}>{p.description}</Text>
-              <Text style={styles.colBox}></Text>
-              {group.middleUnitLabel && <Text style={styles.colBox}></Text>}
-              <Text style={styles.colBox}>{p.each_countable === false ? "N/A" : ""}</Text>
+          <View style={styles.headerCol}>
+            <Text style={styles.headerLabel}>DATE</Text>
+            <View style={styles.blankLine} />
+          </View>
+        </View>
+
+        {typeGroups.map((group) => (
+          <View key={group.name}>
+            <Text style={styles.areaTitle}>{group.name}</Text>
+            <View style={styles.thRow}>
+              <Text style={styles.colProduct}>Product</Text>
+              <Text style={styles.colBox}>Cases</Text>
+              {group.middleUnitLabel && <Text style={styles.colBox}>{group.middleUnitLabel}</Text>}
+              <Text style={styles.colBox}>Each</Text>
+            </View>
+            {group.products.map((p) => (
+              <View key={p.sku} style={styles.tr}>
+                <Text style={styles.colProduct}>{p.description}</Text>
+                <Text style={styles.colBox}></Text>
+                {group.middleUnitLabel && <Text style={styles.colBox}></Text>}
+                <Text style={styles.colBox}>{p.each_countable === false ? "N/A" : ""}</Text>
+              </View>
+            ))}
+          </View>
+        ))}
+      </Page>
+
+      <Page size="LETTER" style={styles.page}>
+        <LocationHeader locationName={locationName} yellowDogCode={yellowDogCode} monthLabel={monthLabel} qrCodeDataUri={qrCodeDataUri} />
+
+        <View style={styles.newItemsSection}>
+          <Text style={styles.newItemsTitle}>New / Unlisted Items</Text>
+          <Text style={styles.newItemsNote}>
+            Found on the shelf but not listed above? Write it in below — reported to a YellowDog
+            manager to add to the catalog.
+          </Text>
+          <View style={styles.niThRow}>
+            <Text style={styles.niBarcode}>Barcode</Text>
+            <Text style={styles.niBrand}>Brand</Text>
+            <Text style={styles.niName}>Product Name</Text>
+            <Text style={styles.niCase}>Case Count</Text>
+            <Text style={styles.niSize}>Size Each</Text>
+          </View>
+          {Array.from({ length: newItemRows }).map((_, i) => (
+            <View key={i} style={styles.niRow}>
+              <Text style={styles.niBarcode}></Text>
+              <Text style={styles.niBrand}></Text>
+              <Text style={styles.niName}></Text>
+              <Text style={styles.niCase}></Text>
+              <Text style={styles.niSize}></Text>
             </View>
           ))}
         </View>
-      ))}
 
-      <View style={styles.newItemsSection}>
-        <Text style={styles.newItemsTitle}>New / Unlisted Items</Text>
-        <Text style={styles.newItemsNote}>
-          Found on the shelf but not listed above? Write it in below — reported to a YellowDog
-          manager to add to the catalog.
-        </Text>
-        <View style={styles.niThRow}>
-          <Text style={styles.niBarcode}>Barcode</Text>
-          <Text style={styles.niBrand}>Brand</Text>
-          <Text style={styles.niName}>Product Name</Text>
-          <Text style={styles.niCase}>Case Count</Text>
-          <Text style={styles.niSize}>Size Each</Text>
+        <View style={styles.commentSection}>
+          <Text style={styles.commentLabel}>COMMENTS</Text>
+          <View style={styles.commentLine} />
+          <View style={styles.commentLine} />
         </View>
-        {Array.from({ length: newItemRows }).map((_, i) => (
-          <View key={i} style={styles.niRow}>
-            <Text style={styles.niBarcode}></Text>
-            <Text style={styles.niBrand}></Text>
-            <Text style={styles.niName}></Text>
-            <Text style={styles.niCase}></Text>
-            <Text style={styles.niSize}></Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.commentSection}>
-        <Text style={styles.commentLabel}>COMMENTS</Text>
-        <View style={styles.commentLine} />
-        <View style={styles.commentLine} />
-      </View>
-    </Page>
+      </Page>
+    </>
   );
 }
 
