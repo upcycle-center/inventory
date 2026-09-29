@@ -302,7 +302,7 @@ export function GenericMonthEndCountSheetDocument({
             <View style={styles.titleCol}>
               <Text style={styles.title}>Month-End Count Sheet</Text>
               <Text style={styles.monthLine}>{monthLabel}</Text>
-              <Text style={styles.locationLine}>Blank — {section.typeLabel}</Text>
+              <Text style={styles.locationLine}>{section.typeLabel}</Text>
             </View>
             <QrBox qrCodeDataUri={qrCodeDataUri} generic />
           </View>
