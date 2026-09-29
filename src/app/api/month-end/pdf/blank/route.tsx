@@ -1,7 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
+import { PRODUCT_TYPE_OPTIONS, middleUnitColumnLabel } from "@/lib/productType";
 import { GenericMonthEndCountSheetDocument } from "@/lib/pdf/MonthEndCountSheetDocument";
 import { exportFilename } from "@/lib/exportFilename";
 import { easternDateString } from "@/lib/easternTime";
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
           })
           .map((v) => ({ name: v.name, products: v.products.slice().sort((a, b) => a.description.localeCompare(b.description)) }))
       : [];
-    return { typeLabel: t.shortLabel, vendors };
+    return { typeLabel: t.shortLabel, middleUnitLabel: middleUnitColumnLabel(t.value), vendors };
   }).filter((s) => s.vendors.length > 0);
 
   const monthLabel = new Date(Date.UTC(year, month - 1, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });

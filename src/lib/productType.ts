@@ -22,3 +22,17 @@ export function productTypeLabel(value: string): string {
 export function isProductTypeValue(value: string): value is ProductTypeValue {
   return LABEL_BY_VALUE.has(value as ProductTypeValue);
 }
+
+// What the blank moEND Count Sheet calls the "Middle Unit" column for
+// each Type -- null means the Type has no middle-unit concept at all, so
+// the column is dropped rather than left empty.
+const MIDDLE_UNIT_COLUMN_LABEL: Record<ProductTypeValue, string | null> = {
+  chargeable: null,
+  non_chargeable_bottle: "Partials",
+  non_chargeable_mixer: null,
+  disposable: "Pack/Sleeve",
+};
+
+export function middleUnitColumnLabel(value: string): string | null {
+  return MIDDLE_UNIT_COLUMN_LABEL[value as ProductTypeValue] ?? null;
+}

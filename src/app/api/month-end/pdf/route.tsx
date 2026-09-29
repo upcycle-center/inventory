@@ -1,13 +1,13 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { sortCategoryGroups } from "@/lib/productCategories";
+import { sortStorageAreas } from "@/lib/storageAreas";
 import { MonthEndCountSheetDocument } from "@/lib/pdf/MonthEndCountSheetDocument";
 import { monthEndCountSheetFilename } from "@/lib/exportFilename";
 import { easternDateString } from "@/lib/easternTime";
 import { checkinQrDataUri } from "@/lib/checkinQr";
 
-const UNCATEGORIZED = { id: "uncategorized", name: "Uncategorized" };
+const UNCATEGORIZED = "uncategorized";
 
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
@@ -41,31 +41,32 @@ export async function GET(request: Request) {
   const { data: locationProducts } = await supabase
     .from("location_products")
     .select(
-      "product:products(sku, description, active, middle_unit_label, each_countable, category_id, category:product_categories(id, name), supplier_id), storage_area:storage_areas(id)"
+      "product:products(sku, description, active, middle_unit_label, each_countable, category_id, supplier_id), storage_area:storage_areas(id, code, name)"
     )
     .eq("location_id", locationId)
     .eq("active", true);
 
-  const categoryMap = new Map<
+  const areaMap = new Map<
     string,
-    { name: string; products: { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean }[] }
+    { area: { id: string; code: string; name: string }; products: { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean }[] }
   >();
   for (const row of (locationProducts as any[]) ?? []) {
     if (!row.product?.active || !row.storage_area) continue;
-    if (categoryFilter && (row.product.category_id ?? UNCATEGORIZED.id) !== categoryFilter) continue;
+    if (categoryFilter && (row.product.category_id ?? UNCATEGORIZED) !== categoryFilter) continue;
     if (vendorFilter && (row.product.supplier_id ?? "no_vendor") !== vendorFilter) continue;
     if (storageAreaFilter && row.storage_area.id !== storageAreaFilter) continue;
 
-    const categoryId = row.product.category_id ?? UNCATEGORIZED.id;
-    const categoryName = row.product.category?.name ?? UNCATEGORIZED.name;
-    const entry = categoryMap.get(categoryId) ?? { name: categoryName, products: [] as any[] };
+    const entry = areaMap.get(row.storage_area.id) ?? { area: row.storage_area, products: [] as any[] };
     entry.products.push(row.product);
-    categoryMap.set(categoryId, entry);
+    areaMap.set(row.storage_area.id, entry);
   }
-  const categories = sortCategoryGroups(Array.from(categoryMap.entries()).map(([id, e]) => ({ id, ...e }))).map((c) => ({
-    name: c.name,
-    products: c.products.slice().sort((a, b) => a.description.localeCompare(b.description)),
-  }));
+  const areas = sortStorageAreas(Array.from(areaMap.values()).map((e) => e.area)).map((area) => {
+    const entry = areaMap.get(area.id)!;
+    return {
+      name: area.name,
+      products: entry.products.slice().sort((a, b) => a.description.localeCompare(b.description)),
+    };
+  });
 
   const monthLabel = new Date(Date.UTC(year, month - 1, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
   const { origin } = new URL(request.url);
@@ -77,7 +78,7 @@ export async function GET(request: Request) {
         locationName={location.name}
         yellowDogCode={location.yellow_dog_code}
         monthLabel={monthLabel}
-        categories={categories}
+        areas={areas}
         qrCodeDataUri={qrCodeDataUri}
       />
     ) as any

@@ -1,18 +1,16 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
-import { sortCategoryGroups } from "@/lib/productCategories";
+import { sortStorageAreas } from "@/lib/storageAreas";
 import { AllMonthEndCountSheetsDocument } from "@/lib/pdf/MonthEndCountSheetDocument";
 import { exportFilename } from "@/lib/exportFilename";
 import { easternDateString } from "@/lib/easternTime";
 import { checkinQrDataUri } from "@/lib/checkinQr";
 
-const UNCATEGORIZED = { id: "uncategorized", name: "Uncategorized" };
-
 // One combined blank Month-End Count Sheet covering every active
-// location, each grouped by Category (alphabetical, Uncategorized last)
-// -- for printing the whole venue's packet at once instead of
-// downloading one location's sheet at a time from /month-end.
+// location, each grouped by Storage Area (alphabetical, Other last) --
+// for printing the whole venue's packet at once instead of downloading
+// one location's sheet at a time from /month-end.
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "admin") {
@@ -31,24 +29,22 @@ export async function GET(request: Request) {
     supabase
       .from("location_products")
       .select(
-        "location_id, product:products(sku, description, active, middle_unit_label, each_countable, category_id, category:product_categories(id, name)), storage_area:storage_areas(id)"
+        "location_id, product:products(sku, description, active, middle_unit_label, each_countable), storage_area:storage_areas(id, code, name)"
       )
       .eq("active", true),
   ]);
 
-  const categoryMapByLocationId = new Map<
+  const areaMapByLocationId = new Map<
     string,
-    Map<string, { name: string; products: { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean }[] }>
+    Map<string, { area: { id: string; code: string; name: string }; products: { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean }[] }>
   >();
   for (const row of (locationProducts as any[]) ?? []) {
     if (!row.product?.active || !row.storage_area) continue;
-    const categoryMap = categoryMapByLocationId.get(row.location_id) ?? new Map();
-    const categoryId = row.product.category_id ?? UNCATEGORIZED.id;
-    const categoryName = row.product.category?.name ?? UNCATEGORIZED.name;
-    const entry = categoryMap.get(categoryId) ?? { name: categoryName, products: [] as any[] };
+    const areaMap = areaMapByLocationId.get(row.location_id) ?? new Map();
+    const entry = areaMap.get(row.storage_area.id) ?? { area: row.storage_area, products: [] as any[] };
     entry.products.push(row.product);
-    categoryMap.set(categoryId, entry);
-    categoryMapByLocationId.set(row.location_id, categoryMap);
+    areaMap.set(row.storage_area.id, entry);
+    areaMapByLocationId.set(row.location_id, areaMap);
   }
 
   const monthLabel = new Date(Date.UTC(year, month - 1, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -57,16 +53,19 @@ export async function GET(request: Request) {
   const locationPages = (
     await Promise.all(
       ((locations as { id: string; name: string; yellow_dog_code: string | null }[] | null) ?? []).map(async (location) => {
-        const categoryMap = categoryMapByLocationId.get(location.id);
-        if (!categoryMap || !categoryMap.size) return null;
-        const categories = sortCategoryGroups(Array.from(categoryMap.entries()).map(([id, e]) => ({ id, ...e }))).map((c) => ({
-          name: c.name,
-          products: c.products.slice().sort((a, b) => a.description.localeCompare(b.description)),
-        }));
+        const areaMap = areaMapByLocationId.get(location.id);
+        if (!areaMap || !areaMap.size) return null;
+        const areas = sortStorageAreas(Array.from(areaMap.values()).map((e) => e.area)).map((area) => {
+          const entry = areaMap.get(area.id)!;
+          return {
+            name: area.name,
+            products: entry.products.slice().sort((a, b) => a.description.localeCompare(b.description)),
+          };
+        });
         return {
           locationName: location.name,
           yellowDogCode: location.yellow_dog_code,
-          categories,
+          areas,
           qrCodeDataUri: await checkinQrDataUri(origin, location.id),
         };
       })

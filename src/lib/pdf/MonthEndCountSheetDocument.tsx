@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
 });
 
 type MonthEndProduct = { sku: string; description: string; middle_unit_label?: string | null; each_countable?: boolean };
-type MonthEndCategory = { name: string; products: MonthEndProduct[] };
+type MonthEndArea = { name: string; products: MonthEndProduct[] };
 
 function QrBox({ qrCodeDataUri, generic }: { qrCodeDataUri: string | null; generic?: boolean }) {
   if (!qrCodeDataUri) return null;
@@ -145,14 +145,14 @@ export function MonthEndCountSheetPage({
   locationName,
   yellowDogCode,
   monthLabel,
-  categories,
+  areas,
   qrCodeDataUri = null,
   newItemRows = 8,
 }: {
   locationName: string;
   yellowDogCode: string | null;
   monthLabel: string;
-  categories: MonthEndCategory[];
+  areas: MonthEndArea[];
   qrCodeDataUri?: string | null;
   newItemRows?: number;
 }) {
@@ -181,16 +181,16 @@ export function MonthEndCountSheetPage({
         </View>
       </View>
 
-      {categories.map((category) => (
-        <View key={category.name}>
-          <Text style={styles.areaTitle}>{category.name}</Text>
+      {areas.map((area) => (
+        <View key={area.name}>
+          <Text style={styles.areaTitle}>{area.name}</Text>
           <View style={styles.thRow}>
             <Text style={styles.colProduct}>Product</Text>
             <Text style={styles.colBox}>Cases</Text>
             <Text style={styles.colBox}>Middle Unit</Text>
             <Text style={styles.colBox}>Each</Text>
           </View>
-          {category.products.map((p) => (
+          {area.products.map((p) => (
             <View key={p.sku} style={styles.tr}>
               <Text style={styles.colProduct}>{p.description}</Text>
               <Text style={styles.colBox}></Text>
@@ -238,7 +238,7 @@ export function MonthEndCountSheetDocument(props: {
   locationName: string;
   yellowDogCode: string | null;
   monthLabel: string;
-  categories: MonthEndCategory[];
+  areas: MonthEndArea[];
   qrCodeDataUri?: string | null;
   newItemRows?: number;
 }) {
@@ -250,14 +250,14 @@ export function MonthEndCountSheetDocument(props: {
 }
 
 // One combined download covering every active location -- each gets its
-// own page, same blank Category-grouped layout as the single-location
+// own page, same blank Storage-Area-grouped layout as the single-location
 // sheet, instead of downloading one location at a time.
 export function AllMonthEndCountSheetsDocument({
   monthLabel,
   locations,
 }: {
   monthLabel: string;
-  locations: { locationName: string; yellowDogCode: string | null; categories: MonthEndCategory[]; qrCodeDataUri: string | null }[];
+  locations: { locationName: string; yellowDogCode: string | null; areas: MonthEndArea[]; qrCodeDataUri: string | null }[];
 }) {
   return (
     <Document>
@@ -267,7 +267,7 @@ export function AllMonthEndCountSheetsDocument({
           locationName={loc.locationName}
           yellowDogCode={loc.yellowDogCode}
           monthLabel={monthLabel}
-          categories={loc.categories}
+          areas={loc.areas}
           qrCodeDataUri={loc.qrCodeDataUri}
         />
       ))}
@@ -276,7 +276,10 @@ export function AllMonthEndCountSheetsDocument({
 }
 
 type VendorGroup = { name: string; products: MonthEndProduct[] };
-type TypeSection = { typeLabel: string; vendors: VendorGroup[] };
+// middleUnitLabel is null for a Type that has no middle-unit concept
+// (Chargeable, Non-Chargeable -- Mixers) -- the column is dropped rather
+// than shown empty. Bottles/Disposables rename it to Partials/Pack-Sleeve.
+type TypeSection = { typeLabel: string; middleUnitLabel: string | null; vendors: VendorGroup[] };
 
 // The generic/blank sheet -- not tied to any one location, so instead of
 // Category sections it's organized Product Type -> Vendor -> Product
@@ -325,14 +328,14 @@ export function GenericMonthEndCountSheetDocument({
               <View style={styles.thRow}>
                 <Text style={styles.colProduct}>Product</Text>
                 <Text style={styles.colBox}>Cases</Text>
-                <Text style={styles.colBox}>Middle Unit</Text>
+                {section.middleUnitLabel && <Text style={styles.colBox}>{section.middleUnitLabel}</Text>}
                 <Text style={styles.colBox}>Each</Text>
               </View>
               {vendor.products.map((p) => (
                 <View key={p.sku} style={styles.tr}>
                   <Text style={styles.colProduct}>{p.description}</Text>
                   <Text style={styles.colBox}></Text>
-                  <Text style={styles.colBox}>{p.middle_unit_label ? `(${p.middle_unit_label})` : ""}</Text>
+                  {section.middleUnitLabel && <Text style={styles.colBox}></Text>}
                   <Text style={styles.colBox}>{p.each_countable === false ? "N/A" : ""}</Text>
                 </View>
               ))}
