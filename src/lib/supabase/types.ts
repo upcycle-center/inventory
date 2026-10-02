@@ -277,6 +277,26 @@ export interface ProductCategory {
   created_at: string;
 }
 
+export interface Recipe {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface RecipeIngredient {
+  id: string;
+  recipe_id: string;
+  product_id: string;
+  // Quantity in fluid ounces for ONE single serving -- Double/1L/2.5gal
+  // batch sizes are all scaled off this base amount.
+  quantity_oz: number;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface ProductBarcode {
   id: string;
   product_id: string;

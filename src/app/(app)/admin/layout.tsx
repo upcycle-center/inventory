@@ -8,6 +8,7 @@ const SECTION_GROUPS = [
       { href: "/admin/products", label: "Products" },
       { href: "/admin/suppliers", label: "Suppliers" },
       { href: "/admin/categories", label: "Categories" },
+      { href: "/admin/recipes", label: "Recipes" },
     ],
   },
   {
