@@ -12,16 +12,19 @@ export function easternDateString(date: Date = new Date()): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-// Human-readable Eastern date+time for confirmation emails/PDFs, e.g.
-// "Sep 4, 2026, 3:42 PM ET".
+// Eastern date+time for confirmation emails/PDFs/"last updated" lines,
+// in a single consistent yyyy-mm-dd hh:mm (24-hour) format app-wide, with
+// the correct EST/EDT abbreviation for that date (America/New_York
+// observes DST, so this is never hardcoded).
 export function easternDateTimeString(date: Date = new Date()): string {
-  const formatted = new Intl.DateTimeFormat("en-US", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
-  return `${formatted} ET`;
+    hour12: false,
+    timeZoneName: "short",
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)!.value;
+  const hour = get("hour") === "24" ? "00" : get("hour");
+  return `${easternDateString(date)} ${hour}:${get("minute")} ${get("timeZoneName")}`;
 }
