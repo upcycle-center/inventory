@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireProfile } from "@/lib/auth";
 import type { LocationType } from "@/lib/supabase/types";
 
 export async function createLocation(formData: FormData) {
@@ -28,4 +29,28 @@ export async function toggleLocationActive(formData: FormData) {
   await supabase.from("locations").update({ active: !active }).eq("id", id);
   revalidatePath("/admin/locations");
   revalidatePath(`/admin/locations/${id}`);
+}
+
+// Season status is distinct from `active` -- a closed-for-the-season
+// location stays active/configured everywhere else, it's just skipped by
+// the all-locations Blank Count Sheet. Same pill-toggle pattern as the
+// WFM Shifts Open/Closed button on Event Detail, stamping who/when for
+// the "Last updated by X on Y" line shown under the toggle.
+export async function toggleLocationStatus(formData: FormData) {
+  const profile = await requireProfile(["admin"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const status = String(formData.get("status"));
+  if (!id) return;
+
+  await supabase
+    .from("locations")
+    .update({
+      status: status === "open" ? "closed" : "open",
+      status_updated_at: new Date().toISOString(),
+      status_updated_by: profile.id,
+    })
+    .eq("id", id);
+
+  revalidatePath("/admin/locations");
 }

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Location } from "@/lib/supabase/types";
-import { createLocation } from "./actions";
+import { createLocation, toggleLocationStatus } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { easternDateTimeString } from "@/lib/easternTime";
 
 const TYPE_LABEL: Record<Location["type"], string> = {
   warehouse: "Warehouse",
@@ -14,7 +15,11 @@ const TYPE_LABEL: Record<Location["type"], string> = {
 
 export default async function AdminLocationsPage() {
   const supabase = createClient();
-  const { data: locations } = await supabase.from("locations").select("*").order("type").order("name");
+  const { data: locations } = await supabase
+    .from("locations")
+    .select("*, status_updated_by_profile:profiles!locations_status_updated_by_fkey(id, name)")
+    .order("type")
+    .order("name");
 
   return (
     <div>
@@ -65,9 +70,26 @@ export default async function AdminLocationsPage() {
               <td className="py-2 text-gray-500">{TYPE_LABEL[l.type]}</td>
               <td className="py-2 text-gray-500">{l.active ? "Active" : "Inactive"}</td>
               <td className="py-2">
-                <span className={l.status === "closed" ? "text-gray-500" : "text-green-700"}>
-                  {l.status === "closed" ? "Closed" : "Open"}
-                </span>
+                <form action={toggleLocationStatus}>
+                  <input type="hidden" name="id" value={l.id} />
+                  <input type="hidden" name="status" value={l.status} />
+                  <button
+                    type="submit"
+                    className={
+                      l.status === "open"
+                        ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                        : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
+                    }
+                  >
+                    {l.status === "open" ? "Open" : "Closed"}
+                  </button>
+                </form>
+                {l.status_updated_at && (
+                  <p className="mt-1 text-xs text-gray-400">
+                    {(l as any).status_updated_by_profile?.name ? `by ${(l as any).status_updated_by_profile.name} ` : ""}
+                    {easternDateTimeString(new Date(l.status_updated_at))}
+                  </p>
+                )}
               </td>
             </tr>
           ))}

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
-import type { LocationSeasonStatus, LocationType } from "@/lib/supabase/types";
+import type { LocationType } from "@/lib/supabase/types";
 
 export async function updateLocation(formData: FormData) {
   const supabase = createClient();
@@ -60,26 +60,6 @@ export async function updateBackupLead(formData: FormData) {
     .eq("id", id);
 
   revalidatePath(`/admin/locations/${id}`);
-}
-
-// Season status is distinct from `active` -- a closed-for-the-season
-// location stays active/configured, it's just skipped by the
-// all-locations Blank Count Sheet. Every change stamps who/when, shown
-// as a "Last updated by X on Y" line, same pattern as Event status.
-export async function updateLocationStatus(formData: FormData) {
-  const profile = await requireProfile(["admin"]);
-  const supabase = createClient();
-  const id = String(formData.get("id"));
-  const status = String(formData.get("status")) as LocationSeasonStatus;
-  if (!id || (status !== "open" && status !== "closed")) return;
-
-  await supabase
-    .from("locations")
-    .update({ status, status_updated_at: new Date().toISOString(), status_updated_by: profile.id })
-    .eq("id", id);
-
-  revalidatePath(`/admin/locations/${id}`);
-  revalidatePath("/admin/locations");
 }
 
 export async function deleteLocation(id: string): Promise<{ error: string } | void> {
