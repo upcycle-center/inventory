@@ -51,25 +51,25 @@ export default async function AdminLocationsPage() {
       <table className="w-full text-left text-sm">
         <thead className="text-gray-500">
           <tr>
-            <th className="pb-2">Name</th>
-            <th className="pb-2">Type</th>
-            <th className="pb-2">Status</th>
-            <th className="pb-2">Season</th>
+            <th className="px-3 pb-2">Name</th>
+            <th className="px-3 pb-2">Type</th>
+            <th className="px-3 pb-2">Status</th>
+            <th className="px-3 pb-2">Season</th>
           </tr>
         </thead>
         <tbody>
           {(locations as Location[] | null)?.map((l) => (
             <tr key={l.id} className="border-t border-gray-100">
-              <td className="py-2">
+              <td className="px-3 py-2">
                 <Link href={`/admin/locations/${l.id}`} className="text-brand hover:underline">
                   {l.yellow_dog_code && <span className="mr-1.5 font-mono text-gray-400">{l.yellow_dog_code}</span>}
                   {l.name}
                 </Link>
                 {l.description && <span className="ml-2 text-gray-400">{l.description}</span>}
               </td>
-              <td className="py-2 text-gray-500">{TYPE_LABEL[l.type]}</td>
-              <td className="py-2 text-gray-500">{l.active ? "Active" : "Inactive"}</td>
-              <td className="py-2">
+              <td className="px-3 py-2 text-gray-500">{TYPE_LABEL[l.type]}</td>
+              <td className="px-3 py-2 text-gray-500">{l.active ? "Active" : "Inactive"}</td>
+              <td className="px-3 py-2">
                 <form action={toggleLocationStatus}>
                   <input type="hidden" name="id" value={l.id} />
                   <input type="hidden" name="status" value={l.status} />
@@ -85,17 +85,19 @@ export default async function AdminLocationsPage() {
                   </button>
                 </form>
                 {l.status_updated_at && (
-                  <p className="mt-1 text-xs text-gray-400">
-                    {(l as any).status_updated_by_profile?.name ? `by ${(l as any).status_updated_by_profile.name} ` : ""}
-                    {easternDateTimeString(new Date(l.status_updated_at))}
-                  </p>
+                  <>
+                    {(l as any).status_updated_by_profile?.name && (
+                      <p className="mt-1 text-xs text-gray-400">by {(l as any).status_updated_by_profile.name}</p>
+                    )}
+                    <p className="text-xs text-gray-400">{easternDateTimeString(new Date(l.status_updated_at))}</p>
+                  </>
                 )}
               </td>
             </tr>
           ))}
           {!locations?.length && (
             <tr>
-              <td colSpan={4} className="py-4 text-gray-400">
+              <td colSpan={4} className="px-3 py-4 text-gray-400">
                 No locations yet.
               </td>
             </tr>
