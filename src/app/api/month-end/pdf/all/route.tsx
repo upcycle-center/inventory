@@ -7,11 +7,12 @@ import { exportFilename } from "@/lib/exportFilename";
 import { easternDateString } from "@/lib/easternTime";
 import { checkinQrDataUri } from "@/lib/checkinQr";
 
-// One combined blank Month-End Count Sheet covering every active
-// location, each grouped by Product Type (Chargeable, Non-Chargeable --
-// Bottles, Non-Chargeable -- Mixers, Disposables/Cleaning) then
-// alphabetically -- same grouping as the Blank sheet, for consistency,
-// instead of downloading one location's sheet at a time from /month-end.
+// One combined blank Month-End Count Sheet covering every active,
+// currently-open location (season status, independent of `active`),
+// each grouped by Product Type (Chargeable, Non-Chargeable -- Bottles,
+// Non-Chargeable -- Mixers, Disposables/Cleaning) then alphabetically --
+// same grouping as the Blank sheet, for consistency, instead of
+// downloading one location's sheet at a time from /month-end.
 export async function GET(request: Request) {
   const profile = await getCurrentProfile();
   if (!profile || profile.role !== "admin") {
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
   const supabase = createClient();
 
   const [{ data: locations }, { data: locationProducts }] = await Promise.all([
-    supabase.from("locations").select("id, name, yellow_dog_code").eq("active", true).order("name"),
+    supabase.from("locations").select("id, name, yellow_dog_code").eq("active", true).eq("status", "open").order("name"),
     supabase
       .from("location_products")
       .select(
@@ -76,7 +77,7 @@ export async function GET(request: Request) {
     )
   ).filter((l): l is NonNullable<typeof l> => l !== null);
 
-  if (!locationPages.length) return new Response("No products assigned to any active location", { status: 404 });
+  if (!locationPages.length) return new Response("No products assigned to any active, open location", { status: 404 });
 
   const buffer = await renderToBuffer((<AllMonthEndCountSheetsDocument monthLabel={monthLabel} locations={locationPages} />) as any);
 

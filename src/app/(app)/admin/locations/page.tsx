@@ -49,6 +49,7 @@ export default async function AdminLocationsPage() {
             <th className="pb-2">Name</th>
             <th className="pb-2">Type</th>
             <th className="pb-2">Status</th>
+            <th className="pb-2">Season</th>
           </tr>
         </thead>
         <tbody>
@@ -63,11 +64,16 @@ export default async function AdminLocationsPage() {
               </td>
               <td className="py-2 text-gray-500">{TYPE_LABEL[l.type]}</td>
               <td className="py-2 text-gray-500">{l.active ? "Active" : "Inactive"}</td>
+              <td className="py-2">
+                <span className={l.status === "closed" ? "text-gray-500" : "text-green-700"}>
+                  {l.status === "closed" ? "Closed" : "Open"}
+                </span>
+              </td>
             </tr>
           ))}
           {!locations?.length && (
             <tr>
-              <td colSpan={3} className="py-4 text-gray-400">
+              <td colSpan={4} className="py-4 text-gray-400">
                 No locations yet.
               </td>
             </tr>

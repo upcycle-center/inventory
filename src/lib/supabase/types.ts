@@ -2,6 +2,7 @@ export type UserRole = "admin" | "warehouse" | "stand_lead" | "ops" | "kitchen" 
 export type EventStatus = "upcoming" | "open" | "closed";
 export type CountType = "opening" | "closing";
 export type LocationType = "warehouse" | "stand" | "kitchen" | "catering";
+export type LocationSeasonStatus = "open" | "closed";
 export type MovementType = "receiving" | "return" | "transfer" | "adjustment" | "recovery";
 export type PoStatus = "placed" | "received" | "canceled";
 export type RequestStatus = "pending" | "fulfilled" | "canceled";
@@ -118,6 +119,11 @@ export interface Location {
   default_lead_user_id: string | null;
   backup_lead_user_id: string | null;
   active: boolean;
+  // Season status -- "closed" skips this location when bulk-generating
+  // the all-locations Blank Count Sheet, independent of `active`.
+  status: LocationSeasonStatus;
+  status_updated_at: string | null;
+  status_updated_by: string | null;
   created_at: string;
 }
 

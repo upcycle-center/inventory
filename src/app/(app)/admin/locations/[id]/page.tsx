@@ -9,6 +9,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
 import { locationDisplayName } from "@/lib/locationLabel";
+import { easternDateTimeString } from "@/lib/easternTime";
 import { toggleLocationActive } from "../actions";
 import {
   addStaffRole,
@@ -19,6 +20,7 @@ import {
   updateBackupLead,
   updateDefaultLead,
   updateLocation,
+  updateLocationStatus,
   upsertThreshold,
 } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
@@ -42,7 +44,11 @@ export default async function LocationDetailPage({ params }: { params: { id: str
 
   const [{ data: location }, { data: staffRoles }, { data: staffTiers }, { data: locationProducts }, { data: users }, { data: thresholds }] =
     await Promise.all([
-      supabase.from("locations").select("*").eq("id", params.id).single(),
+      supabase
+        .from("locations")
+        .select("*, status_updated_by_profile:profiles!locations_status_updated_by_fkey(id, name)")
+        .eq("id", params.id)
+        .single(),
       supabase.from("location_staff_roles").select("*").eq("location_id", params.id).order("sort_order"),
       supabase.from("location_staff_tiers").select("*").eq("location_id", params.id).order("min_attendance"),
       supabase
@@ -205,6 +211,30 @@ export default async function LocationDetailPage({ params }: { params: { id: str
           </button>
         </ActionForm>
         <DeleteLocationButton locationId={location.id} />
+      </div>
+
+      <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
+        <p className="mb-1 text-sm font-medium">Season status</p>
+        <p className="mb-3 text-xs text-gray-500">
+          Closed skips this location when generating the all-locations Blank Count Sheet, without
+          deactivating it elsewhere in the app.
+        </p>
+        {location.status_updated_at && (
+          <p className="mb-2 text-xs text-gray-400">
+            Last updated{(location as any).status_updated_by_profile?.name ? ` by ${(location as any).status_updated_by_profile.name}` : ""} on{" "}
+            {easternDateTimeString(new Date(location.status_updated_at))}
+          </p>
+        )}
+        <ActionForm action={updateLocationStatus} savedLabel="Status updated" className="flex items-center gap-2">
+          <input type="hidden" name="id" value={location.id} />
+          <select name="status" defaultValue={location.status} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+          <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+            Update
+          </button>
+        </ActionForm>
       </div>
 
       <div className="mb-8 flex items-start gap-4 rounded-md border border-gray-200 bg-white p-4">
