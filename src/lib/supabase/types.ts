@@ -9,7 +9,7 @@ export type MovementType = "receiving" | "return" | "transfer" | "adjustment" | 
 // ordered.
 export type PoStatus = "requested" | "placed" | "received" | "canceled";
 export type RequestStatus = "pending" | "fulfilled" | "canceled";
-export type ProductType = "chargeable" | "non_chargeable_bottle" | "non_chargeable_mixer" | "disposable";
+export type ProductType = "chargeable" | "non_chargeable_bottle" | "non_chargeable_mixer" | "disposable" | "garnish";
 export type WasteReason =
   | "spoiled"
   | "broken"

@@ -12,7 +12,7 @@ import type { ProductCategory, Supplier } from "@/lib/supabase/types";
 // uses Price per pour instead) -- grayed out so it's obvious the number
 // on screen isn't doing anything, without discarding whatever's already
 // stored there if the Type gets changed back later.
-const RETAIL_VALUE_DISABLED_TYPES = new Set<ProductTypeValue>(["non_chargeable_bottle", "non_chargeable_mixer", "disposable"]);
+const RETAIL_VALUE_DISABLED_TYPES = new Set<ProductTypeValue>(["non_chargeable_bottle", "non_chargeable_mixer", "disposable", "garnish"]);
 const POUR_FIELDS_ACTIVE_TYPE: ProductTypeValue = "non_chargeable_bottle";
 
 function DisableableNumberField({

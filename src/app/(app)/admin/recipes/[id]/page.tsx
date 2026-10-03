@@ -2,11 +2,13 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Recipe, RecipeIngredient } from "@/lib/supabase/types";
 import { computeRecipeSizes, costPerOz } from "@/lib/recipeCost";
+import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
-import { addIngredient, removeIngredient, updateIngredientQty, updateRecipe } from "./actions";
+import { removeIngredient, updateIngredientQty, updateRecipe } from "./actions";
+import { AddIngredientForm } from "./AddIngredientForm";
 
 function fmtCurrency(value: number | null) {
   return value == null ? "—" : `$${value.toFixed(2)}`;
@@ -22,7 +24,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       .select("*, product:products(id, sku, description, case_cost, case_size, bottle_size_ml)")
       .eq("recipe_id", params.id)
       .order("sort_order"),
-    supabase.from("products").select("*").eq("active", true).order("description"),
+    supabase.from("products").select("id, description, product_type").eq("active", true).order("description"),
   ]);
 
   if (!recipe) notFound();
@@ -101,35 +103,10 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         entering an amount — it&apos;s costed at a standard 2oz.
       </p>
 
-      <ActionForm
-        action={addIngredient}
-        savedLabel="Ingredient added"
-        resetOnSuccess
-        className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-      >
-        <input type="hidden" name="recipe_id" value={recipe.id} />
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Product</label>
-          <select name="product_id" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            {(products as Product[] | null)?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.description}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs text-gray-500">Qty (oz)</label>
-          <input name="quantity_oz" type="number" min={0.01} step={0.01} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </div>
-        <label className="flex items-center gap-1.5 pb-2 text-xs text-gray-500">
-          <input type="checkbox" name="top_off" className="h-4 w-4" />
-          Top Off (2oz std)
-        </label>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Add ingredient
-        </button>
-      </ActionForm>
+      <AddIngredientForm
+        recipeId={recipe.id}
+        products={(products as { id: string; description: string; product_type: ProductTypeValue }[] | null) ?? []}
+      />
 
       <ul className="mb-8 space-y-1">
         {ingredientRows.map((row) =>

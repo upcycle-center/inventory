@@ -435,7 +435,7 @@ export async function bulkUploadProducts(formData: FormData): Promise<{ message:
       : ""
   }${
     productTypesUnmatched
-      ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, or disposable) — those rows' Type was left unchanged.`
+      ? ` ${productTypesUnmatched} product_type value(s) weren't recognized (must be exactly chargeable, non_chargeable_bottle, non_chargeable_mixer, disposable, or garnish) — those rows' Type was left unchanged.`
       : ""
   }${
     fallbackSkuCount

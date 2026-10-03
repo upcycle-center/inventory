@@ -47,8 +47,8 @@ export function CsvUploadForm() {
               Columns required: <code>sku</code>, <code>description</code>. Optional:{" "}
               <code>brand</code>, <code>photo_url</code>, <code>product_type</code> (
               <code>chargeable</code>, <code>non_chargeable_bottle</code>,{" "}
-              <code>non_chargeable_mixer</code>, or <code>disposable</code> — defaults to
-              chargeable), <code>active</code> (<code>yes</code>/<code>no</code>),{" "}
+              <code>non_chargeable_mixer</code>, <code>disposable</code>, or <code>garnish</code> —
+              defaults to chargeable), <code>active</code> (<code>yes</code>/<code>no</code>),{" "}
               <code>category</code> (matched by name against Admin → Categories),{" "}
               <code>gl_code</code> (read-only, for reporting — comes from the category, ignored on
               upload), <code>supplier</code> (matched by name against Admin → Suppliers — an

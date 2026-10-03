@@ -49,12 +49,12 @@ type PourProduct = {
 //   pour; zero (not sale_price -- the UI disables that field for this
 //   type, so it must never be treated as a usable fallback) when pour
 //   details aren't fully filled in yet
-// - non_chargeable_mixer / disposable: cocktail ingredients and supplies,
-//   never billed on their own -- no retail value
+// - non_chargeable_mixer / disposable / garnish: cocktail ingredients and
+//   supplies, never billed on their own -- no retail value
 export function retailUnitPrices(product: PourProduct) {
   const eachPerCase = caseSizeInEach(product.case_size, product.middle_unit_size);
 
-  if (product.product_type === "non_chargeable_mixer" || product.product_type === "disposable") {
+  if (product.product_type === "non_chargeable_mixer" || product.product_type === "disposable" || product.product_type === "garnish") {
     return { perEach: 0, perCase: 0 };
   }
 

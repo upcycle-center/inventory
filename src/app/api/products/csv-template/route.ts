@@ -28,6 +28,7 @@ const TYPE_COLUMNS: Record<ProductTypeValue, readonly string[]> = {
   non_chargeable_bottle: ["bottle_size_ml", "pour_size_oz", "pour_price"],
   non_chargeable_mixer: [],
   disposable: [],
+  garnish: [],
 };
 
 const TAIL_COLUMNS = [
@@ -139,6 +140,23 @@ function exampleRows(type: ProductTypeValue, exampleCategoryName: string, exampl
           location: "023",
           storage_area: "OTH",
           reorder_threshold: "2000",
+        },
+      ];
+    case "garnish":
+      return [
+        {
+          sku: "EX-006",
+          description: "Limes",
+          product_type: "garnish",
+          active: "yes",
+          case_cost: "18.00",
+          unit_of_measure: "each",
+          case_size: "40",
+          each_countable: "yes",
+          pos_square: "no",
+          location: "023",
+          storage_area: "LC",
+          reorder_threshold: "10",
         },
       ];
   }

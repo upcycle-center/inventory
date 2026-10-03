@@ -9,6 +9,7 @@ export const PRODUCT_TYPE_OPTIONS = [
   { value: "non_chargeable_bottle", label: "Non-Chargeable – Bottles (sold in servings)", shortLabel: "Non-Chargeable – Bottles" },
   { value: "non_chargeable_mixer", label: "Non-Chargeable – Mixers", shortLabel: "Non-Chargeable – Mixers" },
   { value: "disposable", label: "Disposables/Cleaning", shortLabel: "Disposables/Cleaning" },
+  { value: "garnish", label: "Garnish", shortLabel: "Garnish" },
 ] as const;
 
 export type ProductTypeValue = (typeof PRODUCT_TYPE_OPTIONS)[number]["value"];
@@ -31,6 +32,7 @@ const MIDDLE_UNIT_COLUMN_LABEL: Record<ProductTypeValue, string | null> = {
   non_chargeable_bottle: "Partials",
   non_chargeable_mixer: null,
   disposable: "Pack/Sleeve",
+  garnish: null,
 };
 
 export function middleUnitColumnLabel(value: string): string | null {
