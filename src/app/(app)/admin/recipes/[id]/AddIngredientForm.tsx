@@ -57,7 +57,7 @@ export function AddIngredientForm({ recipeId, products }: { recipeId: string; pr
     >
       <input type="hidden" name="recipe_id" value={recipeId} />
       <div>
-        <label className="mb-1 block text-xs text-gray-500">Role</label>
+        <label className="mb-1 block text-xs text-gray-500">Ingredient</label>
         <select value={role} onChange={(e) => setRole(e.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
           {ROLE_OPTIONS.map((r) => (
             <option key={r.value} value={r.value}>
