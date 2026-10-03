@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Recipe, RecipeIngredient, RecipeServingPackagingCost } from "@/lib/supabase/types";
-import { computeRecipeSizes, costPerOz, type RecipeSizeKey } from "@/lib/recipeCost";
+import type { Product, Recipe, RecipeIngredient } from "@/lib/supabase/types";
+import { computeRecipeSizes, costPerOz, PACKAGING_COST } from "@/lib/recipeCost";
 import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -18,7 +18,7 @@ function fmtCurrency(value: number | null) {
 export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: recipe }, { data: ingredientsRaw }, { data: products }, { data: packagingCostsRaw }] = await Promise.all([
+  const [{ data: recipe }, { data: ingredientsRaw }, { data: products }] = await Promise.all([
     supabase.from("recipes").select("*").eq("id", params.id).single(),
     supabase
       .from("recipe_ingredients")
@@ -26,7 +26,6 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       .eq("recipe_id", params.id)
       .order("sort_order"),
     supabase.from("products").select("id, description, product_type").eq("active", true).order("description"),
-    supabase.from("recipe_serving_packaging_costs").select("*"),
   ]);
 
   if (!recipe) notFound();
@@ -40,11 +39,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
       costPerOz: costPerOz(row.product!),
     }));
-  const packagingCosts: Partial<Record<RecipeSizeKey, number>> = {};
-  for (const row of (packagingCostsRaw as RecipeServingPackagingCost[] | null) ?? []) {
-    packagingCosts[row.size] = Number(row.cost);
-  }
-  const sizes = computeRecipeSizes(costLines, recipe.target_pour_cost_pct, packagingCosts);
+  const sizes = computeRecipeSizes(costLines, recipe.target_pour_cost_pct);
   const missingCostProducts = costLines.filter((l) => l.costPerOz == null).map((l) => l.description);
 
   return (
@@ -188,7 +183,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
 
       <p className="mb-1 text-sm font-medium">COST &amp; MSRP</p>
       <p className="mb-3 text-xs text-gray-400">
-        ${(packagingCosts[sizes[0].key] ?? 0.5).toFixed(2)} added to cost, for disposables/garnishes/ice.
+        ${PACKAGING_COST.toFixed(2)} added to cost, for disposables/garnishes/ice.
       </p>
 
       <ActionForm

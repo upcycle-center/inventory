@@ -12,6 +12,11 @@ export const DEFAULT_POUR_COST_PCT = 20;
 // everything gets scaled to each Serving's fixed pour size.
 const TOP_OFF_DEFAULT_OZ = 2;
 
+// Flat packaging cost (cup + ice) added on top of ingredient cost for
+// every Serving -- cup+ice cost doesn't depend on which recipe or size
+// it is, so this is a single constant rather than a per-size setting.
+export const PACKAGING_COST = 0.5;
+
 // Cost per fluid ounce for a product, derived from its case economics --
 // the same bottle-size math TOT Retail already uses for pour-based
 // products. Returns null when the product is missing the fields needed
@@ -94,17 +99,13 @@ export interface RecipeSizeResult {
 // (no case_cost/case_size/bottle_size_ml on record) -- the UI flags
 // which ingredient rather than silently showing a wrong total.
 // pourCostPct is a percentage (20 means 20%), per-recipe editable.
-export function computeRecipeSizes(
-  ingredients: RecipeIngredientLine[],
-  pourCostPct: number = DEFAULT_POUR_COST_PCT,
-  packagingCosts: Partial<Record<RecipeSizeKey, number>> = {}
-): RecipeSizeResult[] {
+export function computeRecipeSizes(ingredients: RecipeIngredientLine[], pourCostPct: number = DEFAULT_POUR_COST_PCT): RecipeSizeResult[] {
   const pourCostFraction = pourCostPct / 100;
   return RECIPE_SIZE_DEFS.map(({ key, label, pourOz }) => {
     const lines = resolveIngredientsForSize(ingredients, key);
     const hasAllCosts = lines.length > 0 && lines.every((l) => l.costPerOz != null);
     const ingredientCost = hasAllCosts ? lines.reduce((sum, l) => sum + l.quantityOz * (l.costPerOz ?? 0), 0) : null;
-    const cost = ingredientCost != null ? ingredientCost + (packagingCosts[key] ?? 0) : null;
+    const cost = ingredientCost != null ? ingredientCost + PACKAGING_COST : null;
     const msrp = cost != null && pourCostFraction > 0 ? cost / pourCostFraction : null;
     return { key, label, totalOz: pourOz, cost, msrp };
   });

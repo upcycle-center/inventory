@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Recipe, RecipeServingPackagingCost } from "@/lib/supabase/types";
-import { computeRecipeSizes, costPerOz, RECIPE_SIZE_DEFS, type RecipeSizeKey } from "@/lib/recipeCost";
+import type { Recipe } from "@/lib/supabase/types";
+import { computeRecipeSizes, costPerOz, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
-import { ActionForm } from "@/components/ActionForm";
-import { updatePackagingCosts } from "./actions";
 
 function CostCell({ cost, msrp }: { cost: number | null; msrp: number | null }) {
   if (cost == null || msrp == null) return <span className="text-gray-400">—</span>;
@@ -21,19 +19,14 @@ function CostCell({ cost, msrp }: { cost: number | null; msrp: number | null }) 
 
 export default async function AdminRecipesPage() {
   const supabase = createClient();
-  const [{ data: recipesRaw }, { data: ingredientsRaw }, { data: packagingCostsRaw }] = await Promise.all([
+  const [{ data: recipesRaw }, { data: ingredientsRaw }] = await Promise.all([
     supabase.from("recipes").select("*").order("name"),
     supabase
       .from("recipe_ingredients")
       .select("recipe_id, quantity_oz, product:products(id, description, case_cost, case_size, bottle_size_ml)"),
-    supabase.from("recipe_serving_packaging_costs").select("*"),
   ]);
 
   const recipes = (recipesRaw as Recipe[] | null) ?? [];
-  const packagingCosts: Partial<Record<RecipeSizeKey, number>> = {};
-  for (const row of (packagingCostsRaw as RecipeServingPackagingCost[] | null) ?? []) {
-    packagingCosts[row.size] = Number(row.cost);
-  }
 
   const ingredientsByRecipeId = new Map<string, { productId: string; description: string; quantityOz: number | null; costPerOz: number | null }[]>();
   for (const row of (ingredientsRaw as any[]) ?? []) {
@@ -58,27 +51,6 @@ export default async function AdminRecipesPage() {
         </Link>
       </div>
 
-      <ActionForm action={updatePackagingCosts} savedLabel="Saved" className="mb-4 flex items-end gap-3">
-        <label className="text-sm text-gray-600">
-          Packaging cost (cup + ice), per serving
-          <br />
-          <span className="flex items-center gap-1">
-            $
-            <input
-              name="cost"
-              type="number"
-              min={0}
-              step={0.01}
-              defaultValue={packagingCosts[RECIPE_SIZE_DEFS[0].key] ?? 0.5}
-              className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
-            />
-          </span>
-        </label>
-        <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs text-white">
-          Save
-        </button>
-      </ActionForm>
-
       <table className="w-full text-left text-sm">
         <thead className="text-gray-500">
           <tr>
@@ -98,7 +70,7 @@ export default async function AdminRecipesPage() {
         <tbody>
           {recipes.map((r) => {
             const ingredients = ingredientsByRecipeId.get(r.id) ?? [];
-            const sizes = computeRecipeSizes(ingredients, r.target_pour_cost_pct, packagingCosts);
+            const sizes = computeRecipeSizes(ingredients, r.target_pour_cost_pct);
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">

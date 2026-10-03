@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
-import { RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
 
 export async function createRecipe(formData: FormData): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin"]);
@@ -34,25 +33,6 @@ export async function toggleRecipeActive(formData: FormData) {
   await supabase.from("recipes").update({ active: !active }).eq("id", id);
   revalidatePath("/admin/recipes");
   revalidatePath(`/admin/recipes/${id}`);
-}
-
-export async function updatePackagingCosts(formData: FormData) {
-  const profile = await requireProfile(["admin"]);
-  const supabase = createClient();
-
-  const raw = String(formData.get("cost") || "").trim();
-  const cost = raw ? Number(raw) : 0;
-  if (Number.isNaN(cost) || cost < 0) return;
-
-  await supabase
-    .from("recipe_serving_packaging_costs")
-    .update({ cost, updated_at: new Date().toISOString(), updated_by: profile.id })
-    .in(
-      "size",
-      RECIPE_SIZE_DEFS.map((s) => s.key)
-    );
-
-  revalidatePath("/admin/recipes");
 }
 
 export async function deleteRecipe(id: string): Promise<{ error: string } | void> {

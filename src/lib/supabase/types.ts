@@ -333,15 +333,6 @@ export interface RecipeRequest {
   fulfilled_at: string | null;
 }
 
-export interface RecipeServingPackagingCost {
-  size: RecipeRequestSize;
-  // Flat $ to cover the cup + ice for this Serving size, added on top of
-  // ingredient cost -- shared across every recipe.
-  cost: number;
-  updated_at: string;
-  updated_by: string | null;
-}
-
 export interface ProductBarcode {
   id: string;
   product_id: string;
