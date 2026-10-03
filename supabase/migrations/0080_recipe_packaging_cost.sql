@@ -1,18 +1,17 @@
--- Small fixed cost per Serving to cover the cup itself and ice, added on
--- top of ingredient cost when computing a recipe's Cost & MSRP. One
--- global amount per Serving size (cup+ice cost doesn't depend on which
--- recipe it is) rather than a per-recipe field -- admin-editable,
--- defaults to 0 so it's a no-op until filled in.
+-- Small fixed cost to cover the cup itself and ice, added on top of
+-- ingredient cost when computing a recipe's Cost & MSRP. One flat $0.50
+-- amount shared by every Serving size (cup+ice cost doesn't depend on
+-- which recipe it is), editable from a single settings field.
 create table if not exists recipe_serving_packaging_costs (
   size recipe_request_size primary key,
-  cost numeric(6, 2) not null default 0,
+  cost numeric(6, 2) not null default 0.50,
   updated_at timestamptz not null default now(),
   updated_by uuid references profiles(id)
 );
 
-insert into recipe_serving_packaging_costs (size)
-values ('wine'), ('single'), ('double'), ('liter'), ('batch_2_5_gal')
-on conflict (size) do nothing;
+insert into recipe_serving_packaging_costs (size, cost)
+values ('wine', 0.50), ('single', 0.50), ('double', 0.50), ('liter', 0.50), ('batch_2_5_gal', 0.50)
+on conflict (size) do update set cost = excluded.cost;
 
 alter table recipe_serving_packaging_costs enable row level security;
 

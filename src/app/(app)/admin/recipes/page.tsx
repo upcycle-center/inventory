@@ -58,25 +58,22 @@ export default async function AdminRecipesPage() {
         </Link>
       </div>
 
-      <ActionForm action={updatePackagingCosts} savedLabel="Saved" className="mb-4 flex flex-wrap items-end gap-3">
-        <span className="w-full text-sm font-medium text-gray-600">Packaging cost (cup + ice) per Serving</span>
-        {RECIPE_SIZE_DEFS.map((s) => (
-          <label key={s.key} className="text-xs text-gray-500">
-            {s.label}
-            <br />
-            <span className="flex items-center gap-1">
-              $
-              <input
-                name={`cost_${s.key}`}
-                type="number"
-                min={0}
-                step={0.01}
-                defaultValue={packagingCosts[s.key] ?? 0}
-                className="w-16 rounded-md border border-gray-300 px-2 py-1 text-sm"
-              />
-            </span>
-          </label>
-        ))}
+      <ActionForm action={updatePackagingCosts} savedLabel="Saved" className="mb-4 flex items-end gap-3">
+        <label className="text-sm text-gray-600">
+          Packaging cost (cup + ice), per serving
+          <br />
+          <span className="flex items-center gap-1">
+            $
+            <input
+              name="cost"
+              type="number"
+              min={0}
+              step={0.01}
+              defaultValue={packagingCosts[RECIPE_SIZE_DEFS[0].key] ?? 0.5}
+              className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
+            />
+          </span>
+        </label>
         <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs text-white">
           Save
         </button>

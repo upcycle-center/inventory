@@ -40,15 +40,17 @@ export async function updatePackagingCosts(formData: FormData) {
   const profile = await requireProfile(["admin"]);
   const supabase = createClient();
 
-  for (const { key } of RECIPE_SIZE_DEFS) {
-    const raw = String(formData.get(`cost_${key}`) || "").trim();
-    const cost = raw ? Number(raw) : 0;
-    if (Number.isNaN(cost) || cost < 0) continue;
-    await supabase
-      .from("recipe_serving_packaging_costs")
-      .update({ cost, updated_at: new Date().toISOString(), updated_by: profile.id })
-      .eq("size", key);
-  }
+  const raw = String(formData.get("cost") || "").trim();
+  const cost = raw ? Number(raw) : 0;
+  if (Number.isNaN(cost) || cost < 0) return;
+
+  await supabase
+    .from("recipe_serving_packaging_costs")
+    .update({ cost, updated_at: new Date().toISOString(), updated_by: profile.id })
+    .in(
+      "size",
+      RECIPE_SIZE_DEFS.map((s) => s.key)
+    );
 
   revalidatePath("/admin/recipes");
 }
