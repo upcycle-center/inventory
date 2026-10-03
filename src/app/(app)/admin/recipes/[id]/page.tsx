@@ -216,8 +216,8 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       <table className="w-full max-w-2xl text-left text-sm">
         <thead className="text-gray-500">
           <tr>
-            <th className="px-3 pb-2">Size</th>
-            <th className="px-3 pb-2">TOT Volume</th>
+            <th className="px-3 pb-2">Serving</th>
+            <th className="px-3 pb-2">Pour</th>
             <th className="px-3 pb-2">Cost</th>
             <th className="px-3 pb-2">MSRP</th>
           </tr>

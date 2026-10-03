@@ -1,16 +1,15 @@
 import type { RecipeRequestSize } from "@/lib/supabase/types";
 
 const ML_PER_OZ = 29.5735;
-const FL_OZ_PER_GAL = 128;
 
 // Default target pour-cost % (20, i.e. 20%) -- the standard starting
 // point for a NY concert-venue bar program -- editable per recipe from
 // there (recipes.target_pour_cost_pct) to tweak margin.
 export const DEFAULT_POUR_COST_PCT = 20;
 
-// A Top Off ingredient (quantityOz null -- no measured amount) is costed
-// at this standard amount, same as any other ingredient from there on
-// (doubles for Double, scales normally for Carafe/Bubbler).
+// A Top Off ingredient (quantityOz null -- no measured amount) stands in
+// at this amount when working out the recipe's ingredient ratios, before
+// everything gets scaled to each Serving's fixed pour size.
 const TOP_OFF_DEFAULT_OZ = 2;
 
 // Cost per fluid ounce for a product, derived from its case economics --
@@ -31,22 +30,16 @@ export function costPerOz(product: {
 
 export type RecipeSizeKey = RecipeRequestSize;
 
-// Scale factor relative to the base recipe's total oz (every ingredient's
-// quantity summed, with a Top Off ingredient standing in at 2oz) -- 1x
-// for Wine/Single, 2x for Double, and volume-ratio scaled for the two
-// batch sizes so the batch comes out to exactly that target volume. Wine
-// and Single share the same 1x math -- the label is just which cup it's
-// served in, not a different recipe amount.
-export const RECIPE_SIZE_DEFS: { key: RecipeSizeKey; label: string; scale: (baseTotalOz: number) => number }[] = [
-  { key: "wine", label: "9oz Wine", scale: () => 1 },
-  { key: "single", label: "10oz Single", scale: () => 1 },
-  { key: "double", label: "16oz Double", scale: () => 2 },
-  { key: "liter", label: "1L Carafe", scale: (baseTotalOz) => (baseTotalOz > 0 ? 1000 / ML_PER_OZ / baseTotalOz : 0) },
-  {
-    key: "batch_2_5_gal",
-    label: "2.5gal Bubbler",
-    scale: (baseTotalOz) => (baseTotalOz > 0 ? (2.5 * FL_OZ_PER_GAL) / baseTotalOz : 0),
-  },
+// Each Serving's actual pour size, in oz -- the recipe's ingredient
+// ratios (whatever's entered, with a Top Off ingredient standing in at
+// 2oz) are scaled proportionally so the total comes out to exactly this
+// amount, regardless of what the raw entered quantities summed to.
+export const RECIPE_SIZE_DEFS: { key: RecipeSizeKey; label: string; pourOz: number }[] = [
+  { key: "wine", label: "9oz Wine", pourOz: 3 },
+  { key: "single", label: "10oz Single", pourOz: 6 },
+  { key: "double", label: "16oz Double", pourOz: 12 },
+  { key: "liter", label: "1L Carafe", pourOz: 32 },
+  { key: "batch_2_5_gal", label: "2.5gal Bubbler", pourOz: 320 },
 ];
 
 export function recipeSizeLabel(key: RecipeSizeKey): string {
@@ -78,7 +71,8 @@ function baseQty(i: RecipeIngredientLine): number {
 // Every ingredient resolved to its actual oz for one size.
 export function resolveIngredientsForSize(ingredients: RecipeIngredientLine[], sizeKey: RecipeSizeKey): ResolvedIngredientLine[] {
   const baseTotalOz = ingredients.reduce((sum, i) => sum + baseQty(i), 0);
-  const scale = RECIPE_SIZE_DEFS.find((s) => s.key === sizeKey)?.scale(baseTotalOz) ?? 0;
+  const pourOz = RECIPE_SIZE_DEFS.find((s) => s.key === sizeKey)?.pourOz ?? 0;
+  const scale = baseTotalOz > 0 ? pourOz / baseTotalOz : 0;
   return ingredients.map((i) => ({
     productId: i.productId,
     description: i.description,
