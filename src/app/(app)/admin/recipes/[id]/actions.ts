@@ -16,9 +16,31 @@ export async function updateRecipe(formData: FormData) {
   const originalRecipe = String(formData.get("original_recipe") || "").trim() || null;
   const instructions = String(formData.get("instructions") || "").trim() || null;
 
+  let photoUrl: string | undefined;
+  const photo = formData.get("photo");
+  if (photo instanceof File && photo.size > 0) {
+    const ext = photo.name.split(".").pop() || "jpg";
+    const path = `recipe-${id}-${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("product-photos")
+      .upload(path, photo, { contentType: photo.type, upsert: false });
+
+    if (!uploadError) {
+      const { data } = supabase.storage.from("product-photos").getPublicUrl(path);
+      photoUrl = data.publicUrl;
+    }
+  }
+
   await supabase
     .from("recipes")
-    .update({ name, description, source_url: sourceUrl, original_recipe: originalRecipe, instructions })
+    .update({
+      name,
+      description,
+      source_url: sourceUrl,
+      original_recipe: originalRecipe,
+      instructions,
+      ...(photoUrl ? { photo_url: photoUrl } : {}),
+    })
     .eq("id", id);
   revalidatePath(`/admin/recipes/${id}`);
   revalidatePath("/admin/recipes");

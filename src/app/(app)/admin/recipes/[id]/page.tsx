@@ -5,6 +5,7 @@ import { computeRecipeSizes, costPerOz } from "@/lib/recipeCost";
 import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
 import { removeIngredient, updateIngredientQty, updateRecipe } from "./actions";
@@ -49,9 +50,20 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       <ActionForm
         id="edit-recipe-form"
         action={updateRecipe}
+        encType="multipart/form-data"
         className="mb-3 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={recipe.id} />
+        <div className="mb-1 flex aspect-square w-24 items-center justify-center overflow-hidden rounded bg-gray-100">
+          {recipe.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <ProductPlaceholderIcon />
+            </div>
+          )}
+        </div>
         <label className="text-sm text-gray-600">
           Name
           <input name="name" defaultValue={recipe.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
@@ -93,6 +105,10 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
             placeholder="Build order, glassware, garnish, ice, method..."
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
+        </label>
+        <label className="text-sm text-gray-600">
+          {recipe.photo_url ? "Replace photo" : "Add photo"}
+          <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
       </ActionForm>
 

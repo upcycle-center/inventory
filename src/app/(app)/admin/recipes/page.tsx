@@ -4,6 +4,7 @@ import type { Recipe } from "@/lib/supabase/types";
 import { computeRecipeSizes, costPerOz, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
+import { ProductThumbnail } from "@/components/ProductThumbnail";
 
 function CostCell({ cost, msrp }: { cost: number | null; msrp: number | null }) {
   if (cost == null || msrp == null) return <span className="text-gray-400">—</span>;
@@ -58,6 +59,7 @@ export default async function AdminRecipesPage() {
       <table className="w-full text-left text-sm">
         <thead className="text-gray-500">
           <tr>
+            <th className="px-3 pb-2"></th>
             <th className="px-3 pb-2">Recipe</th>
             {RECIPE_SIZE_DEFS.map((s) => (
               <th key={s.key} className="px-3 pb-2">
@@ -73,6 +75,9 @@ export default async function AdminRecipesPage() {
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">
+                <td className="px-3 py-2">
+                  <ProductThumbnail photoUrl={r.photo_url} alt={r.name} />
+                </td>
                 <td className="px-3 py-2">
                   <a
                     href={`/api/recipes/${r.id}/ops-sheet`}
@@ -98,7 +103,7 @@ export default async function AdminRecipesPage() {
           })}
           {!recipes.length && (
             <tr>
-              <td colSpan={RECIPE_SIZE_DEFS.length + 1} className="px-3 py-6 text-center text-gray-400">
+              <td colSpan={RECIPE_SIZE_DEFS.length + 2} className="px-3 py-6 text-center text-gray-400">
                 No recipes yet.
               </td>
             </tr>

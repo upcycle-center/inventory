@@ -284,6 +284,8 @@ export interface Recipe {
   id: string;
   name: string;
   description: string | null;
+  // Photo of the finished drink, for visual reference.
+  photo_url: string | null;
   // Where this recipe was found online, if anywhere.
   source_url: string | null;
   // The original ingredients/ratios as published -- kept for reference
