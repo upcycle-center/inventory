@@ -14,6 +14,9 @@ import type { ProductCategory, Supplier } from "@/lib/supabase/types";
 // stored there if the Type gets changed back later.
 const RETAIL_VALUE_DISABLED_TYPES = new Set<ProductTypeValue>(["non_chargeable_bottle", "non_chargeable_mixer", "disposable", "garnish"]);
 const POUR_FIELDS_ACTIVE_TYPE: ProductTypeValue = "non_chargeable_bottle";
+// Bottle/container size feeds Recipe cost-per-oz for any type that can be
+// a recipe ingredient -- only Disposables never need it.
+const BOTTLE_SIZE_FIELD_DISABLED_TYPES = new Set<ProductTypeValue>(["disposable"]);
 
 function DisableableNumberField({
   label,
@@ -106,6 +109,7 @@ export function ProductCoreFields({
   const [subUnitCount, setSubUnitCount] = useState(String(defaultMiddleUnitSize ?? ""));
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
   const pourFieldsActive = productType === POUR_FIELDS_ACTIVE_TYPE;
+  const bottleSizeFieldActive = !BOTTLE_SIZE_FIELD_DISABLED_TYPES.has(productType as ProductTypeValue);
 
   // Cost (EA) is a live preview of the same math unitCosts() does
   // server-side -- Cost (CS) divided by the effective each-per-case, which
@@ -299,16 +303,22 @@ export function ProductCoreFields({
         </label>
       </div>
 
-      {pourFieldsActive && (
+      {bottleSizeFieldActive && (
         <div>
-          <p className="mb-1 text-sm font-medium">Pour details (Type: Non-Chargeable – Bottles only)</p>
+          <p className="mb-1 text-sm font-medium">{pourFieldsActive ? "Pour details (Type: Non-Chargeable – Bottles only)" : "Container size"}</p>
           <p className="mb-3 text-sm text-gray-500">
-            For liquor/wine: TOT Retail projects a bottle&apos;s value off pours instead of Retail Value.
+            {pourFieldsActive
+              ? "For liquor/wine: TOT Retail projects a bottle's value off pours instead of Retail Value. Bottle size also feeds Recipe cost-per-oz."
+              : "Used to compute cost per fluid ounce for Recipes."}
           </p>
           <div className="grid grid-cols-3 gap-3">
             <DisableableNumberField label="Bottle size (mL)" name="bottle_size_ml" defaultValue={defaultBottleSizeMl} placeholder="e.g. 750" />
-            <DisableableNumberField label="Pour size (oz)" name="pour_size_oz" defaultValue={defaultPourSizeOz} placeholder="e.g. 1.5" />
-            <DisableableNumberField label="Price per pour" name="pour_price" defaultValue={defaultPourPrice} />
+            {pourFieldsActive && (
+              <>
+                <DisableableNumberField label="Pour size (oz)" name="pour_size_oz" defaultValue={defaultPourSizeOz} placeholder="e.g. 1.5" />
+                <DisableableNumberField label="Price per pour" name="pour_price" defaultValue={defaultPourPrice} />
+              </>
+            )}
           </div>
         </div>
       )}
