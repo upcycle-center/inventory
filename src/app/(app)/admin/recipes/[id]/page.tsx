@@ -186,7 +186,10 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         {!ingredientRows.length && <li className="text-sm text-gray-400">No ingredients yet.</li>}
       </ul>
 
-      <p className="mb-3 text-sm font-medium">COST &amp; MSRP</p>
+      <p className="mb-1 text-sm font-medium">COST &amp; MSRP</p>
+      <p className="mb-3 text-xs text-gray-400">
+        ${(packagingCosts[sizes[0].key] ?? 0.5).toFixed(2)} added to cost, for disposables/garnishes/ice.
+      </p>
 
       <ActionForm
         action={updateTargetPourCost}
