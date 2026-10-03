@@ -281,6 +281,8 @@ export interface Recipe {
   id: string;
   name: string;
   description: string | null;
+  // How-to-make-it prep steps, shown on the Ops Sheet PDF.
+  instructions: string | null;
   active: boolean;
   created_by: string | null;
   created_at: string;
@@ -295,6 +297,23 @@ export interface RecipeIngredient {
   quantity_oz: number;
   sort_order: number;
   created_at: string;
+}
+
+export type RecipeRequestSize = "single" | "double" | "liter" | "batch_2_5_gal";
+export type RecipeRequestStatus = "pending" | "fulfilled" | "canceled";
+
+export interface RecipeRequest {
+  id: string;
+  location_id: string;
+  recipe_id: string;
+  size: RecipeRequestSize;
+  quantity: number;
+  note: string | null;
+  status: RecipeRequestStatus;
+  requested_by: string | null;
+  requested_at: string;
+  fulfilled_by: string | null;
+  fulfilled_at: string | null;
 }
 
 export interface ProductBarcode {

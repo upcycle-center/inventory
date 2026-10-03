@@ -5,9 +5,17 @@ import { computeRecipeSizes, costPerOz } from "@/lib/recipeCost";
 import { createRecipe } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { DownloadIcon } from "@/components/DownloadIcon";
 
-function fmtCurrency(value: number | null) {
-  return value == null ? "—" : `$${value.toFixed(2)}`;
+function CostCell({ cost, msrp }: { cost: number | null; msrp: number | null }) {
+  if (cost == null || msrp == null) return <span className="text-gray-400">—</span>;
+  return (
+    <span>
+      <span>${cost.toFixed(2)}</span>
+      <span className="text-gray-400">/</span>
+      <span className="italic text-green-700">${msrp.toFixed(2)}</span>
+    </span>
+  );
 }
 
 export default async function AdminRecipesPage() {
@@ -39,9 +47,9 @@ export default async function AdminRecipesPage() {
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Recipes" }]} />
       <h1 className="mb-2 text-lg font-semibold">Recipes</h1>
       <p className="mb-6 text-sm text-gray-500">
-        Cost a drink recipe at Single Serving, Double Serving, 1L Batch, and 2.5gal Batch, with a
-        recommended MSRP at a 20% pour cost (the standard target for a NY concert-venue bar
-        program).
+        Cost/MSRP (<span className="italic text-green-700">shown as Cost/MSRP</span>) at a 20% pour cost (NY
+        concert-venue bar program standard). Open a recipe to edit ingredients, prep instructions, or download its
+        Ops Sheet.
       </p>
 
       <ActionForm
@@ -61,16 +69,18 @@ export default async function AdminRecipesPage() {
       <table className="w-full text-left text-sm">
         <thead className="text-gray-500">
           <tr>
-            <th className="px-3 pb-2">Name</th>
-            <th className="px-3 pb-2">Ingredients</th>
-            <th className="px-3 pb-2">Single Serving Cost</th>
-            <th className="px-3 pb-2">Single Serving MSRP</th>
+            <th className="px-3 pb-2">Recipe</th>
+            <th className="px-3 pb-2">Single</th>
+            <th className="px-3 pb-2">Double</th>
+            <th className="px-3 pb-2">1L Carafe</th>
+            <th className="px-3 pb-2">2.5gal Bubbler</th>
           </tr>
         </thead>
         <tbody>
           {recipes.map((r) => {
             const ingredients = ingredientsByRecipeId.get(r.id) ?? [];
-            const single = computeRecipeSizes(ingredients).find((s) => s.key === "single");
+            const sizes = computeRecipeSizes(ingredients);
+            const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">
                 <td className="px-3 py-2">
@@ -79,18 +89,32 @@ export default async function AdminRecipesPage() {
                   </Link>
                   {!r.active && <span className="ml-2 text-xs text-gray-400">Inactive</span>}
                   {r.description && <span className="ml-2 text-gray-400">{r.description}</span>}
+                  <a
+                    href={`/api/recipes/${r.id}/ops-sheet`}
+                    className="ml-2 inline-flex items-center gap-1 text-xs text-brand hover:underline"
+                  >
+                    Ops Sheet
+                    <DownloadIcon />
+                  </a>
                 </td>
-                <td className="px-3 py-2 text-gray-500">
-                  {ingredients.length} ingredient{ingredients.length === 1 ? "" : "s"}
+                <td className="px-3 py-2">
+                  <CostCell cost={byKey.single?.cost ?? null} msrp={byKey.single?.msrp ?? null} />
                 </td>
-                <td className="px-3 py-2 text-gray-500">{fmtCurrency(single?.cost ?? null)}</td>
-                <td className="px-3 py-2 text-gray-500">{fmtCurrency(single?.msrp ?? null)}</td>
+                <td className="px-3 py-2">
+                  <CostCell cost={byKey.double?.cost ?? null} msrp={byKey.double?.msrp ?? null} />
+                </td>
+                <td className="px-3 py-2">
+                  <CostCell cost={byKey.liter?.cost ?? null} msrp={byKey.liter?.msrp ?? null} />
+                </td>
+                <td className="px-3 py-2">
+                  <CostCell cost={byKey.batch_2_5_gal?.cost ?? null} msrp={byKey.batch_2_5_gal?.msrp ?? null} />
+                </td>
               </tr>
             );
           })}
           {!recipes.length && (
             <tr>
-              <td colSpan={4} className="px-3 py-6 text-center text-gray-400">
+              <td colSpan={5} className="px-3 py-6 text-center text-gray-400">
                 No recipes yet.
               </td>
             </tr>

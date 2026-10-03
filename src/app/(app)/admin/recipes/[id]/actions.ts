@@ -12,8 +12,9 @@ export async function updateRecipe(formData: FormData) {
   if (!id || !name) return;
 
   const description = String(formData.get("description") || "").trim() || null;
+  const instructions = String(formData.get("instructions") || "").trim() || null;
 
-  await supabase.from("recipes").update({ name, description }).eq("id", id);
+  await supabase.from("recipes").update({ name, description, instructions }).eq("id", id);
   revalidatePath(`/admin/recipes/${id}`);
   revalidatePath("/admin/recipes");
 }

@@ -9,6 +9,7 @@ export const VIEW_KEYS = [
   { key: "count", label: "Count", href: "/count" },
   { key: "month_end", label: "Month-End", href: "/month-end" },
   { key: "request", label: "Request", href: "/request" },
+  { key: "recipe_request", label: "Recipe Request", href: "/request-recipe" },
   { key: "transfer", label: "Transfer", href: "/transfer" },
   { key: "recovery", label: "Recovery", href: "/recovery" },
   { key: "return", label: "Return", href: "/return" },

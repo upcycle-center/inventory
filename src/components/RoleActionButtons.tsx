@@ -19,6 +19,7 @@ const BUTTONS: { viewKey: ViewKey; label: string; href: string; draftType?: Acti
   { viewKey: "receive", label: "Receive", href: "/receive" },
   { viewKey: "restock_requests", label: "RequestQ", href: "/restock-requests" },
   { viewKey: "request", label: "Request", href: "/request", draftType: "request", activeColor: "bg-yellow-400" },
+  { viewKey: "recipe_request", label: "Recipe Request", href: "/request-recipe" },
   { viewKey: "transfer", label: "Transfer", href: "/transfer", draftType: "transfer", activeColor: "bg-purple-600" },
   { viewKey: "return", label: "Return", href: "/return", draftType: "return", activeColor: "bg-fuchsia-600" },
   { viewKey: "recovery", label: "Recovery", href: "/recovery", draftType: "recovery", activeColor: "bg-orange-600" },

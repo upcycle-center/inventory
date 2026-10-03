@@ -1,0 +1,47 @@
+import { renderToBuffer } from "@react-pdf/renderer";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/auth";
+import { RecipeOpsSheetDocument } from "@/lib/pdf/RecipeOpsSheetDocument";
+import { exportFilename } from "@/lib/exportFilename";
+import { easternDateTimeString } from "@/lib/easternTime";
+
+export async function GET(_request: Request, { params }: { params: { id: string } }) {
+  const profile = await getCurrentProfile();
+  if (!profile) return new Response("Unauthorized", { status: 401 });
+
+  const supabase = createClient();
+
+  const [{ data: recipe }, { data: ingredientsRaw }] = await Promise.all([
+    supabase.from("recipes").select("*").eq("id", params.id).single(),
+    supabase
+      .from("recipe_ingredients")
+      .select("quantity_oz, product:products(description)")
+      .eq("recipe_id", params.id)
+      .order("sort_order"),
+  ]);
+
+  if (!recipe) return new Response("Not found", { status: 404 });
+
+  const ingredients = ((ingredientsRaw as any[]) ?? [])
+    .filter((row) => row.product)
+    .map((row) => ({ description: row.product.description as string, quantityOz: Number(row.quantity_oz) }));
+
+  const buffer = await renderToBuffer(
+    (
+      <RecipeOpsSheetDocument
+        name={recipe.name}
+        description={recipe.description}
+        instructions={recipe.instructions}
+        ingredients={ingredients}
+        generatedAt={easternDateTimeString()}
+      />
+    ) as any
+  );
+
+  return new Response(new Uint8Array(buffer), {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${exportFilename(`Recipe-${recipe.name.replace(/[^a-zA-Z0-9]+/g, "-")}-Ops-Sheet`, "pdf")}"`,
+    },
+  });
+}

@@ -92,3 +92,33 @@ export async function deleteRestockRequest(formData: FormData) {
   revalidatePath("/restock-requests");
   revalidatePath("/dashboard");
 }
+
+export async function fulfillRecipeRequest(formData: FormData) {
+  const profile = await requireProfile(["admin", "warehouse"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  if (!id) return;
+
+  await supabase
+    .from("recipe_requests")
+    .update({ status: "fulfilled", fulfilled_by: profile.id, fulfilled_at: new Date().toISOString() })
+    .eq("id", id);
+
+  revalidatePath("/restock-requests");
+  revalidatePath("/dashboard");
+}
+
+// Admin-only: same no-reason-given removal as deleteRestockRequest --
+// there's no recipe-specific denial reason taxonomy, so Delete covers
+// both "wrong entry" and "can't fulfill this".
+export async function deleteRecipeRequest(formData: FormData) {
+  await requireProfile(["admin"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  if (!id) return;
+
+  await supabase.from("recipe_requests").update({ status: "canceled" }).eq("id", id);
+
+  revalidatePath("/restock-requests");
+  revalidatePath("/dashboard");
+}

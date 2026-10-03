@@ -1,3 +1,5 @@
+import type { RecipeRequestSize } from "@/lib/supabase/types";
+
 const ML_PER_OZ = 29.5735;
 const FL_OZ_PER_GAL = 128;
 
@@ -21,21 +23,25 @@ export function costPerOz(product: {
   return costPerBottle / bottleSizeOz;
 }
 
-export type RecipeSizeKey = "single" | "double" | "liter" | "batch_2_5_gal";
+export type RecipeSizeKey = RecipeRequestSize;
 
 // Scale factor relative to the base (single-serving) recipe's total oz --
 // 1x for Single, 2x for Double, and volume-ratio scaled for the two
 // batch sizes so the batch comes out to exactly that target volume.
-const RECIPE_SIZE_DEFS: { key: RecipeSizeKey; label: string; scale: (baseTotalOz: number) => number }[] = [
-  { key: "single", label: "Single Serving", scale: () => 1 },
-  { key: "double", label: "Double Serving", scale: () => 2 },
-  { key: "liter", label: "1L Batch", scale: (baseTotalOz) => (baseTotalOz > 0 ? 1000 / ML_PER_OZ / baseTotalOz : 0) },
+export const RECIPE_SIZE_DEFS: { key: RecipeSizeKey; label: string; scale: (baseTotalOz: number) => number }[] = [
+  { key: "single", label: "Single", scale: () => 1 },
+  { key: "double", label: "Double", scale: () => 2 },
+  { key: "liter", label: "1L Carafe", scale: (baseTotalOz) => (baseTotalOz > 0 ? 1000 / ML_PER_OZ / baseTotalOz : 0) },
   {
     key: "batch_2_5_gal",
-    label: "2.5gal Batch",
+    label: "2.5gal Bubbler",
     scale: (baseTotalOz) => (baseTotalOz > 0 ? (2.5 * FL_OZ_PER_GAL) / baseTotalOz : 0),
   },
 ];
+
+export function recipeSizeLabel(key: RecipeSizeKey): string {
+  return RECIPE_SIZE_DEFS.find((s) => s.key === key)?.label ?? key;
+}
 
 export interface RecipeIngredientLine {
   productId: string;
@@ -69,4 +75,30 @@ export function computeRecipeSizes(ingredients: RecipeIngredientLine[]): RecipeS
     const msrp = cost != null ? cost / POUR_COST_TARGET : null;
     return { key, label, totalOz, servings, cost, msrp };
   });
+}
+
+// The scale factor for one specific size -- used by the Ops Sheet pick
+// list and Recipe Request fulfillment, where only one size is needed
+// rather than the whole comparison table.
+export function scaleForSize(sizeKey: RecipeSizeKey, baseTotalOz: number): number {
+  return RECIPE_SIZE_DEFS.find((s) => s.key === sizeKey)?.scale(baseTotalOz) ?? 0;
+}
+
+export interface ScaledIngredientLine {
+  productId: string;
+  description: string;
+  quantityOz: number;
+}
+
+// Each ingredient's quantity scaled to one size, optionally multiplied by
+// how many of that size were requested (requestQuantity) -- the actual
+// pick list a Request line or Ops Sheet hands Warehouse.
+export function scaledIngredients(
+  ingredients: { productId: string; description: string; quantityOz: number }[],
+  sizeKey: RecipeSizeKey,
+  requestQuantity = 1
+): ScaledIngredientLine[] {
+  const baseTotalOz = ingredients.reduce((sum, i) => sum + i.quantityOz, 0);
+  const scale = scaleForSize(sizeKey, baseTotalOz) * requestQuantity;
+  return ingredients.map((i) => ({ productId: i.productId, description: i.description, quantityOz: i.quantityOz * scale }));
 }
