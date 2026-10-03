@@ -37,6 +37,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
         name={recipe.name}
         description={recipe.description}
         instructions={recipe.instructions}
+        originalRecipe={recipe.original_recipe}
+        sourceUrl={recipe.source_url}
         ingredients={ingredients}
         generatedAt={easternDateTimeString()}
       />

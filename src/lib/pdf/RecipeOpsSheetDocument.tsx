@@ -14,6 +14,10 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   instructionsText: { fontSize: 10, lineHeight: 1.5 },
+  howToRow: { flexDirection: "row" },
+  howToCol: { flex: 1 },
+  howToColRight: { flex: 1, marginLeft: 16 },
+  sourceUrl: { fontSize: 8, color: "#555555", marginTop: 6 },
   thRow: {
     flexDirection: "row",
     borderWidth: 1,
@@ -42,12 +46,16 @@ export function RecipeOpsSheetDocument({
   name,
   description,
   instructions,
+  originalRecipe,
+  sourceUrl,
   ingredients,
   generatedAt,
 }: {
   name: string;
   description: string | null;
   instructions: string | null;
+  originalRecipe: string | null;
+  sourceUrl: string | null;
   ingredients: RecipeIngredientLine[];
   generatedAt: string;
 }) {
@@ -62,8 +70,17 @@ export function RecipeOpsSheetDocument({
           Printed {generatedAt}
         </Text>
 
-        <Text style={styles.sectionTitle}>How to Make It</Text>
-        <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
+        <View style={styles.howToRow}>
+          <View style={styles.howToCol}>
+            <Text style={styles.sectionTitle}>How to Make It</Text>
+            <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
+          </View>
+          <View style={styles.howToColRight}>
+            <Text style={styles.sectionTitle}>Original Recipe</Text>
+            <Text style={styles.instructionsText}>{originalRecipe || "No original recipe on file."}</Text>
+            {sourceUrl && <Text style={styles.sourceUrl}>Source: {sourceUrl}</Text>}
+          </View>
+        </View>
 
         <Text style={styles.sectionTitle}>Ingredients / Pick List</Text>
         <View style={styles.thRow}>
