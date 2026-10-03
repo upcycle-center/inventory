@@ -226,7 +226,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           {sizes.map((s) => (
             <tr key={s.key} className="border-t border-gray-100">
               <td className="px-3 py-2 font-medium">{s.label}</td>
-              <td className="px-3 py-2 text-gray-500">{s.totalOz.toFixed(2)} oz</td>
+              <td className="px-3 py-2 text-gray-500">{s.totalOz} oz</td>
               <td className="px-3 py-2 text-gray-500">{fmtCurrency(s.cost)}</td>
               <td className="px-3 py-2 font-medium text-green-700">{fmtCurrency(s.msrp)}</td>
             </tr>
