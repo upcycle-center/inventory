@@ -55,11 +55,15 @@ export default async function AdminRecipesPage() {
           <tr>
             <th className="px-3 pb-2"></th>
             <th className="px-3 pb-2 whitespace-nowrap">Recipe</th>
-            {RECIPE_SIZE_DEFS.map((s) => (
-              <th key={s.key} className="whitespace-nowrap px-3 pb-2">
-                {s.label}
-              </th>
-            ))}
+            {RECIPE_SIZE_DEFS.map((s) => {
+              const [amount, ...rest] = s.label.split(" ");
+              return (
+                <th key={s.key} className="whitespace-nowrap px-3 pb-2 text-center">
+                  <div>{amount}</div>
+                  <div>{rest.join(" ")}</div>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
