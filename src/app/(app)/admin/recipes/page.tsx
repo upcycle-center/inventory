@@ -54,9 +54,9 @@ export default async function AdminRecipesPage() {
         <thead className="text-gray-500">
           <tr>
             <th className="px-3 pb-2"></th>
-            <th className="px-3 pb-2">Recipe</th>
+            <th className="px-3 pb-2 whitespace-nowrap">Recipe</th>
             {RECIPE_SIZE_DEFS.map((s) => (
-              <th key={s.key} className="px-3 pb-2">
+              <th key={s.key} className="whitespace-nowrap px-3 pb-2">
                 {s.label}
               </th>
             ))}
@@ -73,19 +73,21 @@ export default async function AdminRecipesPage() {
                   <ProductThumbnail photoUrl={r.photo_url} alt={r.name} />
                 </td>
                 <td className="px-3 py-2">
-                  <a
-                    href={`/api/recipes/${r.id}/ops-sheet`}
-                    title="Download Ops Sheet"
-                    aria-label="Download Ops Sheet"
-                    className="mr-2 inline-flex items-center text-gray-400 hover:text-brand"
-                  >
-                    <DownloadIcon />
-                  </a>
-                  <Link href={`/admin/recipes/${r.id}`} className="text-brand hover:underline">
-                    {r.name}
-                  </Link>
-                  {!r.active && <span className="ml-2 text-xs text-gray-400">Inactive</span>}
-                  {r.description && <span className="ml-2 text-gray-400">{r.description}</span>}
+                  <div className="whitespace-nowrap">
+                    <a
+                      href={`/api/recipes/${r.id}/ops-sheet`}
+                      title="Download Ops Sheet"
+                      aria-label="Download Ops Sheet"
+                      className="mr-2 inline-flex items-center text-gray-400 hover:text-brand"
+                    >
+                      <DownloadIcon />
+                    </a>
+                    <Link href={`/admin/recipes/${r.id}`} className="text-brand hover:underline">
+                      {r.name}
+                    </Link>
+                    {!r.active && <span className="ml-2 text-xs text-gray-400">Inactive</span>}
+                  </div>
+                  {r.description && <div className="whitespace-nowrap text-gray-400">{r.description}</div>}
                 </td>
                 {RECIPE_SIZE_DEFS.map((s) => (
                   <td key={s.key} className="px-3 py-2">
