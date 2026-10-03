@@ -84,7 +84,11 @@ export function AddIngredientForm({ recipeId, products }: { recipeId: string; pr
       </div>
       <label className="flex items-center gap-1.5 pb-2 text-xs text-gray-500">
         <input key={formKey} type="checkbox" name="top_off" className="h-4 w-4" />
-        Top Off (2oz std)
+        <span className="leading-tight">
+          Top Off
+          <br />
+          (2oz std)
+        </span>
       </label>
       <button type="submit" disabled={isPending} className="rounded-md bg-brand px-4 py-2 text-sm text-white disabled:opacity-50">
         {isPending ? "Adding…" : "Add"}
