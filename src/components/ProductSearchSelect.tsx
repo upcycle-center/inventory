@@ -56,14 +56,14 @@ export function ProductSearchSelect({
         className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
       />
       {open && matches.length > 0 && (
-        <ul className="absolute z-10 mt-1 max-h-60 w-full min-w-[16rem] overflow-y-auto rounded-md border border-gray-200 bg-white text-sm shadow-lg">
+        <ul className="absolute z-10 mt-1 max-h-60 w-max max-w-[28rem] min-w-full overflow-auto rounded-md border border-gray-200 bg-white text-sm shadow-lg">
           {matches.map((p) => (
             <li key={p.id}>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => choose(p)}
-                className="block w-full px-3 py-2 text-left hover:bg-gray-50"
+                className="block w-full whitespace-nowrap px-3 py-2 text-left hover:bg-gray-50"
               >
                 {p.description}
               </button>

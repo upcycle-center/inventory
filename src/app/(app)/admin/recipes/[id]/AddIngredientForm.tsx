@@ -72,14 +72,22 @@ export function AddIngredientForm({ recipeId, products }: { recipeId: string; pr
       </div>
       <div>
         <label className="mb-1 block text-xs text-gray-500">Qty (oz)</label>
-        <input key={formKey} name="quantity_oz" type="number" min={0.01} step={0.01} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+        <input
+          key={formKey}
+          name="quantity_oz"
+          type="number"
+          min={0.01}
+          step={0.01}
+          maxLength={2}
+          className="w-14 rounded-md border border-gray-300 px-2 py-2 text-sm"
+        />
       </div>
       <label className="flex items-center gap-1.5 pb-2 text-xs text-gray-500">
         <input key={formKey} type="checkbox" name="top_off" className="h-4 w-4" />
         Top Off (2oz std)
       </label>
       <button type="submit" disabled={isPending} className="rounded-md bg-brand px-4 py-2 text-sm text-white disabled:opacity-50">
-        {isPending ? "Adding…" : "Add ingredient"}
+        {isPending ? "Adding…" : "Add"}
       </button>
       {!isPending && status === "saved" && <span className="text-xs font-medium text-green-600">✓ Ingredient added</span>}
     </form>
