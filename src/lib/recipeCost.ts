@@ -96,13 +96,12 @@ export interface RecipeSizeResult {
 // pourCostPct is a percentage (20 means 20%), per-recipe editable.
 export function computeRecipeSizes(ingredients: RecipeIngredientLine[], pourCostPct: number = DEFAULT_POUR_COST_PCT): RecipeSizeResult[] {
   const pourCostFraction = pourCostPct / 100;
-  return RECIPE_SIZE_DEFS.map(({ key, label }) => {
+  return RECIPE_SIZE_DEFS.map(({ key, label, pourOz }) => {
     const lines = resolveIngredientsForSize(ingredients, key);
-    const totalOz = lines.reduce((sum, l) => sum + l.quantityOz, 0);
     const hasAllCosts = lines.length > 0 && lines.every((l) => l.costPerOz != null);
     const cost = hasAllCosts ? lines.reduce((sum, l) => sum + l.quantityOz * (l.costPerOz ?? 0), 0) : null;
     const msrp = cost != null && pourCostFraction > 0 ? cost / pourCostFraction : null;
-    return { key, label, totalOz, cost, msrp };
+    return { key, label, totalOz: pourOz, cost, msrp };
   });
 }
 
