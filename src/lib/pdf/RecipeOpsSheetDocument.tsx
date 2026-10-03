@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { RECIPE_SIZE_DEFS, scaleForSize } from "@/lib/recipeCost";
+import { RECIPE_SIZE_DEFS, resolveIngredientsForSize, type RecipeIngredientLine } from "@/lib/recipeCost";
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
@@ -34,11 +34,6 @@ const styles = StyleSheet.create({
   colSize: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
 });
 
-interface IngredientLine {
-  description: string;
-  quantityOz: number;
-}
-
 function fmtOz(oz: number) {
   return oz > 0 ? `${oz.toFixed(2)} oz` : "—";
 }
@@ -53,10 +48,10 @@ export function RecipeOpsSheetDocument({
   name: string;
   description: string | null;
   instructions: string | null;
-  ingredients: IngredientLine[];
+  ingredients: RecipeIngredientLine[];
   generatedAt: string;
 }) {
-  const baseTotalOz = ingredients.reduce((sum, i) => sum + i.quantityOz, 0);
+  const resolvedBySize = Object.fromEntries(RECIPE_SIZE_DEFS.map((s) => [s.key, resolveIngredientsForSize(ingredients, s.key)]));
 
   return (
     <Document>
@@ -80,13 +75,19 @@ export function RecipeOpsSheetDocument({
           ))}
         </View>
         {ingredients.map((ing) => (
-          <View key={ing.description} style={styles.tr}>
-            <Text style={styles.colProduct}>{ing.description}</Text>
-            {RECIPE_SIZE_DEFS.map((s) => (
-              <Text key={s.key} style={styles.colSize}>
-                {fmtOz(ing.quantityOz * scaleForSize(s.key, baseTotalOz))}
-              </Text>
-            ))}
+          <View key={ing.productId} style={styles.tr}>
+            <Text style={styles.colProduct}>
+              {ing.description}
+              {ing.quantityOz == null ? " (Top Off)" : ""}
+            </Text>
+            {RECIPE_SIZE_DEFS.map((s) => {
+              const resolved = resolvedBySize[s.key].find((l: any) => l.productId === ing.productId);
+              return (
+                <Text key={s.key} style={styles.colSize}>
+                  {resolved ? fmtOz(resolved.quantityOz) : "—"}
+                </Text>
+              );
+            })}
           </View>
         ))}
         {!ingredients.length && <Text style={styles.instructionsText}>No ingredients on file.</Text>}

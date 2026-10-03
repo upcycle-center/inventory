@@ -4,9 +4,16 @@ import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { LocationLabel } from "@/components/LocationLabel";
 import { getRestockUnitByProductId } from "@/lib/restockUnit";
-import { fulfillRestockRequest, deleteRestockRequest, denyRestockRequest, fulfillRecipeRequest, deleteRecipeRequest } from "./actions";
+import {
+  fulfillRestockRequest,
+  deleteRestockRequest,
+  denyRestockRequest,
+  fulfillRecipeRequest,
+  deleteRecipeRequest,
+  reportRecipeRequestShortfall,
+} from "./actions";
 import { DENIAL_REASONS } from "@/lib/denialReasons";
-import { recipeSizeLabel, scaledIngredients } from "@/lib/recipeCost";
+import { recipeSizeLabel, pickListForSize } from "@/lib/recipeCost";
 import { easternDateTimeString } from "@/lib/easternTime";
 
 export default async function RestockRequestsPage() {
@@ -53,9 +60,9 @@ export default async function RestockRequestsPage() {
     supabase
       .from("recipe_requests")
       .select(
-        "id, size, quantity, note, requested_at, location:locations(id, name, yellow_dog_code), recipe:recipes(id, name), requested_by_profile:profiles(id, name)"
+        "id, size, quantity, note, status, requested_at, location:locations(id, name, yellow_dog_code), recipe:recipes(id, name), requested_by_profile:profiles(id, name)"
       )
-      .eq("status", "pending")
+      .in("status", ["pending", "partial"])
       .order("requested_at", { ascending: true }),
     isManager
       ? supabase
@@ -79,15 +86,20 @@ export default async function RestockRequestsPage() {
   const { data: ingredientsRaw } = recipeIds.length
     ? await supabase
         .from("recipe_ingredients")
-        .select("recipe_id, quantity_oz, product:products(id, description)")
+        .select("recipe_id, quantity_oz, product:products(id, description, supplier_id)")
         .in("recipe_id", recipeIds)
     : { data: [] as any[] };
 
-  const ingredientsByRecipeId = new Map<string, { productId: string; description: string; quantityOz: number }[]>();
+  const ingredientsByRecipeId = new Map<string, { productId: string; description: string; quantityOz: number | null; supplierId: string | null }[]>();
   for (const row of (ingredientsRaw as any[]) ?? []) {
     if (!row.product) continue;
     const list = ingredientsByRecipeId.get(row.recipe_id) ?? [];
-    list.push({ productId: row.product.id, description: row.product.description, quantityOz: Number(row.quantity_oz) });
+    list.push({
+      productId: row.product.id,
+      description: row.product.description,
+      quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
+      supplierId: row.product.supplier_id,
+    });
     ingredientsByRecipeId.set(row.recipe_id, list);
   }
 
@@ -312,7 +324,8 @@ export default async function RestockRequestsPage() {
           <tbody>
             {recipeRequestRows.map((r) => {
               const ingredients = ingredientsByRecipeId.get(r.recipe?.id) ?? [];
-              const pickList = scaledIngredients(ingredients, r.size, r.quantity);
+              const pickList = pickListForSize(ingredients, r.size, r.quantity);
+              const shortfallFormId = `shortfall-form-${r.id}`;
               return (
                 <tr key={r.id} className="border-t border-gray-100 align-top">
                   <td className="px-4 py-2 whitespace-nowrap">
@@ -320,16 +333,24 @@ export default async function RestockRequestsPage() {
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
                     {r.recipe?.name}
+                    {r.status === "partial" && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Partial</span>
+                    )}
                     <span className="block text-xs text-gray-400">
                       {recipeSizeLabel(r.size)} × {r.quantity}
                     </span>
                     {r.note && <span className="block text-xs text-gray-400">{r.note}</span>}
                   </td>
                   <td className="px-4 py-2">
+                    {isManager && <form id={shortfallFormId} action={reportRecipeRequestShortfall} />}
                     {pickList.map((ing) => (
-                      <span key={ing.productId} className="block whitespace-nowrap text-gray-500">
+                      <label key={ing.productId} className="flex items-center gap-1.5 whitespace-nowrap text-gray-500">
+                        {isManager && (
+                          <input type="checkbox" form={shortfallFormId} name="missing_product_id" value={ing.productId} className="h-3.5 w-3.5" />
+                        )}
                         {ing.description}: {ing.quantityOz.toFixed(2)} oz
-                      </span>
+                        {ing.isTopOff && <span className="text-xs text-gray-400">(T/O)</span>}
+                      </label>
                     ))}
                     {!pickList.length && <span className="text-gray-400">—</span>}
                   </td>
@@ -337,24 +358,35 @@ export default async function RestockRequestsPage() {
                   <td className="px-4 py-2 whitespace-nowrap text-gray-500">{easternDateTimeString(new Date(r.requested_at))}</td>
                   {isManager && (
                     <td className="px-4 py-2 text-right">
-                      <div className="flex justify-end items-center gap-2">
-                        <form action={fulfillRecipeRequest}>
-                          <input type="hidden" name="id" value={r.id} />
-                          <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                            Fulfill
-                          </button>
-                        </form>
-                        {isAdmin && (
-                          <form action={deleteRecipeRequest}>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex justify-end items-center gap-2">
+                          <form action={fulfillRecipeRequest}>
                             <input type="hidden" name="id" value={r.id} />
-                            <button
-                              type="submit"
-                              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
-                            >
-                              Delete
+                            <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
+                              Fulfill
                             </button>
                           </form>
-                        )}
+                          {isAdmin && (
+                            <form action={deleteRecipeRequest}>
+                              <input type="hidden" name="id" value={r.id} />
+                              <button
+                                type="submit"
+                                className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                              >
+                                Delete
+                              </button>
+                            </form>
+                          )}
+                        </div>
+                        <button
+                          type="submit"
+                          form={shortfallFormId}
+                          name="id"
+                          value={r.id}
+                          className="rounded-md border border-amber-300 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50"
+                        >
+                          Report Shortfall → PO
+                        </button>
                       </div>
                     </td>
                   )}

@@ -15,6 +15,7 @@ const SECTION_GROUPS = [
     label: "Operations",
     items: [
       { href: "/restock-requests", label: "RequestQ" },
+      { href: "/admin/purchase-orders", label: "Purchase Orders" },
       { href: "/admin/events", label: "Events" },
       { href: "/admin/locations", label: "Locations" },
       { href: "/admin/storage-areas", label: "Storage Areas" },

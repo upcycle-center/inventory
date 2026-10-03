@@ -33,7 +33,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
     .map((row) => ({
       productId: row.product!.id,
       description: row.product!.description,
-      quantityOz: Number(row.quantity_oz),
+      quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
       costPerOz: costPerOz(row.product!),
     }));
   const sizes = computeRecipeSizes(costLines);
@@ -96,7 +96,9 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
 
       <p className="mb-3 text-sm font-medium">Ingredients</p>
       <p className="mb-3 text-sm text-gray-500">
-        Quantity is per Single Serving — Double, 1L Carafe, and 2.5gal Bubbler all scale from this.
+        Quantity is for the 9oz Wine/10oz Single pour — 16oz Double doubles it, 1L Carafe and 2.5gal
+        Bubbler scale off it. Mark an ingredient Top Off (e.g. soda, juice to fill the cup) instead of
+        entering an amount — it&apos;s costed at a standard 2oz.
       </p>
 
       <ActionForm
@@ -118,8 +120,12 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-500">Qty (oz)</label>
-          <input name="quantity_oz" type="number" min={0.01} step={0.01} required className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <input name="quantity_oz" type="number" min={0.01} step={0.01} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
         </div>
+        <label className="flex items-center gap-1.5 pb-2 text-xs text-gray-500">
+          <input type="checkbox" name="top_off" className="h-4 w-4" />
+          Top Off (2oz std)
+        </label>
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
           Add ingredient
         </button>
@@ -141,10 +147,15 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
                   type="number"
                   min={0.01}
                   step={0.01}
-                  defaultValue={row.quantity_oz}
-                  className="w-20 rounded-md border border-gray-300 px-2 py-1 text-xs"
+                  defaultValue={row.quantity_oz ?? ""}
+                  placeholder="2 (Top Off)"
+                  className="w-24 rounded-md border border-gray-300 px-2 py-1 text-xs"
                 />
                 <span className="text-xs text-gray-400">oz</span>
+                <label className="flex items-center gap-1 text-xs text-gray-500">
+                  <input type="checkbox" name="top_off" defaultChecked={row.quantity_oz == null} className="h-3.5 w-3.5" />
+                  T/O
+                </label>
                 <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
                   Save
                 </button>
@@ -183,12 +194,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           {sizes.map((s) => (
             <tr key={s.key} className="border-t border-gray-100">
               <td className="px-3 py-2 font-medium">{s.label}</td>
-              <td className="px-3 py-2 text-gray-500">
-                {s.totalOz.toFixed(2)} oz
-                {(s.key === "liter" || s.key === "batch_2_5_gal") && s.servings > 0 && (
-                  <span className="ml-2 text-xs text-gray-400">≈ {s.servings.toFixed(1)} single servings</span>
-                )}
-              </td>
+              <td className="px-3 py-2 text-gray-500">{s.totalOz.toFixed(2)} oz</td>
               <td className="px-3 py-2 text-gray-500">{fmtCurrency(s.cost)}</td>
               <td className="px-3 py-2 font-medium text-green-700">{fmtCurrency(s.msrp)}</td>
             </tr>

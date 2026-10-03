@@ -5,16 +5,24 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 
-export async function createRecipe(formData: FormData) {
+export async function createRecipe(formData: FormData): Promise<{ error: string } | void> {
   const profile = await requireProfile(["admin"]);
   const supabase = createClient();
   const name = String(formData.get("name") || "").trim();
-  if (!name) return;
+  if (!name) return { error: "Name is required." };
 
   const description = String(formData.get("description") || "").trim() || null;
 
-  await supabase.from("recipes").insert({ name, description, created_by: profile.id });
+  const { data, error } = await supabase
+    .from("recipes")
+    .insert({ name, description, created_by: profile.id })
+    .select("id")
+    .single();
+
+  if (error) return { error: error.message };
+
   revalidatePath("/admin/recipes");
+  redirect(`/admin/recipes/${data.id}`);
 }
 
 export async function toggleRecipeActive(formData: FormData) {

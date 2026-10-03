@@ -4,7 +4,10 @@ export type CountType = "opening" | "closing";
 export type LocationType = "warehouse" | "stand" | "kitchen" | "catering";
 export type LocationSeasonStatus = "open" | "closed";
 export type MovementType = "receiving" | "return" | "transfer" | "adjustment" | "recovery";
-export type PoStatus = "placed" | "received" | "canceled";
+// "requested" = flagged as needed but not yet sent to the supplier (a PO
+// Request) -- distinct from "placed", which means it's actually been
+// ordered.
+export type PoStatus = "requested" | "placed" | "received" | "canceled";
 export type RequestStatus = "pending" | "fulfilled" | "canceled";
 export type ProductType = "chargeable" | "non_chargeable_bottle" | "non_chargeable_mixer" | "disposable";
 export type WasteReason =
@@ -292,15 +295,19 @@ export interface RecipeIngredient {
   id: string;
   recipe_id: string;
   product_id: string;
-  // Quantity in fluid ounces for ONE single serving -- Double/1L/2.5gal
-  // batch sizes are all scaled off this base amount.
-  quantity_oz: number;
+  // Quantity in fluid ounces used in the 10oz Single cup (16oz Double
+  // doubles it) -- null means Top Off: no measured amount, fills
+  // whatever's left in the cup instead.
+  quantity_oz: number | null;
   sort_order: number;
   created_at: string;
 }
 
-export type RecipeRequestSize = "single" | "double" | "liter" | "batch_2_5_gal";
-export type RecipeRequestStatus = "pending" | "fulfilled" | "canceled";
+export type RecipeRequestSize = "wine" | "single" | "double" | "liter" | "batch_2_5_gal";
+// "partial" = Warehouse pulled what was in stock and flagged the rest as
+// a PO Request -- the request stays visible (not fulfilled) until the
+// shortfall is received and the request is manually completed.
+export type RecipeRequestStatus = "pending" | "fulfilled" | "partial" | "canceled";
 
 export interface RecipeRequest {
   id: string;
@@ -411,6 +418,16 @@ export interface InventoryMovement {
   reason_code: string | null;
   note: string | null;
   user_id: string;
+  created_at: string;
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  purchase_order_id: string;
+  product_id: string;
+  quantity_oz: number | null;
+  note: string | null;
+  recipe_request_id: string | null;
   created_at: string;
 }
 

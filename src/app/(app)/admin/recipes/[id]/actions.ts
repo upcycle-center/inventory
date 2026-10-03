@@ -24,8 +24,11 @@ export async function addIngredient(formData: FormData) {
   const supabase = createClient();
   const recipeId = String(formData.get("recipe_id"));
   const productId = String(formData.get("product_id"));
-  const quantityOz = Number(formData.get("quantity_oz"));
-  if (!recipeId || !productId || !quantityOz || quantityOz <= 0) return;
+  const isTopOff = formData.get("top_off") === "on";
+  const quantityRaw = String(formData.get("quantity_oz") || "").trim();
+  const quantityOz = quantityRaw ? Number(quantityRaw) : null;
+  if (!recipeId || !productId) return;
+  if (!isTopOff && (!quantityOz || quantityOz <= 0)) return;
 
   const { count } = await supabase
     .from("recipe_ingredients")
@@ -35,7 +38,7 @@ export async function addIngredient(formData: FormData) {
   await supabase.from("recipe_ingredients").insert({
     recipe_id: recipeId,
     product_id: productId,
-    quantity_oz: quantityOz,
+    quantity_oz: isTopOff ? null : quantityOz,
     sort_order: count ?? 0,
   });
 
@@ -48,10 +51,13 @@ export async function updateIngredientQty(formData: FormData) {
   const supabase = createClient();
   const id = String(formData.get("id"));
   const recipeId = String(formData.get("recipe_id"));
-  const quantityOz = Number(formData.get("quantity_oz"));
-  if (!id || !recipeId || !quantityOz || quantityOz <= 0) return;
+  const isTopOff = formData.get("top_off") === "on";
+  const quantityRaw = String(formData.get("quantity_oz") || "").trim();
+  const quantityOz = quantityRaw ? Number(quantityRaw) : null;
+  if (!id || !recipeId) return;
+  if (!isTopOff && (!quantityOz || quantityOz <= 0)) return;
 
-  await supabase.from("recipe_ingredients").update({ quantity_oz: quantityOz }).eq("id", id);
+  await supabase.from("recipe_ingredients").update({ quantity_oz: isTopOff ? null : quantityOz }).eq("id", id);
   revalidatePath(`/admin/recipes/${recipeId}`);
   revalidatePath("/admin/recipes");
 }

@@ -7,6 +7,11 @@ const FL_OZ_PER_GAL = 128;
 // program -- so recommended MSRP = cost / 0.20 (cost x 5).
 export const POUR_COST_TARGET = 0.2;
 
+// A Top Off ingredient (quantityOz null -- no measured amount) is costed
+// at this standard amount, same as any other ingredient from there on
+// (doubles for Double, scales normally for Carafe/Bubbler).
+const TOP_OFF_DEFAULT_OZ = 2;
+
 // Cost per fluid ounce for a product, derived from its case economics --
 // the same bottle-size math TOT Retail already uses for pour-based
 // products. Returns null when the product is missing the fields needed
@@ -25,12 +30,16 @@ export function costPerOz(product: {
 
 export type RecipeSizeKey = RecipeRequestSize;
 
-// Scale factor relative to the base (single-serving) recipe's total oz --
-// 1x for Single, 2x for Double, and volume-ratio scaled for the two
-// batch sizes so the batch comes out to exactly that target volume.
+// Scale factor relative to the base recipe's total oz (every ingredient's
+// quantity summed, with a Top Off ingredient standing in at 2oz) -- 1x
+// for Wine/Single, 2x for Double, and volume-ratio scaled for the two
+// batch sizes so the batch comes out to exactly that target volume. Wine
+// and Single share the same 1x math -- the label is just which cup it's
+// served in, not a different recipe amount.
 export const RECIPE_SIZE_DEFS: { key: RecipeSizeKey; label: string; scale: (baseTotalOz: number) => number }[] = [
-  { key: "single", label: "Single", scale: () => 1 },
-  { key: "double", label: "Double", scale: () => 2 },
+  { key: "wine", label: "9oz Wine", scale: () => 1 },
+  { key: "single", label: "10oz Single", scale: () => 1 },
+  { key: "double", label: "16oz Double", scale: () => 2 },
   { key: "liter", label: "1L Carafe", scale: (baseTotalOz) => (baseTotalOz > 0 ? 1000 / ML_PER_OZ / baseTotalOz : 0) },
   {
     key: "batch_2_5_gal",
@@ -46,17 +55,42 @@ export function recipeSizeLabel(key: RecipeSizeKey): string {
 export interface RecipeIngredientLine {
   productId: string;
   description: string;
+  // null = Top Off -- no measured amount, costed at a standard 2oz.
+  quantityOz: number | null;
+  // Optional for callers that only need the pick list, not cost (e.g.
+  // Ops Sheet, RequestQ's pick-list display).
+  costPerOz?: number | null;
+}
+
+export interface ResolvedIngredientLine {
+  productId: string;
+  description: string;
   quantityOz: number;
+  isTopOff: boolean;
   costPerOz: number | null;
+}
+
+function baseQty(i: RecipeIngredientLine): number {
+  return i.quantityOz ?? TOP_OFF_DEFAULT_OZ;
+}
+
+// Every ingredient resolved to its actual oz for one size.
+export function resolveIngredientsForSize(ingredients: RecipeIngredientLine[], sizeKey: RecipeSizeKey): ResolvedIngredientLine[] {
+  const baseTotalOz = ingredients.reduce((sum, i) => sum + baseQty(i), 0);
+  const scale = RECIPE_SIZE_DEFS.find((s) => s.key === sizeKey)?.scale(baseTotalOz) ?? 0;
+  return ingredients.map((i) => ({
+    productId: i.productId,
+    description: i.description,
+    quantityOz: baseQty(i) * scale,
+    isTopOff: i.quantityOz == null,
+    costPerOz: i.costPerOz ?? null,
+  }));
 }
 
 export interface RecipeSizeResult {
   key: RecipeSizeKey;
   label: string;
   totalOz: number;
-  // Single-serving-equivalents this size represents -- 1 for Single, 2
-  // for Double, ~N for a batch (how many single servings it yields).
-  servings: number;
   cost: number | null;
   msrp: number | null;
 }
@@ -65,40 +99,31 @@ export interface RecipeSizeResult {
 // (no case_cost/case_size/bottle_size_ml on record) -- the UI flags
 // which ingredient rather than silently showing a wrong total.
 export function computeRecipeSizes(ingredients: RecipeIngredientLine[]): RecipeSizeResult[] {
-  const baseTotalOz = ingredients.reduce((sum, i) => sum + i.quantityOz, 0);
-  const hasAllCosts = ingredients.length > 0 && ingredients.every((i) => i.costPerOz != null);
-
-  return RECIPE_SIZE_DEFS.map(({ key, label, scale }) => {
-    const servings = scale(baseTotalOz);
-    const totalOz = baseTotalOz * servings;
-    const cost = hasAllCosts ? ingredients.reduce((sum, i) => sum + i.quantityOz * servings * (i.costPerOz ?? 0), 0) : null;
+  return RECIPE_SIZE_DEFS.map(({ key, label }) => {
+    const lines = resolveIngredientsForSize(ingredients, key);
+    const totalOz = lines.reduce((sum, l) => sum + l.quantityOz, 0);
+    const hasAllCosts = lines.length > 0 && lines.every((l) => l.costPerOz != null);
+    const cost = hasAllCosts ? lines.reduce((sum, l) => sum + l.quantityOz * (l.costPerOz ?? 0), 0) : null;
     const msrp = cost != null ? cost / POUR_COST_TARGET : null;
-    return { key, label, totalOz, servings, cost, msrp };
+    return { key, label, totalOz, cost, msrp };
   });
 }
 
-// The scale factor for one specific size -- used by the Ops Sheet pick
-// list and Recipe Request fulfillment, where only one size is needed
-// rather than the whole comparison table.
-export function scaleForSize(sizeKey: RecipeSizeKey, baseTotalOz: number): number {
-  return RECIPE_SIZE_DEFS.find((s) => s.key === sizeKey)?.scale(baseTotalOz) ?? 0;
-}
-
-export interface ScaledIngredientLine {
+export interface PickListLine {
   productId: string;
   description: string;
   quantityOz: number;
+  isTopOff: boolean;
 }
 
-// Each ingredient's quantity scaled to one size, optionally multiplied by
-// how many of that size were requested (requestQuantity) -- the actual
-// pick list a Request line or Ops Sheet hands Warehouse.
-export function scaledIngredients(
-  ingredients: { productId: string; description: string; quantityOz: number }[],
-  sizeKey: RecipeSizeKey,
-  requestQuantity = 1
-): ScaledIngredientLine[] {
-  const baseTotalOz = ingredients.reduce((sum, i) => sum + i.quantityOz, 0);
-  const scale = scaleForSize(sizeKey, baseTotalOz) * requestQuantity;
-  return ingredients.map((i) => ({ productId: i.productId, description: i.description, quantityOz: i.quantityOz * scale }));
+// The actual pick list for one size, optionally multiplied by how many of
+// that size were requested (requestQuantity) -- used by the Ops Sheet and
+// Recipe Request fulfillment/shortfall reporting.
+export function pickListForSize(ingredients: RecipeIngredientLine[], sizeKey: RecipeSizeKey, requestQuantity = 1): PickListLine[] {
+  return resolveIngredientsForSize(ingredients, sizeKey).map((l) => ({
+    productId: l.productId,
+    description: l.description,
+    quantityOz: l.quantityOz * requestQuantity,
+    isTopOff: l.isTopOff,
+  }));
 }
