@@ -46,6 +46,18 @@ export async function updateRecipe(formData: FormData) {
   revalidatePath("/admin/recipes");
 }
 
+export async function updateTargetPourCost(formData: FormData) {
+  await requireProfile(["admin"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const pct = Number(formData.get("target_pour_cost_pct"));
+  if (!id || !pct || pct <= 0) return;
+
+  await supabase.from("recipes").update({ target_pour_cost_pct: pct }).eq("id", id);
+  revalidatePath(`/admin/recipes/${id}`);
+  revalidatePath("/admin/recipes");
+}
+
 export async function addIngredient(formData: FormData) {
   await requireProfile(["admin"]);
   const supabase = createClient();

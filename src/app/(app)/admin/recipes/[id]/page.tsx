@@ -8,7 +8,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
-import { removeIngredient, updateIngredientQty, updateRecipe } from "./actions";
+import { removeIngredient, updateIngredientQty, updateRecipe, updateTargetPourCost } from "./actions";
 import { AddIngredientForm } from "./AddIngredientForm";
 
 function fmtCurrency(value: number | null) {
@@ -39,7 +39,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
       costPerOz: costPerOz(row.product!),
     }));
-  const sizes = computeRecipeSizes(costLines);
+  const sizes = computeRecipeSizes(costLines, recipe.target_pour_cost_pct);
   const missingCostProducts = costLines.filter((l) => l.costPerOz == null).map((l) => l.description);
 
   return (
@@ -132,12 +132,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         <DeleteRecipeButton recipeId={recipe.id} />
       </div>
 
-      <p className="mb-3 text-sm font-medium">Ingredients</p>
-      <p className="mb-3 text-sm text-gray-500">
-        Quantity is for the 9oz Wine/10oz Single pour — 16oz Double doubles it, 1L Carafe and 2.5gal
-        Bubbler scale off it. Mark an ingredient Top Off (e.g. soda, juice to fill the cup) instead of
-        entering an amount — it&apos;s costed at a standard 2oz.
-      </p>
+      <p className="mb-3 text-sm font-medium">RECIPE</p>
 
       <AddIngredientForm
         recipeId={recipe.id}
@@ -186,8 +181,32 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         {!ingredientRows.length && <li className="text-sm text-gray-400">No ingredients yet.</li>}
       </ul>
 
-      <p className="mb-3 text-sm font-medium">Cost &amp; recommended MSRP</p>
-      <p className="mb-3 text-sm text-gray-500">MSRP is cost ÷ 20% target pour cost (NY concert-venue bar program convention).</p>
+      <p className="mb-3 text-sm font-medium">COST &amp; MSRP</p>
+
+      <ActionForm
+        action={updateTargetPourCost}
+        savedLabel="Saved"
+        className="mb-3 flex items-center gap-2"
+      >
+        <input type="hidden" name="id" value={recipe.id} />
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          Target pour cost
+          <input
+            name="target_pour_cost_pct"
+            type="number"
+            min={1}
+            max={100}
+            step={0.5}
+            defaultValue={recipe.target_pour_cost_pct}
+            className="w-16 rounded-md border border-gray-300 px-2 py-1 text-sm"
+          />
+          %
+        </label>
+        <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
+          Save
+        </button>
+      </ActionForm>
+
       {missingCostProducts.length > 0 && (
         <p className="mb-3 text-sm text-red-600">
           Cost can&apos;t be calculated — missing Case Cost/Case Size/Bottle Size on: {missingCostProducts.join(", ")}.
@@ -198,9 +217,9 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         <thead className="text-gray-500">
           <tr>
             <th className="px-3 pb-2">Size</th>
-            <th className="px-3 pb-2">Total Volume</th>
+            <th className="px-3 pb-2">TOT Volume</th>
             <th className="px-3 pb-2">Cost</th>
-            <th className="px-3 pb-2">Recommended MSRP</th>
+            <th className="px-3 pb-2">MSRP</th>
           </tr>
         </thead>
         <tbody>

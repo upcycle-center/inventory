@@ -3,9 +3,10 @@ import type { RecipeRequestSize } from "@/lib/supabase/types";
 const ML_PER_OZ = 29.5735;
 const FL_OZ_PER_GAL = 128;
 
-// 20% pour cost -- the standard target for a NY concert-venue bar
-// program -- so recommended MSRP = cost / 0.20 (cost x 5).
-export const POUR_COST_TARGET = 0.2;
+// Default target pour-cost % (20, i.e. 20%) -- the standard starting
+// point for a NY concert-venue bar program -- editable per recipe from
+// there (recipes.target_pour_cost_pct) to tweak margin.
+export const DEFAULT_POUR_COST_PCT = 20;
 
 // A Top Off ingredient (quantityOz null -- no measured amount) is costed
 // at this standard amount, same as any other ingredient from there on
@@ -98,13 +99,15 @@ export interface RecipeSizeResult {
 // null cost/msrp means at least one ingredient is missing cost data
 // (no case_cost/case_size/bottle_size_ml on record) -- the UI flags
 // which ingredient rather than silently showing a wrong total.
-export function computeRecipeSizes(ingredients: RecipeIngredientLine[]): RecipeSizeResult[] {
+// pourCostPct is a percentage (20 means 20%), per-recipe editable.
+export function computeRecipeSizes(ingredients: RecipeIngredientLine[], pourCostPct: number = DEFAULT_POUR_COST_PCT): RecipeSizeResult[] {
+  const pourCostFraction = pourCostPct / 100;
   return RECIPE_SIZE_DEFS.map(({ key, label }) => {
     const lines = resolveIngredientsForSize(ingredients, key);
     const totalOz = lines.reduce((sum, l) => sum + l.quantityOz, 0);
     const hasAllCosts = lines.length > 0 && lines.every((l) => l.costPerOz != null);
     const cost = hasAllCosts ? lines.reduce((sum, l) => sum + l.quantityOz * (l.costPerOz ?? 0), 0) : null;
-    const msrp = cost != null ? cost / POUR_COST_TARGET : null;
+    const msrp = cost != null && pourCostFraction > 0 ? cost / pourCostFraction : null;
     return { key, label, totalOz, cost, msrp };
   });
 }

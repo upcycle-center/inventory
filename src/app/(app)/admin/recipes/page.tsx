@@ -50,12 +50,6 @@ export default async function AdminRecipesPage() {
           Add Recipe
         </Link>
       </div>
-      <p className="mb-6 text-sm text-gray-500">
-        Cost/MSRP (<span className="italic text-green-700">shown as Cost/MSRP</span>) at a 20% pour cost (NY
-        concert-venue bar program standard). Open a recipe to edit ingredients, prep instructions, or download its
-        Ops Sheet.
-      </p>
-
       <table className="w-full text-left text-sm">
         <thead className="text-gray-500">
           <tr>
@@ -71,7 +65,7 @@ export default async function AdminRecipesPage() {
         <tbody>
           {recipes.map((r) => {
             const ingredients = ingredientsByRecipeId.get(r.id) ?? [];
-            const sizes = computeRecipeSizes(ingredients);
+            const sizes = computeRecipeSizes(ingredients, r.target_pour_cost_pct);
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">
