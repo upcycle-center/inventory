@@ -284,6 +284,11 @@ export interface Recipe {
   id: string;
   name: string;
   description: string | null;
+  // Where this recipe was found online, if anywhere.
+  source_url: string | null;
+  // The original ingredients/ratios as published -- kept for reference
+  // alongside the venue's own (possibly adjusted) ingredient list.
+  original_recipe: string | null;
   // How-to-make-it prep steps, shown on the Ops Sheet PDF.
   instructions: string | null;
   active: boolean;

@@ -65,6 +65,26 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           />
         </label>
         <label className="text-sm text-gray-600">
+          Source URL
+          <input
+            name="source_url"
+            type="url"
+            defaultValue={recipe.source_url ?? ""}
+            placeholder="https://..."
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm text-gray-600">
+          Original Recipe
+          <textarea
+            name="original_recipe"
+            defaultValue={recipe.original_recipe ?? ""}
+            rows={4}
+            placeholder="Original ingredients/ratios as published, for reference..."
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm text-gray-600">
           Instructions (how to make it)
           <textarea
             name="instructions"

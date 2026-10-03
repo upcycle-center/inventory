@@ -12,9 +12,14 @@ export async function updateRecipe(formData: FormData) {
   if (!id || !name) return;
 
   const description = String(formData.get("description") || "").trim() || null;
+  const sourceUrl = String(formData.get("source_url") || "").trim() || null;
+  const originalRecipe = String(formData.get("original_recipe") || "").trim() || null;
   const instructions = String(formData.get("instructions") || "").trim() || null;
 
-  await supabase.from("recipes").update({ name, description, instructions }).eq("id", id);
+  await supabase
+    .from("recipes")
+    .update({ name, description, source_url: sourceUrl, original_recipe: originalRecipe, instructions })
+    .eq("id", id);
   revalidatePath(`/admin/recipes/${id}`);
   revalidatePath("/admin/recipes");
 }
