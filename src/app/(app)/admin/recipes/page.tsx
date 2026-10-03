@@ -70,7 +70,7 @@ export default async function AdminRecipesPage() {
         <tbody>
           {recipes.map((r) => {
             const ingredients = ingredientsByRecipeId.get(r.id) ?? [];
-            const sizes = computeRecipeSizes(ingredients, r.target_pour_cost_pct);
+            const sizes = computeRecipeSizes(ingredients, r.target_profit_pct);
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">

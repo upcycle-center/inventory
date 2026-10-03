@@ -2,10 +2,11 @@ import type { RecipeRequestSize } from "@/lib/supabase/types";
 
 const ML_PER_OZ = 29.5735;
 
-// Default target pour-cost % (20, i.e. 20%) -- the standard starting
-// point for a NY concert-venue bar program -- editable per recipe from
-// there (recipes.target_pour_cost_pct) to tweak margin.
-export const DEFAULT_POUR_COST_PCT = 20;
+// Default target profit % (80, i.e. profit is 80% of MSRP, cost the
+// other 20%) -- the standard starting point for a NY concert-venue bar
+// program -- editable per recipe (recipes.target_profit_pct) to tweak
+// margin.
+export const DEFAULT_TARGET_PROFIT_PCT = 80;
 
 // A Top Off ingredient (quantityOz null -- no measured amount) stands in
 // at this amount when working out the recipe's ingredient ratios, before
@@ -98,15 +99,16 @@ export interface RecipeSizeResult {
 // null cost/msrp means at least one ingredient is missing cost data
 // (no case_cost/case_size/bottle_size_ml on record) -- the UI flags
 // which ingredient rather than silently showing a wrong total.
-// pourCostPct is a percentage (20 means 20%), per-recipe editable.
-export function computeRecipeSizes(ingredients: RecipeIngredientLine[], pourCostPct: number = DEFAULT_POUR_COST_PCT): RecipeSizeResult[] {
-  const pourCostFraction = pourCostPct / 100;
+// targetProfitPct is a percentage (80 means profit is 80% of MSRP, cost
+// the other 20%), per-recipe editable -- MSRP = cost / (1 - pct/100).
+export function computeRecipeSizes(ingredients: RecipeIngredientLine[], targetProfitPct: number = DEFAULT_TARGET_PROFIT_PCT): RecipeSizeResult[] {
+  const costFraction = 1 - targetProfitPct / 100;
   return RECIPE_SIZE_DEFS.map(({ key, label, pourOz }) => {
     const lines = resolveIngredientsForSize(ingredients, key);
     const hasAllCosts = lines.length > 0 && lines.every((l) => l.costPerOz != null);
     const ingredientCost = hasAllCosts ? lines.reduce((sum, l) => sum + l.quantityOz * (l.costPerOz ?? 0), 0) : null;
     const cost = ingredientCost != null ? ingredientCost + PACKAGING_COST : null;
-    const msrp = cost != null && pourCostFraction > 0 ? cost / pourCostFraction : null;
+    const msrp = cost != null && costFraction > 0 ? cost / costFraction : null;
     return { key, label, totalOz: pourOz, cost, msrp };
   });
 }
