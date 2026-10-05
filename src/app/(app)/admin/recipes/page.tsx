@@ -12,7 +12,7 @@ function CostCell({ cost, msrp }: { cost: number | null; msrp: number | null }) 
     <span>
       <span>${cost.toFixed(2)}</span>
       <span className="text-gray-400">/</span>
-      <span className="italic text-green-700">${msrp.toFixed(2)}</span>
+      <span className="italic text-green-700">${Math.ceil(msrp)}</span>
     </span>
   );
 }

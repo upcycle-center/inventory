@@ -16,6 +16,10 @@ function fmtCurrency(value: number | null) {
   return value == null ? "—" : `$${value.toFixed(2)}`;
 }
 
+function fmtMsrp(value: number | null) {
+  return value == null ? "—" : `$${Math.ceil(value)}`;
+}
+
 export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
@@ -233,7 +237,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
               <td className="px-3 py-2 font-medium">{s.label}</td>
               <td className="px-3 py-2 text-gray-500">{s.totalOz} oz</td>
               <td className="px-3 py-2 text-gray-500">{fmtCurrency(s.cost)}</td>
-              <td className="px-3 py-2 font-medium text-green-700">{fmtCurrency(s.msrp)}</td>
+              <td className="px-3 py-2 font-medium text-green-700">{fmtMsrp(s.msrp)}</td>
             </tr>
           ))}
         </tbody>
