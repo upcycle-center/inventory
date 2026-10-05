@@ -20,8 +20,18 @@ export const ActionForm = forwardRef<
     // rather than stay open -- navigates back through browser history.
     // Has no effect when the action itself redirects (that takes over).
     backOnSuccess?: boolean;
+    // Fires on every status change -- lets a page show the saved/error
+    // indicator somewhere other than right after this form (e.g. next
+    // to an external submit button living elsewhere on the page).
+    onStatusChange?: (status: "idle" | "saved" | "error", message?: string) => void;
+    // Suppresses this form's own inline indicator -- pair with
+    // onStatusChange when the page renders the indicator itself.
+    hideStatus?: boolean;
   }
->(function ActionForm({ action, children, className, savedLabel = "Saved", id, encType, resetOnSuccess = false, backOnSuccess = false }, ref) {
+>(function ActionForm(
+  { action, children, className, savedLabel = "Saved", id, encType, resetOnSuccess = false, backOnSuccess = false, onStatusChange, hideStatus = false },
+  ref
+) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
@@ -62,8 +72,10 @@ export const ActionForm = forwardRef<
             if (typeof returnedError === "string" && returnedError) {
               setErrorMessage(returnedError);
               setStatus("error");
+              onStatusChange?.("error", returnedError);
             } else {
               setStatus("saved");
+              onStatusChange?.("saved");
               if (resetOnSuccess) formRef.current?.reset();
               if (backOnSuccess) {
                 router.back();
@@ -79,18 +91,22 @@ export const ActionForm = forwardRef<
               throw err;
             }
             setStatus("error");
+            onStatusChange?.("error");
           }
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          timeoutRef.current = setTimeout(() => setStatus("idle"), 4000);
+          timeoutRef.current = setTimeout(() => {
+            setStatus("idle");
+            onStatusChange?.("idle");
+          }, 4000);
         });
       }}
     >
       {children}
-      {isPending && <span className="ml-2 align-middle text-xs text-gray-400">Saving…</span>}
-      {!isPending && status === "saved" && (
+      {!hideStatus && isPending && <span className="ml-2 align-middle text-xs text-gray-400">Saving…</span>}
+      {!hideStatus && !isPending && status === "saved" && (
         <span className="ml-2 align-middle text-xs font-medium text-green-600">✓ {savedLabel}</span>
       )}
-      {!isPending && status === "error" && (
+      {!hideStatus && !isPending && status === "error" && (
         <span className="ml-2 align-middle text-xs font-medium text-red-600">{errorMessage ?? "Something went wrong"}</span>
       )}
     </form>

@@ -11,6 +11,8 @@ import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
 import { removeIngredient, updateBeoMarkup, updateIngredientQty, updateRecipe, updateTargetMarkup } from "./actions";
 import { AddIngredientForm } from "./AddIngredientForm";
+import { SaveStatusIndicator, SaveStatusProvider } from "./SaveStatus";
+import { TopEditForm } from "./TopEditForm";
 
 function fmtCurrency(value: number | null) {
   return value == null ? "—" : `$${value.toFixed(2)}`;
@@ -53,11 +55,12 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
   const missingCostProducts = costLines.filter((l) => l.costPerOz == null).map((l) => l.description);
 
   return (
-    <div>
+    <SaveStatusProvider>
+      <div>
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Recipes", href: "/admin/recipes" }, { label: recipe.name }]} />
       <h1 className="mb-6 text-lg font-semibold">Edit recipe</h1>
 
-      <ActionForm
+      <TopEditForm
         id="edit-recipe-form"
         action={updateRecipe}
         encType="multipart/form-data"
@@ -136,7 +139,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           {recipe.photo_url ? "Replace photo" : "Add photo"}
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
-      </ActionForm>
+      </TopEditForm>
 
       <p className="mb-3 text-sm font-medium">RECIPE</p>
 
@@ -267,6 +270,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         <button type="submit" form="edit-recipe-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
           Save
         </button>
+        <SaveStatusIndicator />
         <a
           href={`/api/recipes/${recipe.id}/ops-sheet`}
           className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
@@ -282,6 +286,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </ActionForm>
         <DeleteRecipeButton recipeId={recipe.id} />
       </div>
-    </div>
+      </div>
+    </SaveStatusProvider>
   );
 }
