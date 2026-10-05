@@ -47,7 +47,7 @@ export type RecipeSizeKey = RecipeRequestSize;
 // 2oz) are scaled proportionally so the total comes out to exactly this
 // amount, regardless of what the raw entered quantities summed to.
 export const RECIPE_SIZE_DEFS: { key: RecipeSizeKey; label: string; pourOz: number }[] = [
-  { key: "wine", label: "9oz Wine", pourOz: 3 },
+  { key: "wine", label: "9oz Squat", pourOz: 3 },
   { key: "single", label: "10oz Single", pourOz: 6 },
   { key: "double", label: "16oz Double", pourOz: 12 },
   { key: "liter", label: "1L Carafe", pourOz: 32 },
