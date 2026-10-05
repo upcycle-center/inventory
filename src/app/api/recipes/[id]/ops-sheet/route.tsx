@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     supabase.from("recipes").select("*, category:product_categories(id, name)").eq("id", params.id).single(),
     supabase
       .from("recipe_ingredients")
-      .select("quantity_oz, product:products(id, description)")
+      .select("quantity_oz, product:products(id, description, bottle_size_ml)")
       .eq("recipe_id", params.id)
       .order("sort_order"),
   ]);
@@ -29,6 +29,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       description: row.product.description as string,
       quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
       costPerOz: null,
+      bottleSizeMl: row.product.bottle_size_ml == null ? null : Number(row.product.bottle_size_ml),
     }));
 
   const buffer = await renderToBuffer(

@@ -1,6 +1,6 @@
 import type { RecipeRequestSize } from "@/lib/supabase/types";
 
-const ML_PER_OZ = 29.5735;
+export const ML_PER_OZ = 29.5735;
 
 // Default target markup % (500, i.e. MSRP = cost + 5x cost = 6x cost
 // total) -- the standard starting point for a NY concert-venue bar
