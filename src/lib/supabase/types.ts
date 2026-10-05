@@ -293,6 +293,9 @@ export interface Recipe {
   original_recipe: string | null;
   // How-to-make-it prep steps, shown on the Ops Sheet PDF.
   instructions: string | null;
+  // Same category list Products use (e.g. "Concessions Liquor"), for
+  // GL/revenue reporting consistency.
+  category_id: string | null;
   // Target markup %, e.g. 500 for 500% -- MSRP = cost * (1 + this / 100).
   // Defaults to 500 but editable per recipe to tweak margin.
   target_markup_pct: number;

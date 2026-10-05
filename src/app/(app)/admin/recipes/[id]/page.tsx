@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { Product, Recipe, RecipeIngredient } from "@/lib/supabase/types";
+import type { Product, ProductCategory, Recipe, RecipeIngredient } from "@/lib/supabase/types";
 import { computeRecipeSizes, costPerOz, DEFAULT_BEO_MARKUP_PCT, DEFAULT_TARGET_MARKUP_PCT, PACKAGING_COST } from "@/lib/recipeCost";
 import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
@@ -23,7 +23,7 @@ function fmtMsrp(value: number | null) {
 export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [{ data: recipe }, { data: ingredientsRaw }, { data: products }] = await Promise.all([
+  const [{ data: recipe }, { data: ingredientsRaw }, { data: products }, { data: categories }] = await Promise.all([
     supabase.from("recipes").select("*").eq("id", params.id).single(),
     supabase
       .from("recipe_ingredients")
@@ -31,6 +31,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       .eq("recipe_id", params.id)
       .order("sort_order"),
     supabase.from("products").select("id, description, product_type").eq("active", true).order("description"),
+    supabase.from("product_categories").select("*").order("name"),
   ]);
 
   if (!recipe) notFound();
@@ -84,6 +85,22 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
             defaultValue={recipe.description ?? ""}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
+        </label>
+        <label className="text-sm text-gray-600">
+          Category
+          <select
+            name="category_id"
+            defaultValue={recipe.category_id ?? ""}
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">No category</option>
+            {((categories as ProductCategory[] | null) ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+                {c.gl_code ? ` (${c.gl_code})` : ""}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="text-sm text-gray-600">
           Source URL

@@ -12,6 +12,7 @@ export async function updateRecipe(formData: FormData) {
   if (!id || !name) return;
 
   const description = String(formData.get("description") || "").trim() || null;
+  const categoryId = String(formData.get("category_id") || "") || null;
   const sourceUrl = String(formData.get("source_url") || "").trim() || null;
   const originalRecipe = String(formData.get("original_recipe") || "").trim() || null;
   const instructions = String(formData.get("instructions") || "").trim() || null;
@@ -36,6 +37,7 @@ export async function updateRecipe(formData: FormData) {
     .update({
       name,
       description,
+      category_id: categoryId,
       source_url: sourceUrl,
       original_recipe: originalRecipe,
       instructions,

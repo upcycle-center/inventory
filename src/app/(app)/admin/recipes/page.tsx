@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Recipe } from "@/lib/supabase/types";
+import type { ProductCategory, Recipe } from "@/lib/supabase/types";
 import { computeRecipeSizes, costPerOz, DEFAULT_TARGET_MARKUP_PCT, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
@@ -19,14 +19,16 @@ function CostCell({ cost, msrp }: { cost: number | null; msrp: number | null }) 
 
 export default async function AdminRecipesPage() {
   const supabase = createClient();
-  const [{ data: recipesRaw }, { data: ingredientsRaw }] = await Promise.all([
+  const [{ data: recipesRaw }, { data: ingredientsRaw }, { data: categoriesRaw }] = await Promise.all([
     supabase.from("recipes").select("*").order("name"),
     supabase
       .from("recipe_ingredients")
       .select("recipe_id, quantity_oz, product:products(id, description, case_cost, case_size, bottle_size_ml)"),
+    supabase.from("product_categories").select("*"),
   ]);
 
   const recipes = (recipesRaw as Recipe[] | null) ?? [];
+  const categoryNameById = new Map(((categoriesRaw as ProductCategory[] | null) ?? []).map((c) => [c.id, c.name]));
 
   const ingredientsByRecipeId = new Map<string, { productId: string; description: string; quantityOz: number | null; costPerOz: number | null }[]>();
   for (const row of (ingredientsRaw as any[]) ?? []) {
@@ -92,6 +94,9 @@ export default async function AdminRecipesPage() {
                     </Link>
                     {!r.active && <span className="ml-2 text-xs text-gray-400">Inactive</span>}
                   </div>
+                  {r.category_id && categoryNameById.get(r.category_id) && (
+                    <div className="whitespace-nowrap text-xs text-gray-400">{categoryNameById.get(r.category_id)}</div>
+                  )}
                   {r.description && <div className="whitespace-nowrap text-gray-400">{r.description}</div>}
                 </td>
                 {RECIPE_SIZE_DEFS.map((s) => (
