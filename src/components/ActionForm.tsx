@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 
 export const ActionForm = forwardRef<
   HTMLFormElement,
@@ -15,8 +16,13 @@ export const ActionForm = forwardRef<
     // next entry once saved -- never set on an edit form, where resetting
     // to defaultValue would visibly undo the save just made.
     resetOnSuccess?: boolean;
+    // For a standalone "edit" page meant to close and return once saved,
+    // rather than stay open -- navigates back through browser history.
+    // Has no effect when the action itself redirects (that takes over).
+    backOnSuccess?: boolean;
   }
->(function ActionForm({ action, children, className, savedLabel = "Saved", id, encType, resetOnSuccess = false }, ref) {
+>(function ActionForm({ action, children, className, savedLabel = "Saved", id, encType, resetOnSuccess = false, backOnSuccess = false }, ref) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [status, setStatus] = useState<"idle" | "saved" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -59,6 +65,10 @@ export const ActionForm = forwardRef<
             } else {
               setStatus("saved");
               if (resetOnSuccess) formRef.current?.reset();
+              if (backOnSuccess) {
+                router.back();
+                return;
+              }
             }
           } catch (err) {
             // Server Actions signal redirect()/notFound() via a thrown error

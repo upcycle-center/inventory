@@ -26,6 +26,7 @@ export default async function StorageAreaDetailPage({ params }: { params: { id: 
       <ActionForm
         id="edit-storage-area-form"
         action={updateStorageArea}
+        backOnSuccess
         className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={area.id} />

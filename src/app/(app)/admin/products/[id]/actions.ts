@@ -128,6 +128,15 @@ export async function updateProductAndLocations(formData: FormData) {
 
   revalidatePath(`/admin/products/${id}`);
   revalidatePath("/admin/products");
+
+  // Arrived here from a recipe's ingredient list to fix missing cost
+  // data -- send them straight back so they can keep building the
+  // recipe instead of having to navigate back manually.
+  const returnToRecipeId = String(formData.get("return_to_recipe_id") || "").trim();
+  if (returnToRecipeId) {
+    revalidatePath(`/admin/recipes/${returnToRecipeId}`);
+    redirect(`/admin/recipes/${returnToRecipeId}`);
+  }
 }
 
 export async function deleteProduct(id: string): Promise<{ error: string } | void> {

@@ -38,6 +38,7 @@ export default async function StaffDetailPage({ params }: { params: { id: string
       <ActionForm
         id="edit-staff-form"
         action={updateStaff}
+        backOnSuccess
         className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={staffMember.id} />

@@ -12,7 +12,14 @@ import { updateProductAndLocations } from "./actions";
 import { toggleProductActive } from "../actions";
 import { DeleteProductButton } from "./DeleteProductButton";
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams: { recipeId?: string };
+}) {
+  const recipeId = searchParams.recipeId;
   const supabase = createClient();
 
   const [{ data: product }, { data: suppliers }, { data: locations }, { data: storageAreas }, { data: categories }, { data: locationProducts }] =
@@ -50,8 +57,15 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       />
       <h1 className="mb-6 text-lg font-semibold">Edit product</h1>
 
-      <ActionForm id="edit-product-form" action={updateProductAndLocations} encType="multipart/form-data">
+      {recipeId && (
+        <Link href={`/admin/recipes/${recipeId}`} className="mb-3 inline-block text-sm text-brand hover:underline">
+          ← Back to Recipe
+        </Link>
+      )}
+
+      <ActionForm id="edit-product-form" action={updateProductAndLocations} encType="multipart/form-data" backOnSuccess>
         <input type="hidden" name="id" value={product.id} />
+        {recipeId && <input type="hidden" name="return_to_recipe_id" value={recipeId} />}
 
         <div className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
           <div className="mb-1 flex aspect-square w-24 items-center justify-center overflow-hidden rounded bg-gray-100">

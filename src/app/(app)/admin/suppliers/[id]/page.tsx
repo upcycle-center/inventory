@@ -28,6 +28,7 @@ export default async function SupplierDetailPage({ params }: { params: { id: str
       <ActionForm
         id="edit-supplier-form"
         action={updateSupplier}
+        backOnSuccess
         className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={supplier.id} />

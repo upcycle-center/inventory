@@ -28,6 +28,7 @@ export default async function CertificationTypeDetailPage({ params }: { params: 
       <ActionForm
         id="edit-cert-type-form"
         action={updateCertificationType}
+        backOnSuccess
         className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={certType.id} />

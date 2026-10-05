@@ -145,7 +145,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           row.product ? (
             <li key={row.id} className="flex items-center justify-between gap-3 rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">
               <span className="flex-1">
-                <Link href={`/admin/products/${row.product.id}`} className="text-brand hover:underline">
+                <Link href={`/admin/products/${row.product.id}?recipeId=${recipe.id}`} className="text-brand hover:underline">
                   {row.product.description}
                 </Link>
                 {costPerOz(row.product) == null && <span className="ml-2 text-xs text-red-600">Missing cost data</span>}
