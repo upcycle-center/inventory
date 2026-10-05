@@ -18,6 +18,13 @@ const POUR_FIELDS_ACTIVE_TYPE: ProductTypeValue = "non_chargeable_bottle";
 // a recipe ingredient -- only Disposables never need it.
 const BOTTLE_SIZE_FIELD_DISABLED_TYPES = new Set<ProductTypeValue>(["disposable"]);
 
+const ML_PER_OZ = 29.5735;
+
+function round(value: number, decimals: number): number {
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
 function DisableableNumberField({
   label,
   name,
@@ -106,6 +113,10 @@ export function ProductCoreFields({
   const [unitOfMeasure, setUnitOfMeasure] = useState(defaultUnitOfMeasure ?? "each");
   const [caseCost, setCaseCost] = useState(String(defaultCaseCost ?? ""));
   const [caseSize, setCaseSize] = useState(String(defaultCaseSize ?? ""));
+  const [bottleSizeMl, setBottleSizeMl] = useState(String(defaultBottleSizeMl ?? ""));
+  const [bottleSizeOz, setBottleSizeOz] = useState(
+    defaultBottleSizeMl ? String(round(Number(defaultBottleSizeMl) / ML_PER_OZ, 2)) : ""
+  );
   const [subUnitCount, setSubUnitCount] = useState(String(defaultMiddleUnitSize ?? ""));
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
   const pourFieldsActive = productType === POUR_FIELDS_ACTIVE_TYPE;
@@ -311,15 +322,47 @@ export function ProductCoreFields({
               ? "For liquor/wine: TOT Retail projects a bottle's value off pours instead of Retail Value. Bottle size also feeds Recipe cost-per-oz."
               : "Used to compute cost per fluid ounce for Recipes."}
           </p>
-          <div className="grid grid-cols-3 gap-3">
-            <DisableableNumberField label="Bottle size (mL)" name="bottle_size_ml" defaultValue={defaultBottleSizeMl} placeholder="e.g. 750" />
-            {pourFieldsActive && (
-              <>
-                <DisableableNumberField label="Pour size (oz)" name="pour_size_oz" defaultValue={defaultPourSizeOz} placeholder="e.g. 1.5" />
-                <DisableableNumberField label="Price per pour" name="pour_price" defaultValue={defaultPourPrice} />
-              </>
-            )}
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-sm text-gray-600">
+              mL
+              <input
+                name="bottle_size_ml"
+                type="number"
+                step="0.01"
+                min={0}
+                value={bottleSizeMl}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setBottleSizeMl(raw);
+                  setBottleSizeOz(raw ? String(round(Number(raw) / ML_PER_OZ, 2)) : "");
+                }}
+                placeholder="e.g. 750"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-sm text-gray-600">
+              oz
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={bottleSizeOz}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setBottleSizeOz(raw);
+                  setBottleSizeMl(raw ? String(round(Number(raw) * ML_PER_OZ, 2)) : "");
+                }}
+                placeholder="e.g. 25.4"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
           </div>
+          {pourFieldsActive && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <DisableableNumberField label="Pour size (oz)" name="pour_size_oz" defaultValue={defaultPourSizeOz} placeholder="e.g. 1.5" />
+              <DisableableNumberField label="Price per pour" name="pour_price" defaultValue={defaultPourPrice} />
+            </div>
+          )}
         </div>
       )}
 
