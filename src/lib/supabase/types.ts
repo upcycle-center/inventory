@@ -293,6 +293,10 @@ export interface Recipe {
   original_recipe: string | null;
   // How-to-make-it prep steps, shown on the Ops Sheet PDF.
   instructions: string | null;
+  // Batch-prep instructions (how to mix/store the pre-made batch
+  // itself) -- separate from per-serving `instructions` -- shown on
+  // the Ops Sheet PDF under the BATCH SERVICE table.
+  batch_instructions: string | null;
   // Same category list Products use (e.g. "Concessions Liquor"), for
   // GL/revenue reporting consistency.
   category_id: string | null;

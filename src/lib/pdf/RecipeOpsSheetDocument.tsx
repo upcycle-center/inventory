@@ -130,6 +130,7 @@ export function RecipeOpsSheetDocument({
   description,
   category,
   instructions,
+  batchInstructions,
   originalRecipe,
   sourceUrl,
   ingredients,
@@ -140,6 +141,7 @@ export function RecipeOpsSheetDocument({
   description: string | null;
   category: string | null;
   instructions: string | null;
+  batchInstructions: string | null;
   originalRecipe: string | null;
   sourceUrl: string | null;
   ingredients: OpsSheetIngredientLine[];
@@ -189,6 +191,26 @@ export function RecipeOpsSheetDocument({
             <Text style={styles.sectionTitle}>SERVICE</Text>
             <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
           </View>
+        </View>
+
+        <View wrap={false}>
+          <Text style={styles.sectionTitle}>COST &amp; MSRP</Text>
+          <View style={styles.thRow}>
+            <Text style={styles.colServing}>Serving</Text>
+            <Text style={styles.colCost}>Pour</Text>
+            <Text style={styles.colCost}>Cost</Text>
+            <Text style={styles.colCost}>BEO</Text>
+            <Text style={styles.colCost}>MSRP</Text>
+          </View>
+          {costSizes.map((s) => (
+            <View key={s.key} style={styles.tr}>
+              <Text style={styles.colServing}>{s.label}</Text>
+              <Text style={styles.colCost}>{s.totalOz} oz</Text>
+              <Text style={styles.colCost}>{fmtCurrency(s.cost)}</Text>
+              <Text style={[styles.colCost, styles.beoText]}>{fmtRounded(s.beo)}</Text>
+              <Text style={[styles.colCost, styles.msrpText]}>{fmtRounded(s.msrp)}</Text>
+            </View>
+          ))}
         </View>
 
         <Text style={styles.sectionTitle}>BATCH PICK LIST</Text>
@@ -244,23 +266,8 @@ export function RecipeOpsSheetDocument({
         )}
 
         <View wrap={false}>
-          <Text style={styles.sectionTitle}>COST &amp; MSRP</Text>
-          <View style={styles.thRow}>
-            <Text style={styles.colServing}>Serving</Text>
-            <Text style={styles.colCost}>Pour</Text>
-            <Text style={styles.colCost}>Cost</Text>
-            <Text style={styles.colCost}>BEO</Text>
-            <Text style={styles.colCost}>MSRP</Text>
-          </View>
-          {costSizes.map((s) => (
-            <View key={s.key} style={styles.tr}>
-              <Text style={styles.colServing}>{s.label}</Text>
-              <Text style={styles.colCost}>{s.totalOz} oz</Text>
-              <Text style={styles.colCost}>{fmtCurrency(s.cost)}</Text>
-              <Text style={[styles.colCost, styles.beoText]}>{fmtRounded(s.beo)}</Text>
-              <Text style={[styles.colCost, styles.msrpText]}>{fmtRounded(s.msrp)}</Text>
-            </View>
-          ))}
+          <Text style={styles.sectionTitle}>BATCH INSTRUCTIONS</Text>
+          <Text style={styles.instructionsText}>{batchInstructions || "No batch instructions on file."}</Text>
         </View>
       </Page>
     </Document>

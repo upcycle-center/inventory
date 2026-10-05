@@ -16,6 +16,7 @@ export async function updateRecipe(formData: FormData) {
   const sourceUrl = String(formData.get("source_url") || "").trim() || null;
   const originalRecipe = String(formData.get("original_recipe") || "").trim() || null;
   const instructions = String(formData.get("instructions") || "").trim() || null;
+  const batchInstructions = String(formData.get("batch_instructions") || "").trim() || null;
 
   let photoUrl: string | undefined;
   const photo = formData.get("photo");
@@ -41,6 +42,7 @@ export async function updateRecipe(formData: FormData) {
       source_url: sourceUrl,
       original_recipe: originalRecipe,
       instructions,
+      batch_instructions: batchInstructions,
       ...(photoUrl ? { photo_url: photoUrl } : {}),
     })
     .eq("id", id);

@@ -1,12 +1,15 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, ProductCategory, Recipe, RecipeIngredient } from "@/lib/supabase/types";
 import { computeRecipeSizes, costPerOz, DEFAULT_BEO_MARKUP_PCT, DEFAULT_TARGET_MARKUP_PCT, PACKAGING_COST } from "@/lib/recipeCost";
+import { urlQrDataUri } from "@/lib/checkinQr";
 import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
+import { DownloadIcon } from "@/components/DownloadIcon";
 import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
 import { removeIngredient, updateBeoMarkup, updateIngredientQty, updateRecipe, updateTargetMarkup } from "./actions";
@@ -54,6 +57,11 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
   );
   const missingCostProducts = costLines.filter((l) => l.costPerOz == null).map((l) => l.description);
 
+  const host = headers().get("host");
+  const protocol = host?.startsWith("localhost") ? "http" : "https";
+  const opsSheetUrl = `${protocol}://${host}/api/recipes/${recipe.id}/ops-sheet`;
+  const opsSheetQr = await urlQrDataUri(opsSheetUrl, 120);
+
   return (
     <SaveStatusProvider>
       <div>
@@ -67,15 +75,28 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         className="mb-3 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={recipe.id} />
-        <div className="mb-1 flex aspect-square w-24 items-center justify-center overflow-hidden rounded bg-gray-100">
-          {recipe.photo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <ProductPlaceholderIcon />
-            </div>
-          )}
+        <div className="mb-1 flex items-start gap-4">
+          <div className="flex aspect-square w-24 shrink-0 items-center justify-center overflow-hidden rounded bg-gray-100">
+            {recipe.photo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-contain" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <ProductPlaceholderIcon />
+              </div>
+            )}
+          </div>
+          <div className="flex items-start gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={opsSheetQr} alt="QR code to Ops Sheet PDF" className="h-24 w-24 shrink-0 rounded border border-gray-200" />
+            <a
+              href={opsSheetUrl}
+              className="inline-flex items-center gap-1 text-sm text-brand hover:underline"
+            >
+              <DownloadIcon />
+              Ops Sheet
+            </a>
+          </div>
         </div>
         <label className="text-sm text-gray-600">
           Name
@@ -116,7 +137,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           />
         </label>
         <label className="text-sm text-gray-600">
-          Original Recipe
+          RECIPE
           <textarea
             name="original_recipe"
             defaultValue={recipe.original_recipe ?? ""}
@@ -126,7 +147,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           />
         </label>
         <label className="text-sm text-gray-600">
-          Instructions (how to make it)
+          SERVICE
           <textarea
             name="instructions"
             defaultValue={recipe.instructions ?? ""}
@@ -136,12 +157,22 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           />
         </label>
         <label className="text-sm text-gray-600">
+          BATCH INSTRUCTIONS
+          <textarea
+            name="batch_instructions"
+            defaultValue={recipe.batch_instructions ?? ""}
+            rows={5}
+            placeholder="How to mix/store the pre-made batch itself..."
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="text-sm text-gray-600">
           {recipe.photo_url ? "Replace photo" : "Add photo"}
           <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
         </label>
       </TopEditForm>
 
-      <p className="mb-3 text-sm font-medium">RECIPE</p>
+      <p className="mb-3 text-sm font-medium">BATCH PICK LIST</p>
 
       <AddIngredientForm
         recipeId={recipe.id}
@@ -271,12 +302,6 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           Save
         </button>
         <SaveStatusIndicator />
-        <a
-          href={`/api/recipes/${recipe.id}/ops-sheet`}
-          className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
-        >
-          Download Ops Sheet
-        </a>
         <ActionForm action={toggleRecipeActive} className="contents" savedLabel={recipe.active ? "Deactivated" : "Reactivated"}>
           <input type="hidden" name="id" value={recipe.id} />
           <input type="hidden" name="active" value={String(recipe.active)} />

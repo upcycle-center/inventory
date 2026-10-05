@@ -47,6 +47,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
         description={recipe.description}
         category={(recipe as any).category?.name ?? null}
         instructions={recipe.instructions}
+        batchInstructions={recipe.batch_instructions}
         originalRecipe={recipe.original_recipe}
         sourceUrl={recipe.source_url}
         ingredients={ingredients}
