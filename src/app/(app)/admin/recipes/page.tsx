@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { Recipe } from "@/lib/supabase/types";
-import { computeRecipeSizes, costPerOz, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
+import { computeRecipeSizes, costPerOz, DEFAULT_TARGET_PROFIT_PCT, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
@@ -70,7 +70,7 @@ export default async function AdminRecipesPage() {
         <tbody>
           {recipes.map((r) => {
             const ingredients = ingredientsByRecipeId.get(r.id) ?? [];
-            const sizes = computeRecipeSizes(ingredients, r.target_profit_pct);
+            const sizes = computeRecipeSizes(ingredients, r.target_profit_pct ?? DEFAULT_TARGET_PROFIT_PCT);
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">
