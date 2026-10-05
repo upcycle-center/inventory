@@ -2,13 +2,12 @@ import type { RecipeRequestSize } from "@/lib/supabase/types";
 
 const ML_PER_OZ = 29.5735;
 
-// Default target markup % (400, i.e. MSRP = cost + 4x cost, same 5x
-// multiple as the old 80%-of-MSRP default) -- the standard starting
-// point for a NY concert-venue bar program -- editable per recipe
-// (recipes.target_markup_pct) to tweak margin. Markup is a % of cost,
-// not of MSRP, so unlike a profit-of-MSRP percentage it has no 100%
-// ceiling.
-export const DEFAULT_TARGET_MARKUP_PCT = 400;
+// Default target markup % (500, i.e. MSRP = cost + 5x cost = 6x cost
+// total) -- the standard starting point for a NY concert-venue bar
+// program -- editable per recipe (recipes.target_markup_pct) to tweak
+// margin. Markup is a % of cost, not of MSRP, so unlike a
+// profit-of-MSRP percentage it has no 100% ceiling.
+export const DEFAULT_TARGET_MARKUP_PCT = 500;
 
 // A Top Off ingredient (quantityOz null -- no measured amount) stands in
 // at this amount when working out the recipe's ingredient ratios, before

@@ -46,14 +46,17 @@ export async function updateRecipe(formData: FormData) {
   revalidatePath("/admin/recipes");
 }
 
-export async function updateTargetMarkup(formData: FormData) {
+export async function updateTargetMarkup(formData: FormData): Promise<{ error: string } | void> {
   await requireProfile(["admin"]);
   const supabase = createClient();
   const id = String(formData.get("id"));
   const pct = Number(formData.get("target_markup_pct"));
-  if (!id || !pct || pct <= 0) return;
+  if (!id || !pct || pct <= 0) return { error: "Enter a markup % greater than 0." };
 
-  await supabase.from("recipes").update({ target_markup_pct: pct }).eq("id", id);
+  const { data, error } = await supabase.from("recipes").update({ target_markup_pct: pct }).eq("id", id).select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "No recipe was updated -- it may have been deleted." };
+
   revalidatePath(`/admin/recipes/${id}`);
   revalidatePath("/admin/recipes");
 }
