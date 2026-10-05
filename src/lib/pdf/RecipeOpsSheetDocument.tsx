@@ -56,6 +56,18 @@ const styles = StyleSheet.create({
   colProduct: { flex: 2, flexDirection: "row", alignItems: "center", paddingLeft: 4 },
   checkbox: { width: 8, height: 8, borderWidth: 1, borderColor: "#000000", marginRight: 6 },
   colBatch: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
+  yieldRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderTopWidth: 1,
+    borderColor: "#000000",
+    paddingVertical: 5,
+    backgroundColor: "#f0f0f0",
+    fontFamily: "Helvetica-Bold",
+  },
   colServing: { flex: 1.5, paddingLeft: 4 },
   colCost: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
   beoText: { color: "#1d4ed8" },
@@ -109,6 +121,11 @@ export function RecipeOpsSheetDocument({
   const bubblerOz = Object.fromEntries(
     resolveIngredientsForSize(ingredients, "batch_2_5_gal").map((l) => [l.productId, l.quantityOz])
   );
+  // TOT Yield excludes Top Off ingredients -- that volume is added
+  // fresh at service, not part of what the batch itself yields.
+  const measuredIngredients = ingredients.filter((i) => i.quantityOz != null);
+  const literYield = measuredIngredients.reduce((sum, i) => sum + (literOz[i.productId] ?? 0), 0);
+  const bubblerYield = measuredIngredients.reduce((sum, i) => sum + (bubblerOz[i.productId] ?? 0), 0);
   const subtitle = [description, category].filter(Boolean).join(" · ");
 
   // Grouped by Product Type, in the same fixed order as the Products
@@ -190,6 +207,11 @@ export function RecipeOpsSheetDocument({
                 <Text style={styles.colBatch}>{fmtOz(bubblerOz[ing.productId] ?? 0)}</Text>
               </View>
             ))}
+            <View style={styles.yieldRow}>
+              <Text style={[styles.colProduct, { paddingLeft: 4 }]}>TOT Yield</Text>
+              <Text style={styles.colBatch}>{fmtOz(literYield)}</Text>
+              <Text style={styles.colBatch}>{fmtOz(bubblerYield)}</Text>
+            </View>
           </>
         )}
 
