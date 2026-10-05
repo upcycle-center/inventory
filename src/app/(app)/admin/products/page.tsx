@@ -121,6 +121,7 @@ export default async function AdminProductsPage({
               <th className="px-4 py-2 whitespace-nowrap">IC</th>
               <th className="w-full px-4 py-2">Product</th>
               <th className="px-4 py-2 whitespace-nowrap"><span className="sr-only">Case Size</span></th>
+              <th className="px-4 py-2 whitespace-nowrap text-right">$EA</th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
@@ -148,6 +149,9 @@ export default async function AdminProductsPage({
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">
                   <CaseSizeLabel product={p} />
                 </td>
+                <td className="px-4 py-2 whitespace-nowrap text-right text-gray-500">
+                  {p.case_cost && p.case_size ? `$${(p.case_cost / p.case_size).toFixed(2)}` : "—"}
+                </td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   <Link
                     href={`/admin/products/new?from=${p.id}`}
@@ -162,7 +166,7 @@ export default async function AdminProductsPage({
             ))}
             {!products?.length && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
                   No products match these filters.
                 </td>
               </tr>
