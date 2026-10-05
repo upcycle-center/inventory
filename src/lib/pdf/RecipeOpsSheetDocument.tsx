@@ -71,15 +71,13 @@ function fmtRounded(value: number | null) {
 }
 
 // Whole units (bottles/cans) needed to cover the resolved oz for a batch
-// size, rounded up, shown with the bottle size so it's clear what's
-// being counted (e.g. "4 × 750ml") -- you can't pull a fraction of a
-// bottle, and this list exists to say how many bottles to pull.
+// size, rounded up -- just the count, since this is a pick list (how
+// many to grab), not a measurement reference.
 function fmtBottleCount(oz: number, bottleSizeMl: number | null) {
   if (!(oz > 0) || !bottleSizeMl) return "—";
   const bottleSizeOz = bottleSizeMl / ML_PER_OZ;
   if (!bottleSizeOz) return "—";
-  const units = Math.ceil(oz / bottleSizeOz);
-  return `${units} × ${Math.round(bottleSizeMl)}ml`;
+  return `${Math.ceil(oz / bottleSizeOz)}`;
 }
 
 function fmtOz(oz: number) {
