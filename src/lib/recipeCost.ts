@@ -94,6 +94,27 @@ export function resolveIngredientsForSize(ingredients: RecipeIngredientLine[], s
   }));
 }
 
+// For batch production specifically -- the pre-made batch itself never
+// includes Top Off (that's added fresh per serving at pour time, not
+// pre-mixed and stored), so this scales ONLY the measured ingredients
+// to fill the full batch volume on their own, unlike
+// resolveIngredientsForSize, which treats Top Off as a flat 2oz
+// ingredient sharing in the ratio (right for a single pour, wrong for
+// batch-mixing). Top Off ingredients are dropped from the result.
+export function resolveMeasuredIngredientsForSize(ingredients: RecipeIngredientLine[], sizeKey: RecipeSizeKey): ResolvedIngredientLine[] {
+  const measured = ingredients.filter((i) => i.quantityOz != null);
+  const baseTotalOz = measured.reduce((sum, i) => sum + (i.quantityOz as number), 0);
+  const pourOz = RECIPE_SIZE_DEFS.find((s) => s.key === sizeKey)?.pourOz ?? 0;
+  const scale = baseTotalOz > 0 ? pourOz / baseTotalOz : 0;
+  return measured.map((i) => ({
+    productId: i.productId,
+    description: i.description,
+    quantityOz: (i.quantityOz as number) * scale,
+    isTopOff: false,
+    costPerOz: i.costPerOz ?? null,
+  }));
+}
+
 export interface RecipeSizeResult {
   key: RecipeSizeKey;
   label: string;
