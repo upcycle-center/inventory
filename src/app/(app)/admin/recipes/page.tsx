@@ -85,8 +85,8 @@ export default async function AdminRecipesPage() {
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">
-                <td className="w-20 p-0">
-                  <ProductThumbnail photoUrl={r.photo_url} alt={r.name} className="h-full w-20" />
+                <td className="w-20 px-3 py-2">
+                  <ProductThumbnail photoUrl={r.photo_url} alt={r.name} className="h-20 w-20" />
                 </td>
                 <td className="px-3 py-2">
                   <div className="mb-1 flex items-center gap-2">
