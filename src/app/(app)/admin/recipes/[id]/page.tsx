@@ -177,51 +177,45 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         ${PACKAGING_COST.toFixed(2)} added to cost, for disposables/garnishes/ice.
       </p>
 
-      <ActionForm
-        action={updateTargetMarkup}
-        savedLabel="Saved"
-        className="mb-3 flex items-center gap-2"
-      >
-        <input type="hidden" name="id" value={recipe.id} />
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          Target Markup%
-          <input
-            name="target_markup_pct"
-            type="number"
-            min={1}
-            step={0.5}
-            defaultValue={recipe.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT}
-            className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
-          />
-          %
-        </label>
-        <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
-          Save
-        </button>
-      </ActionForm>
+      <div className="mb-3 flex flex-wrap items-center gap-4">
+        <ActionForm action={updateTargetMarkup} savedLabel="Saved" className="flex items-center gap-2">
+          <input type="hidden" name="id" value={recipe.id} />
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            MSRP Markup%
+            <input
+              name="target_markup_pct"
+              type="number"
+              min={1}
+              step={0.5}
+              defaultValue={recipe.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT}
+              className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
+            />
+            %
+          </label>
+          <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
+            Save
+          </button>
+        </ActionForm>
 
-      <ActionForm
-        action={updateBeoMarkup}
-        savedLabel="Saved"
-        className="mb-3 flex items-center gap-2"
-      >
-        <input type="hidden" name="id" value={recipe.id} />
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          BEO Markup%
-          <input
-            name="beo_markup_pct"
-            type="number"
-            min={1}
-            step={0.5}
-            defaultValue={recipe.beo_markup_pct ?? DEFAULT_BEO_MARKUP_PCT}
-            className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
-          />
-          %
-        </label>
-        <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
-          Save
-        </button>
-      </ActionForm>
+        <ActionForm action={updateBeoMarkup} savedLabel="Saved" className="flex items-center gap-2">
+          <input type="hidden" name="id" value={recipe.id} />
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            BEO Markup%
+            <input
+              name="beo_markup_pct"
+              type="number"
+              min={1}
+              step={0.5}
+              defaultValue={recipe.beo_markup_pct ?? DEFAULT_BEO_MARKUP_PCT}
+              className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
+            />
+            %
+          </label>
+          <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
+            Save
+          </button>
+        </ActionForm>
+      </div>
 
       {missingCostProducts.length > 0 && (
         <p className="mb-3 text-sm text-red-600">
@@ -246,7 +240,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
               <td className="px-3 py-2 text-gray-500">{s.totalOz} oz</td>
               <td className="px-3 py-2 text-gray-500">{fmtCurrency(s.cost)}</td>
               <td className="px-3 py-2 font-medium text-green-700">{fmtMsrp(s.msrp)}</td>
-              <td className="px-3 py-2 font-medium text-purple-700">{fmtMsrp(s.beo)}</td>
+              <td className="px-3 py-2 font-medium text-blue-700">{fmtMsrp(s.beo)}</td>
             </tr>
           ))}
         </tbody>
