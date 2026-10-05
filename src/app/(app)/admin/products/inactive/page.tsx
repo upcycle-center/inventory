@@ -39,6 +39,7 @@ export default async function InactiveProductsPage() {
               <th className="px-4 py-2">Product</th>
               <th className="px-4 py-2 whitespace-nowrap">Type</th>
               <th className="px-4 py-2 whitespace-nowrap"><span className="sr-only">Case Size</span></th>
+              <th className="px-4 py-2 whitespace-nowrap text-right">$EA</th>
               <th className="px-4 py-2 whitespace-nowrap">Supplier</th>
               <th className="px-4 py-2"></th>
             </tr>
@@ -68,6 +69,9 @@ export default async function InactiveProductsPage() {
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">
                   <CaseSizeLabel product={p} />
                 </td>
+                <td className="px-4 py-2 whitespace-nowrap text-right text-gray-500">
+                  {p.case_cost && p.case_size ? `$${(p.case_cost / p.case_size).toFixed(2)}` : "—"}
+                </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.supplier?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-right">
                   <form action={toggleProductActive}>
@@ -82,7 +86,7 @@ export default async function InactiveProductsPage() {
             ))}
             {!products?.length && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
                   No inactive products.
                 </td>
               </tr>
