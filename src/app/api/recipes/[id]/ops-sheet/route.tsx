@@ -12,7 +12,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const supabase = createClient();
 
   const [{ data: recipe }, { data: ingredientsRaw }] = await Promise.all([
-    supabase.from("recipes").select("*").eq("id", params.id).single(),
+    supabase.from("recipes").select("*, category:product_categories(id, name)").eq("id", params.id).single(),
     supabase
       .from("recipe_ingredients")
       .select("quantity_oz, product:products(id, description)")
@@ -36,6 +36,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       <RecipeOpsSheetDocument
         name={recipe.name}
         description={recipe.description}
+        category={(recipe as any).category?.name ?? null}
         instructions={recipe.instructions}
         originalRecipe={recipe.original_recipe}
         sourceUrl={recipe.source_url}
