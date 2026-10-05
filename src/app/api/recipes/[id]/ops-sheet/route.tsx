@@ -60,6 +60,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${exportFilename(`Recipe-${recipe.name.replace(/[^a-zA-Z0-9]+/g, "-")}-Ops-Sheet`, "pdf")}"`,
+      "Cache-Control": "no-store",
     },
   });
 }
