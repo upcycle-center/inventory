@@ -81,7 +81,7 @@ function fmtBottleCount(oz: number, bottleSizeMl: number | null) {
 }
 
 function fmtOz(oz: number) {
-  return oz > 0 ? `${oz.toFixed(2)} oz` : "—";
+  return oz > 0 ? `${Math.ceil(oz)} oz` : "—";
 }
 
 export function RecipeOpsSheetDocument({
