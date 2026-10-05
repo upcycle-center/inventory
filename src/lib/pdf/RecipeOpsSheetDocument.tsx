@@ -126,7 +126,6 @@ export function RecipeOpsSheetDocument({
   const measuredIngredients = ingredients.filter((i) => i.quantityOz != null);
   const literYield = measuredIngredients.reduce((sum, i) => sum + (literOz[i.productId] ?? 0), 0);
   const bubblerYield = measuredIngredients.reduce((sum, i) => sum + (bubblerOz[i.productId] ?? 0), 0);
-  const subtitle = [description, category].filter(Boolean).join(" · ");
 
   // Grouped by Product Type, in the same fixed order as the Products
   // tabs -- only groups that actually have ingredients are shown.
@@ -144,7 +143,8 @@ export function RecipeOpsSheetDocument({
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>{name}</Text>
-            {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+            {!!category && <Text style={styles.subtitle}>{category}</Text>}
+            {!!description && <Text style={styles.subtitle}>{description}</Text>}
           </View>
           <Text style={styles.printedAt}>Printed {generatedAt}</Text>
         </View>
