@@ -166,8 +166,14 @@ export function RecipeOpsSheetDocument({
   // part of batch production.
   const groups = PRODUCT_TYPE_OPTIONS.map((opt) => ({
     label: opt.shortLabel,
-    items: measuredIngredients.filter((i) => i.productType === opt.value),
+    items: measuredIngredients
+      .filter((i) => i.productType === opt.value)
+      .sort((a, b) => a.description.localeCompare(b.description)),
   })).filter((g) => g.items.length > 0);
+  // Same Type-grouped, alphabetized order as BATCH PICK LIST, but
+  // without the group header bars -- just the ingredients clustered by
+  // Type for easy reading.
+  const measuredIngredientsGrouped = groups.flatMap((g) => g.items);
 
   return (
     <Document>
@@ -246,7 +252,7 @@ export function RecipeOpsSheetDocument({
               <Text style={styles.colBatch}>{literLabel} Batch</Text>
               <Text style={styles.colBatch}>{bubblerLabel} Batch</Text>
             </View>
-            {measuredIngredients.map((ing) => (
+            {measuredIngredientsGrouped.map((ing) => (
               <View key={ing.productId} style={styles.tr}>
                 <Text style={[styles.colProduct, { paddingLeft: 4 }]}>{ing.description}</Text>
                 <Text style={styles.colBatch}>{fmtOz(literOz.get(ing.productId) ?? 0)}</Text>
