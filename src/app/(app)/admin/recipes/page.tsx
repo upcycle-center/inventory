@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductCategory, Recipe } from "@/lib/supabase/types";
-import { computeRecipeSizes, costPerOz, DEFAULT_TARGET_MARKUP_PCT, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
+import { computeRecipeSizes, costPerOz, DEFAULT_BEO_MARKUP_PCT, DEFAULT_TARGET_MARKUP_PCT, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
 
-function CostCell({ cost, msrp }: { cost: number | null; msrp: number | null }) {
-  if (cost == null || msrp == null) return <span className="text-gray-400">—</span>;
+function CostCell({ cost, beo, msrp }: { cost: number | null; beo: number | null; msrp: number | null }) {
+  if (cost == null || beo == null || msrp == null) return <span className="text-gray-400">—</span>;
   return (
     <span>
       <span>${cost.toFixed(2)}</span>
+      <span className="text-gray-400">/</span>
+      <span className="italic text-blue-700">${Math.ceil(beo)}</span>
       <span className="text-gray-400">/</span>
       <span className="italic text-green-700">${Math.ceil(msrp)}</span>
     </span>
@@ -72,7 +74,11 @@ export default async function AdminRecipesPage() {
         <tbody>
           {recipes.map((r) => {
             const ingredients = ingredientsByRecipeId.get(r.id) ?? [];
-            const sizes = computeRecipeSizes(ingredients, r.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT);
+            const sizes = computeRecipeSizes(
+              ingredients,
+              r.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT,
+              r.beo_markup_pct ?? DEFAULT_BEO_MARKUP_PCT
+            );
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">
@@ -101,7 +107,7 @@ export default async function AdminRecipesPage() {
                 </td>
                 {RECIPE_SIZE_DEFS.map((s) => (
                   <td key={s.key} className="px-3 py-2">
-                    <CostCell cost={byKey[s.key]?.cost ?? null} msrp={byKey[s.key]?.msrp ?? null} />
+                    <CostCell cost={byKey[s.key]?.cost ?? null} beo={byKey[s.key]?.beo ?? null} msrp={byKey[s.key]?.msrp ?? null} />
                   </td>
                 ))}
               </tr>
