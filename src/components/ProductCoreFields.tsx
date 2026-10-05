@@ -115,7 +115,7 @@ export function ProductCoreFields({
   const [caseSize, setCaseSize] = useState(String(defaultCaseSize ?? ""));
   const [bottleSizeMl, setBottleSizeMl] = useState(String(defaultBottleSizeMl ?? ""));
   const [bottleSizeOz, setBottleSizeOz] = useState(
-    defaultBottleSizeMl ? String(round(Number(defaultBottleSizeMl) / ML_PER_OZ, 2)) : ""
+    defaultBottleSizeMl ? String(round(Number(defaultBottleSizeMl) / ML_PER_OZ, 1)) : ""
   );
   const [subUnitCount, setSubUnitCount] = useState(String(defaultMiddleUnitSize ?? ""));
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
@@ -334,7 +334,7 @@ export function ProductCoreFields({
                 onChange={(e) => {
                   const raw = e.target.value;
                   setBottleSizeMl(raw);
-                  setBottleSizeOz(raw ? String(round(Number(raw) / ML_PER_OZ, 2)) : "");
+                  setBottleSizeOz(raw ? String(round(Number(raw) / ML_PER_OZ, 1)) : "");
                 }}
                 placeholder="e.g. 750"
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -350,7 +350,7 @@ export function ProductCoreFields({
                 onChange={(e) => {
                   const raw = e.target.value;
                   setBottleSizeOz(raw);
-                  setBottleSizeMl(raw ? String(round(Number(raw) * ML_PER_OZ, 2)) : "");
+                  setBottleSizeMl(raw ? String(round(Number(raw) * ML_PER_OZ, 1)) : "");
                 }}
                 placeholder="e.g. 25.4"
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
