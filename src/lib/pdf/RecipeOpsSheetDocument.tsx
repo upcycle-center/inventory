@@ -221,7 +221,7 @@ export function RecipeOpsSheetDocument({
           </>
         )}
 
-        <Text style={styles.sectionTitle}>COST / BEO / MSRP</Text>
+        <Text style={styles.sectionTitle}>COST &amp; MSRP</Text>
         <View style={styles.thRow}>
           <Text style={styles.colServing}>Serving</Text>
           <Text style={styles.colCost}>Pour</Text>
