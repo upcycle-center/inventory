@@ -2,14 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Recipe, RecipeIngredient } from "@/lib/supabase/types";
-import { computeRecipeSizes, costPerOz, DEFAULT_TARGET_PROFIT_PCT, PACKAGING_COST } from "@/lib/recipeCost";
+import { computeRecipeSizes, costPerOz, DEFAULT_TARGET_MARKUP_PCT, PACKAGING_COST } from "@/lib/recipeCost";
 import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
-import { removeIngredient, updateIngredientQty, updateRecipe, updateTargetProfit } from "./actions";
+import { removeIngredient, updateIngredientQty, updateRecipe, updateTargetMarkup } from "./actions";
 import { AddIngredientForm } from "./AddIngredientForm";
 
 function fmtCurrency(value: number | null) {
@@ -40,7 +40,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
       costPerOz: costPerOz(row.product!),
     }));
-  const sizes = computeRecipeSizes(costLines, recipe.target_profit_pct ?? DEFAULT_TARGET_PROFIT_PCT);
+  const sizes = computeRecipeSizes(costLines, recipe.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT);
   const missingCostProducts = costLines.filter((l) => l.costPerOz == null).map((l) => l.description);
 
   return (
@@ -190,21 +190,20 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       </p>
 
       <ActionForm
-        action={updateTargetProfit}
+        action={updateTargetMarkup}
         savedLabel="Saved"
         className="mb-3 flex items-center gap-2"
       >
         <input type="hidden" name="id" value={recipe.id} />
         <label className="flex items-center gap-2 text-sm text-gray-600">
-          Target Profit%
+          Target Markup%
           <input
-            name="target_profit_pct"
+            name="target_markup_pct"
             type="number"
             min={1}
-            max={99}
             step={0.5}
-            defaultValue={recipe.target_profit_pct ?? DEFAULT_TARGET_PROFIT_PCT}
-            className="w-16 rounded-md border border-gray-300 px-2 py-1 text-sm"
+            defaultValue={recipe.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT}
+            className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
           />
           %
         </label>

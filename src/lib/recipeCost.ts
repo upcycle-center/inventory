@@ -2,11 +2,13 @@ import type { RecipeRequestSize } from "@/lib/supabase/types";
 
 const ML_PER_OZ = 29.5735;
 
-// Default target profit % (80, i.e. profit is 80% of MSRP, cost the
-// other 20%) -- the standard starting point for a NY concert-venue bar
-// program -- editable per recipe (recipes.target_profit_pct) to tweak
-// margin.
-export const DEFAULT_TARGET_PROFIT_PCT = 80;
+// Default target markup % (400, i.e. MSRP = cost + 4x cost, same 5x
+// multiple as the old 80%-of-MSRP default) -- the standard starting
+// point for a NY concert-venue bar program -- editable per recipe
+// (recipes.target_markup_pct) to tweak margin. Markup is a % of cost,
+// not of MSRP, so unlike a profit-of-MSRP percentage it has no 100%
+// ceiling.
+export const DEFAULT_TARGET_MARKUP_PCT = 400;
 
 // A Top Off ingredient (quantityOz null -- no measured amount) stands in
 // at this amount when working out the recipe's ingredient ratios, before
@@ -99,16 +101,16 @@ export interface RecipeSizeResult {
 // null cost/msrp means at least one ingredient is missing cost data
 // (no case_cost/case_size/bottle_size_ml on record) -- the UI flags
 // which ingredient rather than silently showing a wrong total.
-// targetProfitPct is a percentage (80 means profit is 80% of MSRP, cost
-// the other 20%), per-recipe editable -- MSRP = cost / (1 - pct/100).
-export function computeRecipeSizes(ingredients: RecipeIngredientLine[], targetProfitPct: number = DEFAULT_TARGET_PROFIT_PCT): RecipeSizeResult[] {
-  const costFraction = 1 - targetProfitPct / 100;
+// targetMarkupPct is a percentage of cost (400 means MSRP = cost + 4x
+// cost), per-recipe editable -- MSRP = cost * (1 + pct/100).
+export function computeRecipeSizes(ingredients: RecipeIngredientLine[], targetMarkupPct: number = DEFAULT_TARGET_MARKUP_PCT): RecipeSizeResult[] {
+  const markupMultiplier = 1 + targetMarkupPct / 100;
   return RECIPE_SIZE_DEFS.map(({ key, label, pourOz }) => {
     const lines = resolveIngredientsForSize(ingredients, key);
     const hasAllCosts = lines.length > 0 && lines.every((l) => l.costPerOz != null);
     const ingredientCost = hasAllCosts ? lines.reduce((sum, l) => sum + l.quantityOz * (l.costPerOz ?? 0), 0) : null;
     const cost = ingredientCost != null ? ingredientCost + PACKAGING_COST : null;
-    const msrp = cost != null && costFraction > 0 ? cost / costFraction : null;
+    const msrp = cost != null && markupMultiplier > 0 ? cost * markupMultiplier : null;
     return { key, label, totalOz: pourOz, cost, msrp };
   });
 }

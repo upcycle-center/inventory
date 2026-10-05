@@ -293,9 +293,9 @@ export interface Recipe {
   original_recipe: string | null;
   // How-to-make-it prep steps, shown on the Ops Sheet PDF.
   instructions: string | null;
-  // Target profit %, e.g. 80 for 80% -- MSRP = cost / (1 - this / 100).
-  // Defaults to 80 but editable per recipe to tweak margin.
-  target_profit_pct: number;
+  // Target markup %, e.g. 400 for 400% -- MSRP = cost * (1 + this / 100).
+  // Defaults to 400 but editable per recipe to tweak margin.
+  target_markup_pct: number;
   active: boolean;
   created_by: string | null;
   created_at: string;
