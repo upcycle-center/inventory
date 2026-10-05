@@ -117,26 +117,6 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </label>
       </ActionForm>
 
-      <div className="mb-8 flex items-center gap-3">
-        <button type="submit" form="edit-recipe-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Save
-        </button>
-        <a
-          href={`/api/recipes/${recipe.id}/ops-sheet`}
-          className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
-        >
-          Download Ops Sheet
-        </a>
-        <ActionForm action={toggleRecipeActive} className="contents" savedLabel={recipe.active ? "Deactivated" : "Reactivated"}>
-          <input type="hidden" name="id" value={recipe.id} />
-          <input type="hidden" name="active" value={String(recipe.active)} />
-          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
-            {recipe.active ? "Deactivate" : "Reactivate"}
-          </button>
-        </ActionForm>
-        <DeleteRecipeButton recipeId={recipe.id} />
-      </div>
-
       <p className="mb-3 text-sm font-medium">RECIPE</p>
 
       <AddIngredientForm
@@ -242,6 +222,26 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
           ))}
         </tbody>
       </table>
+
+      <div className="mt-6 flex items-center gap-3">
+        <button type="submit" form="edit-recipe-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+          Save
+        </button>
+        <a
+          href={`/api/recipes/${recipe.id}/ops-sheet`}
+          className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+        >
+          Download Ops Sheet
+        </a>
+        <ActionForm action={toggleRecipeActive} className="contents" savedLabel={recipe.active ? "Deactivated" : "Reactivated"}>
+          <input type="hidden" name="id" value={recipe.id} />
+          <input type="hidden" name="active" value={String(recipe.active)} />
+          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+            {recipe.active ? "Deactivate" : "Reactivate"}
+          </button>
+        </ActionForm>
+        <DeleteRecipeButton recipeId={recipe.id} />
+      </div>
     </div>
   );
 }
