@@ -4,7 +4,10 @@ import type { ProductCategory, Recipe } from "@/lib/supabase/types";
 import { computeRecipeSizes, costPerOz, DEFAULT_BEO_MARKUP_PCT, DEFAULT_TARGET_MARKUP_PCT, RECIPE_SIZE_DEFS } from "@/lib/recipeCost";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
+import { DuplicateIcon } from "@/components/DuplicateIcon";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
+import { ActionForm } from "@/components/ActionForm";
+import { duplicateRecipe } from "./actions";
 
 function CostCell({ cost, beo, msrp }: { cost: number | null; beo: number | null; msrp: number | null }) {
   if (cost == null || beo == null || msrp == null) return <span className="text-gray-400">—</span>;
@@ -82,19 +85,32 @@ export default async function AdminRecipesPage() {
             const byKey = Object.fromEntries(sizes.map((s) => [s.key, s]));
             return (
               <tr key={r.id} className="border-t border-gray-100">
-                <td className="px-3 py-2">
-                  <ProductThumbnail photoUrl={r.photo_url} alt={r.name} />
+                <td className="w-20 p-0">
+                  <ProductThumbnail photoUrl={r.photo_url} alt={r.name} className="h-full w-20" />
                 </td>
                 <td className="px-3 py-2">
-                  <div className="whitespace-nowrap">
+                  <div className="mb-1 flex items-center gap-2">
                     <a
                       href={`/api/recipes/${r.id}/ops-sheet`}
                       title="Download Ops Sheet"
                       aria-label="Download Ops Sheet"
-                      className="mr-2 inline-flex items-center text-gray-400 hover:text-brand"
+                      className="inline-flex items-center text-gray-400 hover:text-brand"
                     >
                       <DownloadIcon />
                     </a>
+                    <ActionForm action={duplicateRecipe} className="contents">
+                      <input type="hidden" name="id" value={r.id} />
+                      <button
+                        type="submit"
+                        title="Duplicate"
+                        aria-label="Duplicate"
+                        className="inline-flex items-center text-amber-600 hover:text-amber-700"
+                      >
+                        <DuplicateIcon />
+                      </button>
+                    </ActionForm>
+                  </div>
+                  <div className="whitespace-nowrap">
                     <Link href={`/admin/recipes/${r.id}`} className="text-brand hover:underline">
                       {r.name}
                     </Link>

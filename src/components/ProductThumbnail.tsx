@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 
-export function ProductThumbnail({ photoUrl, alt }: { photoUrl: string | null; alt: string }) {
+export function ProductThumbnail({
+  photoUrl,
+  alt,
+  className = "h-10 w-10",
+}: {
+  photoUrl: string | null;
+  alt: string;
+  className?: string;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -11,7 +19,7 @@ export function ProductThumbnail({ photoUrl, alt }: { photoUrl: string | null; a
       <button
         type="button"
         onClick={() => photoUrl && setExpanded(true)}
-        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-gray-100"
+        className={`flex shrink-0 items-center justify-center overflow-hidden rounded bg-gray-100 ${className}`}
       >
         {photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
