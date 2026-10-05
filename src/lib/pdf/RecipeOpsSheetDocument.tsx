@@ -136,6 +136,11 @@ export function RecipeOpsSheetDocument({
 
   const literLabel = RECIPE_SIZE_DEFS.find((s) => s.key === "liter")?.label ?? "1L";
   const bubblerLabel = RECIPE_SIZE_DEFS.find((s) => s.key === "batch_2_5_gal")?.label ?? "2.5gal";
+  // The fixed pour target each batch's ingredient ratios are scaled to
+  // (Top Off's share included) -- TOT Yield, which excludes Top Off,
+  // is shown against this as the batch's hard volume cap.
+  const literMaxOz = RECIPE_SIZE_DEFS.find((s) => s.key === "liter")?.pourOz ?? 32;
+  const bubblerMaxOz = RECIPE_SIZE_DEFS.find((s) => s.key === "batch_2_5_gal")?.pourOz ?? 320;
 
   return (
     <Document>
@@ -189,7 +194,7 @@ export function RecipeOpsSheetDocument({
         ))}
         {!ingredients.length && <Text style={styles.instructionsText}>No ingredients on file.</Text>}
 
-        {!!ingredients.length && (
+        {!!measuredIngredients.length && (
           <>
             <Text style={styles.sectionTitle}>BATCH SERVICE</Text>
             <View style={styles.thRow}>
@@ -197,20 +202,21 @@ export function RecipeOpsSheetDocument({
               <Text style={styles.colBatch}>{literLabel} Batch</Text>
               <Text style={styles.colBatch}>{bubblerLabel} Batch</Text>
             </View>
-            {ingredients.map((ing) => (
+            {measuredIngredients.map((ing) => (
               <View key={ing.productId} style={styles.tr}>
-                <Text style={[styles.colProduct, { paddingLeft: 4 }]}>
-                  {ing.description}
-                  {ing.quantityOz == null ? " (Top Off)" : ""}
-                </Text>
+                <Text style={[styles.colProduct, { paddingLeft: 4 }]}>{ing.description}</Text>
                 <Text style={styles.colBatch}>{fmtOz(literOz[ing.productId] ?? 0)}</Text>
                 <Text style={styles.colBatch}>{fmtOz(bubblerOz[ing.productId] ?? 0)}</Text>
               </View>
             ))}
             <View style={styles.yieldRow}>
               <Text style={[styles.colProduct, { paddingLeft: 4 }]}>TOT Yield</Text>
-              <Text style={styles.colBatch}>{fmtOz(literYield)}</Text>
-              <Text style={styles.colBatch}>{fmtOz(bubblerYield)}</Text>
+              <Text style={styles.colBatch}>
+                {fmtOz(literYield)} / {literMaxOz} oz
+              </Text>
+              <Text style={styles.colBatch}>
+                {fmtOz(bubblerYield)} / {bubblerMaxOz} oz
+              </Text>
             </View>
           </>
         )}
@@ -218,6 +224,7 @@ export function RecipeOpsSheetDocument({
         <Text style={styles.sectionTitle}>COST / BEO / MSRP</Text>
         <View style={styles.thRow}>
           <Text style={styles.colServing}>Serving</Text>
+          <Text style={styles.colCost}>Pour</Text>
           <Text style={styles.colCost}>Cost</Text>
           <Text style={styles.colCost}>BEO</Text>
           <Text style={styles.colCost}>MSRP</Text>
@@ -225,6 +232,7 @@ export function RecipeOpsSheetDocument({
         {costSizes.map((s) => (
           <View key={s.key} style={styles.tr}>
             <Text style={styles.colServing}>{s.label}</Text>
+            <Text style={styles.colCost}>{s.totalOz} oz</Text>
             <Text style={styles.colCost}>{fmtCurrency(s.cost)}</Text>
             <Text style={[styles.colCost, styles.beoText]}>{fmtRounded(s.beo)}</Text>
             <Text style={[styles.colCost, styles.msrpText]}>{fmtRounded(s.msrp)}</Text>
