@@ -293,9 +293,12 @@ export interface Recipe {
   original_recipe: string | null;
   // How-to-make-it prep steps, shown on the Ops Sheet PDF.
   instructions: string | null;
-  // Target markup %, e.g. 400 for 400% -- MSRP = cost * (1 + this / 100).
-  // Defaults to 400 but editable per recipe to tweak margin.
+  // Target markup %, e.g. 500 for 500% -- MSRP = cost * (1 + this / 100).
+  // Defaults to 500 but editable per recipe to tweak margin.
   target_markup_pct: number;
+  // Separate markup % used to price this recipe for Catering client
+  // invoicing via a BEO (Banquet Event Order). Defaults to 300.
+  beo_markup_pct: number;
   active: boolean;
   created_by: string | null;
   created_at: string;

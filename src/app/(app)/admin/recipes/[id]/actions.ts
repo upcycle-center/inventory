@@ -61,6 +61,21 @@ export async function updateTargetMarkup(formData: FormData): Promise<{ error: s
   revalidatePath("/admin/recipes");
 }
 
+export async function updateBeoMarkup(formData: FormData): Promise<{ error: string } | void> {
+  await requireProfile(["admin"]);
+  const supabase = createClient();
+  const id = String(formData.get("id"));
+  const pct = Number(formData.get("beo_markup_pct"));
+  if (!id || !pct || pct <= 0) return { error: "Enter a markup % greater than 0." };
+
+  const { data, error } = await supabase.from("recipes").update({ beo_markup_pct: pct }).eq("id", id).select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "No recipe was updated -- it may have been deleted." };
+
+  revalidatePath(`/admin/recipes/${id}`);
+  revalidatePath("/admin/recipes");
+}
+
 export async function addIngredient(formData: FormData) {
   await requireProfile(["admin"]);
   const supabase = createClient();

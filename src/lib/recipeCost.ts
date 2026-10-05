@@ -9,6 +9,11 @@ const ML_PER_OZ = 29.5735;
 // profit-of-MSRP percentage it has no 100% ceiling.
 export const DEFAULT_TARGET_MARKUP_PCT = 500;
 
+// Default BEO markup % (300) -- a second, separate markup used to price
+// a recipe for Catering client invoicing via a BEO (Banquet Event
+// Order), independent of the retail Target Markup%.
+export const DEFAULT_BEO_MARKUP_PCT = 300;
+
 // A Top Off ingredient (quantityOz null -- no measured amount) stands in
 // at this amount when working out the recipe's ingredient ratios, before
 // everything gets scaled to each Serving's fixed pour size.
@@ -95,22 +100,30 @@ export interface RecipeSizeResult {
   totalOz: number;
   cost: number | null;
   msrp: number | null;
+  beo: number | null;
 }
 
-// null cost/msrp means at least one ingredient is missing cost data
+// null cost/msrp/beo means at least one ingredient is missing cost data
 // (no case_cost/case_size/bottle_size_ml on record) -- the UI flags
 // which ingredient rather than silently showing a wrong total.
-// targetMarkupPct is a percentage of cost (400 means MSRP = cost + 4x
-// cost), per-recipe editable -- MSRP = cost * (1 + pct/100).
-export function computeRecipeSizes(ingredients: RecipeIngredientLine[], targetMarkupPct: number = DEFAULT_TARGET_MARKUP_PCT): RecipeSizeResult[] {
+// targetMarkupPct/beoMarkupPct are percentages of cost (400 means
+// price = cost + 4x cost), both per-recipe editable --
+// price = cost * (1 + pct/100).
+export function computeRecipeSizes(
+  ingredients: RecipeIngredientLine[],
+  targetMarkupPct: number = DEFAULT_TARGET_MARKUP_PCT,
+  beoMarkupPct: number = DEFAULT_BEO_MARKUP_PCT
+): RecipeSizeResult[] {
   const markupMultiplier = 1 + targetMarkupPct / 100;
+  const beoMultiplier = 1 + beoMarkupPct / 100;
   return RECIPE_SIZE_DEFS.map(({ key, label, pourOz }) => {
     const lines = resolveIngredientsForSize(ingredients, key);
     const hasAllCosts = lines.length > 0 && lines.every((l) => l.costPerOz != null);
     const ingredientCost = hasAllCosts ? lines.reduce((sum, l) => sum + l.quantityOz * (l.costPerOz ?? 0), 0) : null;
     const cost = ingredientCost != null ? ingredientCost + PACKAGING_COST : null;
     const msrp = cost != null && markupMultiplier > 0 ? cost * markupMultiplier : null;
-    return { key, label, totalOz: pourOz, cost, msrp };
+    const beo = cost != null && beoMultiplier > 0 ? cost * beoMultiplier : null;
+    return { key, label, totalOz: pourOz, cost, msrp, beo };
   });
 }
 

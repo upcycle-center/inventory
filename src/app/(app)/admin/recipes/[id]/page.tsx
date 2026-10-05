@@ -2,14 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Recipe, RecipeIngredient } from "@/lib/supabase/types";
-import { computeRecipeSizes, costPerOz, DEFAULT_TARGET_MARKUP_PCT, PACKAGING_COST } from "@/lib/recipeCost";
+import { computeRecipeSizes, costPerOz, DEFAULT_BEO_MARKUP_PCT, DEFAULT_TARGET_MARKUP_PCT, PACKAGING_COST } from "@/lib/recipeCost";
 import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
-import { removeIngredient, updateIngredientQty, updateRecipe, updateTargetMarkup } from "./actions";
+import { removeIngredient, updateBeoMarkup, updateIngredientQty, updateRecipe, updateTargetMarkup } from "./actions";
 import { AddIngredientForm } from "./AddIngredientForm";
 
 function fmtCurrency(value: number | null) {
@@ -44,7 +44,11 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
       costPerOz: costPerOz(row.product!),
     }));
-  const sizes = computeRecipeSizes(costLines, recipe.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT);
+  const sizes = computeRecipeSizes(
+    costLines,
+    recipe.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT,
+    recipe.beo_markup_pct ?? DEFAULT_BEO_MARKUP_PCT
+  );
   const missingCostProducts = costLines.filter((l) => l.costPerOz == null).map((l) => l.description);
 
   return (
@@ -196,6 +200,29 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         </button>
       </ActionForm>
 
+      <ActionForm
+        action={updateBeoMarkup}
+        savedLabel="Saved"
+        className="mb-3 flex items-center gap-2"
+      >
+        <input type="hidden" name="id" value={recipe.id} />
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          BEO Markup%
+          <input
+            name="beo_markup_pct"
+            type="number"
+            min={1}
+            step={0.5}
+            defaultValue={recipe.beo_markup_pct ?? DEFAULT_BEO_MARKUP_PCT}
+            className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
+          />
+          %
+        </label>
+        <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
+          Save
+        </button>
+      </ActionForm>
+
       {missingCostProducts.length > 0 && (
         <p className="mb-3 text-sm text-red-600">
           Cost can&apos;t be calculated — missing Case Cost/Case Size/Bottle Size on: {missingCostProducts.join(", ")}.
@@ -209,6 +236,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
             <th className="px-3 pb-2">Pour</th>
             <th className="px-3 pb-2">Cost</th>
             <th className="px-3 pb-2">MSRP</th>
+            <th className="px-3 pb-2">BEO</th>
           </tr>
         </thead>
         <tbody>
@@ -218,6 +246,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
               <td className="px-3 py-2 text-gray-500">{s.totalOz} oz</td>
               <td className="px-3 py-2 text-gray-500">{fmtCurrency(s.cost)}</td>
               <td className="px-3 py-2 font-medium text-green-700">{fmtMsrp(s.msrp)}</td>
+              <td className="px-3 py-2 font-medium text-purple-700">{fmtMsrp(s.beo)}</td>
             </tr>
           ))}
         </tbody>

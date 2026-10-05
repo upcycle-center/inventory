@@ -22,6 +22,10 @@ const SECTION_GROUPS = [
     ],
   },
   {
+    label: "Catering",
+    items: [{ href: "/admin/catering/beo", label: "BEO" }],
+  },
+  {
     label: "Reports",
     items: [
       { href: "/admin/reports/events", label: "Events" },
