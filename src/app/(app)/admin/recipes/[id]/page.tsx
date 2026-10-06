@@ -12,7 +12,7 @@ import { ProductPlaceholderIcon } from "@/components/ProductPlaceholderIcon";
 import { DownloadIcon } from "@/components/DownloadIcon";
 import { toggleRecipeActive } from "../actions";
 import { DeleteRecipeButton } from "../DeleteRecipeButton";
-import { removeIngredient, updateBeoMarkup, updateIngredientQty, updateRecipe, updateTargetMarkup } from "./actions";
+import { removeIngredient, updateIngredientQty, updateMarkups, updateRecipe } from "./actions";
 import { AddIngredientForm } from "./AddIngredientForm";
 import { SaveStatusIndicator, SaveStatusProvider } from "./SaveStatus";
 import { TopEditForm } from "./TopEditForm";
@@ -230,7 +230,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-4">
-        <ActionForm action={updateTargetMarkup} savedLabel="Saved" className="flex items-center gap-2">
+        <ActionForm action={updateMarkups} savedLabel="Saved" className="flex flex-wrap items-center gap-4">
           <input type="hidden" name="id" value={recipe.id} />
           <label className="flex items-center gap-2 text-sm text-gray-600">
             MSRP Markup%
@@ -244,13 +244,6 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
             />
             %
           </label>
-          <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
-            Save
-          </button>
-        </ActionForm>
-
-        <ActionForm action={updateBeoMarkup} savedLabel="Saved" className="flex items-center gap-2">
-          <input type="hidden" name="id" value={recipe.id} />
           <label className="flex items-center gap-2 text-sm text-gray-600">
             BEO Markup%
             <input

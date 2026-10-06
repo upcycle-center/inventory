@@ -50,29 +50,20 @@ export async function updateRecipe(formData: FormData) {
   revalidatePath("/admin/recipes");
 }
 
-export async function updateTargetMarkup(formData: FormData): Promise<{ error: string } | void> {
+export async function updateMarkups(formData: FormData): Promise<{ error: string } | void> {
   await requireProfile(["admin"]);
   const supabase = createClient();
   const id = String(formData.get("id"));
-  const pct = Number(formData.get("target_markup_pct"));
-  if (!id || !pct || pct <= 0) return { error: "Enter a markup % greater than 0." };
+  const targetPct = Number(formData.get("target_markup_pct"));
+  const beoPct = Number(formData.get("beo_markup_pct"));
+  if (!id || !targetPct || targetPct <= 0) return { error: "Enter an MSRP markup % greater than 0." };
+  if (!beoPct || beoPct <= 0) return { error: "Enter a BEO markup % greater than 0." };
 
-  const { data, error } = await supabase.from("recipes").update({ target_markup_pct: pct }).eq("id", id).select("id");
-  if (error) return { error: error.message };
-  if (!data || data.length === 0) return { error: "No recipe was updated -- it may have been deleted." };
-
-  revalidatePath(`/admin/recipes/${id}`);
-  revalidatePath("/admin/recipes");
-}
-
-export async function updateBeoMarkup(formData: FormData): Promise<{ error: string } | void> {
-  await requireProfile(["admin"]);
-  const supabase = createClient();
-  const id = String(formData.get("id"));
-  const pct = Number(formData.get("beo_markup_pct"));
-  if (!id || !pct || pct <= 0) return { error: "Enter a markup % greater than 0." };
-
-  const { data, error } = await supabase.from("recipes").update({ beo_markup_pct: pct }).eq("id", id).select("id");
+  const { data, error } = await supabase
+    .from("recipes")
+    .update({ target_markup_pct: targetPct, beo_markup_pct: beoPct })
+    .eq("id", id)
+    .select("id");
   if (error) return { error: error.message };
   if (!data || data.length === 0) return { error: "No recipe was updated -- it may have been deleted." };
 
