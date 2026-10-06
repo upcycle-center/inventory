@@ -16,7 +16,7 @@ const ROLE_OPTIONS: { value: string; label: string; types: ProductTypeValue[] | 
   { value: "alcohol", label: "Alcohol", types: ["non_chargeable_bottle"] },
   { value: "mixer", label: "Mixer", types: ["non_chargeable_mixer"] },
   { value: "top_off", label: "Top Off", types: ["chargeable", "non_chargeable_mixer"] },
-  { value: "garnish", label: "Garnish", types: ["garnish"] },
+  { value: "garnish", label: "Garnish/Bitters", types: ["garnish"] },
 ];
 
 // Standalone submit handling instead of the shared ActionForm -- Role and
