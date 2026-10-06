@@ -1,12 +1,5 @@
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import {
-  BASE_MULTIPLIER,
-  ML_PER_OZ,
-  RECIPE_SIZE_DEFS,
-  resolveMeasuredIngredientsForSize,
-  type RecipeIngredientLine,
-  type RecipeSizeResult,
-} from "@/lib/recipeCost";
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
+import { ML_PER_OZ, RECIPE_SIZE_DEFS, resolveMeasuredIngredientsForSize, type RecipeIngredientLine } from "@/lib/recipeCost";
 import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
 
 export interface OpsSheetIngredientLine extends RecipeIngredientLine {
@@ -23,6 +16,8 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 },
   title: { fontSize: 18, marginBottom: 2, fontFamily: "Helvetica-Bold" },
   subtitle: { fontSize: 11, color: "#555555" },
+  headerRight: { alignItems: "flex-end" },
+  headerPhoto: { width: 64, height: 64, borderRadius: 4, marginBottom: 4, objectFit: "cover" },
   printedAt: { fontSize: 9, color: "#555555" },
   sectionTitle: {
     fontSize: 12,
@@ -79,21 +74,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     fontFamily: "Helvetica-Bold",
   },
-  colServing: { flex: 1.5, paddingLeft: 4 },
-  colCost: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
   topOffText: { color: "#6b7280", fontStyle: "italic" },
-  baseText: { color: "#c2410c" },
-  beoText: { color: "#1d4ed8" },
-  msrpText: { color: "#15803d" },
 });
-
-function fmtCurrency(value: number | null) {
-  return value == null ? "—" : `$${value.toFixed(2)}`;
-}
-
-function fmtRounded(value: number | null) {
-  return value == null ? "—" : `$${Math.ceil(value)}`;
-}
 
 // Whole units (bottles/cans) needed to cover the resolved oz for a batch
 // size, rounded up -- just the count, since this is a pick list (how
@@ -136,23 +118,23 @@ export function RecipeOpsSheetDocument({
   name,
   description,
   category,
+  photoUrl,
   instructions,
   batchInstructions,
   originalRecipe,
   sourceUrl,
   ingredients,
-  costSizes,
   generatedAt,
 }: {
   name: string;
   description: string | null;
   category: string | null;
+  photoUrl: string | null;
   instructions: string | null;
   batchInstructions: string | null;
   originalRecipe: string | null;
   sourceUrl: string | null;
   ingredients: OpsSheetIngredientLine[];
-  costSizes: RecipeSizeResult[];
   generatedAt: string;
 }) {
   // The pre-made batch never includes Top Off -- that's added fresh per
@@ -194,7 +176,10 @@ export function RecipeOpsSheetDocument({
             {!!category && <Text style={styles.subtitle}>{category}</Text>}
             {!!description && <Text style={styles.subtitle}>{description}</Text>}
           </View>
-          <Text style={styles.printedAt}>Printed {generatedAt}</Text>
+          <View style={styles.headerRight}>
+            {!!photoUrl && <Image src={photoUrl} style={styles.headerPhoto} />}
+            <Text style={styles.printedAt}>Printed {generatedAt}</Text>
+          </View>
         </View>
 
         <View style={styles.howToRow}>
@@ -207,27 +192,6 @@ export function RecipeOpsSheetDocument({
             <Text style={styles.sectionTitle}>SERVICE</Text>
             <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
           </View>
-        </View>
-
-        <View wrap={false}>
-          <Text style={styles.sectionTitle}>COST &amp; MSRP</Text>
-          <View style={styles.thRow}>
-            <Text style={styles.colServing}>Serving</Text>
-            <Text style={styles.colCost}>Pour</Text>
-            <Text style={styles.colCost}>Base</Text>
-            <Text style={styles.colCost}>BEO</Text>
-            <Text style={styles.colCost}>MSRP</Text>
-          </View>
-          {costSizes.map((s) => (
-            <View key={s.key} style={styles.tr}>
-              <Text style={styles.colServing}>{s.label}</Text>
-              {/* Carafe/Bubbler rows are holding vessels, not an actual pour -- show a dash instead of their oz volume. */}
-              <Text style={styles.colCost}>{BATCH_SIZE_KEYS.has(s.key) ? "—" : `${s.totalOz} oz`}</Text>
-              <Text style={[styles.colCost, styles.baseText]}>{fmtCurrency(s.cost == null ? null : s.cost * BASE_MULTIPLIER)}</Text>
-              <Text style={[styles.colCost, styles.beoText]}>{fmtRounded(s.beo)}</Text>
-              <Text style={[styles.colCost, styles.msrpText]}>{fmtRounded(s.msrp)}</Text>
-            </View>
-          ))}
         </View>
 
         <Text style={styles.sectionTitle}>BATCH PICK LIST</Text>
