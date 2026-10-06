@@ -81,6 +81,7 @@ const styles = StyleSheet.create({
   },
   colServing: { flex: 1.5, paddingLeft: 4 },
   colCost: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
+  topOffText: { color: "#6b7280", fontStyle: "italic" },
   baseText: { color: "#c2410c" },
   beoText: { color: "#1d4ed8" },
   msrpText: { color: "#15803d" },
@@ -169,19 +170,20 @@ export function RecipeOpsSheetDocument({
     batchSizes.map((b) => [b.key, measuredIngredients.reduce((sum, i) => sum + (b.oz.get(i.productId) ?? 0), 0)])
   );
 
-  // Grouped by Product Type, in the same fixed order as the Products
-  // tabs -- Top Off is excluded, same as BATCH SERVICE, since it isn't
-  // part of batch production.
-  const groups = PRODUCT_TYPE_OPTIONS.map((opt) => ({
+  // All ingredients -- including Top Off (e.g. a Mixer) -- grouped by
+  // Product Type, in the same fixed order as the Products tabs. BATCH
+  // PICK LIST needs Top Off items too, so staff know to pull them for
+  // use at pour time, even though they have no fixed batch quantity.
+  const pickListGroups = PRODUCT_TYPE_OPTIONS.map((opt) => ({
     label: opt.shortLabel,
-    items: measuredIngredients
-      .filter((i) => i.productType === opt.value)
-      .sort((a, b) => a.description.localeCompare(b.description)),
+    items: ingredients.filter((i) => i.productType === opt.value).sort((a, b) => a.description.localeCompare(b.description)),
   })).filter((g) => g.items.length > 0);
-  // Same Type-grouped, alphabetized order as BATCH PICK LIST, but
-  // without the group header bars -- just the ingredients clustered by
-  // Type for easy reading.
-  const measuredIngredientsGrouped = groups.flatMap((g) => g.items);
+  // Same grouping, measured ingredients only -- Top Off is excluded
+  // here since BATCH SERVICE states exact pre-batched amounts, and Top
+  // Off is added fresh per serving, not pre-mixed and stored.
+  const measuredIngredientsGrouped = PRODUCT_TYPE_OPTIONS.flatMap((opt) =>
+    measuredIngredients.filter((i) => i.productType === opt.value).sort((a, b) => a.description.localeCompare(b.description))
+  );
 
   return (
     <Document>
@@ -237,7 +239,7 @@ export function RecipeOpsSheetDocument({
             </Text>
           ))}
         </View>
-        {groups.map((group) => (
+        {pickListGroups.map((group) => (
           <View key={group.label} wrap={false}>
             <View style={styles.groupRow}>
               <Text style={styles.groupLabel}>{group.label}</Text>
@@ -248,11 +250,17 @@ export function RecipeOpsSheetDocument({
                   <View style={styles.checkbox} />
                   <Text>{ing.description}</Text>
                 </View>
-                {batchSizes.map((b) => (
-                  <Text key={b.key} style={styles.colBatch}>
-                    {fmtBottleCount(b.oz.get(ing.productId) ?? 0, ing.bottleSizeMl)}
-                  </Text>
-                ))}
+                {ing.quantityOz == null
+                  ? batchSizes.map((b) => (
+                      <Text key={b.key} style={[styles.colBatch, styles.topOffText]}>
+                        Top Off
+                      </Text>
+                    ))
+                  : batchSizes.map((b) => (
+                      <Text key={b.key} style={styles.colBatch}>
+                        {fmtBottleCount(b.oz.get(ing.productId) ?? 0, ing.bottleSizeMl)}
+                      </Text>
+                    ))}
               </View>
             ))}
           </View>
