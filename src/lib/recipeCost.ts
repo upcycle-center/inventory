@@ -16,7 +16,7 @@ export const DEFAULT_BEO_MARKUP_PCT = 300;
 
 // "Base" price shown alongside Cost/BEO/MSRP -- a fixed, non-editable
 // multiplier of cost (not a per-recipe setting like Target/BEO Markup%).
-export const BASE_MULTIPLIER = 1.5;
+export const BASE_MULTIPLIER = 1.25;
 
 // A Top Off ingredient (quantityOz null -- no measured amount) stands in
 // at this amount when working out the recipe's ingredient ratios, before
