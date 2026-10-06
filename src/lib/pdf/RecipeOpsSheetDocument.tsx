@@ -13,6 +13,10 @@ export interface OpsSheetIngredientLine extends RecipeIngredientLine {
   productType: string;
 }
 
+// Which RECIPE_SIZE_DEFS keys are pre-made batches (BATCH PICK
+// LIST/SERVICE columns) rather than a single Serving pour.
+const BATCH_SIZE_KEYS = new Set(["liter", "batch_2_5_gal", "batch_5_gal"]);
+
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 },
@@ -148,18 +152,20 @@ export function RecipeOpsSheetDocument({
   costSizes: RecipeSizeResult[];
   generatedAt: string;
 }) {
-  const literLabel = RECIPE_SIZE_DEFS.find((s) => s.key === "liter")?.label ?? "1L";
-  const bubblerLabel = RECIPE_SIZE_DEFS.find((s) => s.key === "batch_2_5_gal")?.label ?? "2.5gal";
   // The pre-made batch never includes Top Off -- that's added fresh per
   // serving at pour time, not pre-mixed and stored -- so only the
   // measured ingredients are scaled to fill the full batch volume.
-  const literMaxOz = RECIPE_SIZE_DEFS.find((s) => s.key === "liter")?.pourOz ?? 32;
-  const bubblerMaxOz = RECIPE_SIZE_DEFS.find((s) => s.key === "batch_2_5_gal")?.pourOz ?? 320;
-  const literOz = roundToWholeOzSum(resolveMeasuredIngredientsForSize(ingredients, "liter"), literMaxOz);
-  const bubblerOz = roundToWholeOzSum(resolveMeasuredIngredientsForSize(ingredients, "batch_2_5_gal"), bubblerMaxOz);
+  // Every batch-production size (1L through the largest Bubbler) gets
+  // its own pick-list/service column, driven generically off
+  // RECIPE_SIZE_DEFS so a new size needs no further changes here.
+  const batchSizes = RECIPE_SIZE_DEFS.filter((s) => BATCH_SIZE_KEYS.has(s.key)).map((s) => {
+    const oz = roundToWholeOzSum(resolveMeasuredIngredientsForSize(ingredients, s.key), s.pourOz);
+    return { key: s.key, label: s.label, maxOz: s.pourOz, oz };
+  });
   const measuredIngredients = ingredients.filter((i) => i.quantityOz != null);
-  const literYield = measuredIngredients.reduce((sum, i) => sum + (literOz.get(i.productId) ?? 0), 0);
-  const bubblerYield = measuredIngredients.reduce((sum, i) => sum + (bubblerOz.get(i.productId) ?? 0), 0);
+  const batchYields = new Map(
+    batchSizes.map((b) => [b.key, measuredIngredients.reduce((sum, i) => sum + (b.oz.get(i.productId) ?? 0), 0)])
+  );
 
   // Grouped by Product Type, in the same fixed order as the Products
   // tabs -- Top Off is excluded, same as BATCH SERVICE, since it isn't
@@ -222,8 +228,11 @@ export function RecipeOpsSheetDocument({
         <Text style={styles.sectionTitle}>BATCH PICK LIST</Text>
         <View style={styles.thRow}>
           <Text style={styles.colProduct}>Ingredient</Text>
-          <Text style={styles.colBatch}>{literLabel} Batch</Text>
-          <Text style={styles.colBatch}>{bubblerLabel} Batch</Text>
+          {batchSizes.map((b) => (
+            <Text key={b.key} style={styles.colBatch}>
+              {b.label} Batch
+            </Text>
+          ))}
         </View>
         {groups.map((group) => (
           <View key={group.label} wrap={false}>
@@ -236,8 +245,11 @@ export function RecipeOpsSheetDocument({
                   <View style={styles.checkbox} />
                   <Text>{ing.description}</Text>
                 </View>
-                <Text style={styles.colBatch}>{fmtBottleCount(literOz.get(ing.productId) ?? 0, ing.bottleSizeMl)}</Text>
-                <Text style={styles.colBatch}>{fmtBottleCount(bubblerOz.get(ing.productId) ?? 0, ing.bottleSizeMl)}</Text>
+                {batchSizes.map((b) => (
+                  <Text key={b.key} style={styles.colBatch}>
+                    {fmtBottleCount(b.oz.get(ing.productId) ?? 0, ing.bottleSizeMl)}
+                  </Text>
+                ))}
               </View>
             ))}
           </View>
@@ -249,24 +261,29 @@ export function RecipeOpsSheetDocument({
             <Text style={styles.sectionTitle}>BATCH SERVICE</Text>
             <View style={styles.thRow}>
               <Text style={styles.colProduct}>Ingredient</Text>
-              <Text style={styles.colBatch}>{literLabel} Batch</Text>
-              <Text style={styles.colBatch}>{bubblerLabel} Batch</Text>
+              {batchSizes.map((b) => (
+                <Text key={b.key} style={styles.colBatch}>
+                  {b.label} Batch
+                </Text>
+              ))}
             </View>
             {measuredIngredientsGrouped.map((ing) => (
               <View key={ing.productId} style={styles.tr}>
                 <Text style={[styles.colProduct, { paddingLeft: 4 }]}>{ing.description}</Text>
-                <Text style={styles.colBatch}>{fmtOz(literOz.get(ing.productId) ?? 0)}</Text>
-                <Text style={styles.colBatch}>{fmtOz(bubblerOz.get(ing.productId) ?? 0)}</Text>
+                {batchSizes.map((b) => (
+                  <Text key={b.key} style={styles.colBatch}>
+                    {fmtOz(b.oz.get(ing.productId) ?? 0)}
+                  </Text>
+                ))}
               </View>
             ))}
             <View style={styles.yieldRow}>
               <Text style={[styles.colProduct, { paddingLeft: 4 }]}>TOT Yield</Text>
-              <Text style={styles.colBatch}>
-                {fmtOz(literYield)} / {literMaxOz} oz
-              </Text>
-              <Text style={styles.colBatch}>
-                {fmtOz(bubblerYield)} / {bubblerMaxOz} oz
-              </Text>
+              {batchSizes.map((b) => (
+                <Text key={b.key} style={styles.colBatch}>
+                  {fmtOz(batchYields.get(b.key) ?? 0)} / {b.maxOz} oz
+                </Text>
+              ))}
             </View>
           </View>
         )}

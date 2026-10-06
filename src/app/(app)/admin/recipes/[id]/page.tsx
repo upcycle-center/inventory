@@ -285,7 +285,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
               <td className="px-3 py-2 font-medium">{s.label}</td>
               <td className="px-3 py-2 text-gray-500">{s.totalOz} oz</td>
               <td className="px-3 py-2 text-gray-500">{fmtCurrency(s.cost)}</td>
-              <td className="px-3 py-2 font-medium text-orange-700">{fmtMsrp(s.cost == null ? null : s.cost * 2)}</td>
+              <td className="px-3 py-2 font-medium text-orange-700">{fmtCurrency(s.cost == null ? null : s.cost * 2)}</td>
               <td className="px-3 py-2 font-medium text-blue-700">{fmtMsrp(s.beo)}</td>
               <td className="px-3 py-2 font-medium text-green-700">{fmtMsrp(s.msrp)}</td>
             </tr>

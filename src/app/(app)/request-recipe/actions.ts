@@ -6,7 +6,7 @@ import { requireProfile } from "@/lib/auth";
 import { saveDraft, clearDraft } from "@/lib/actionDrafts";
 import type { RecipeRequestSize, UserRole } from "@/lib/supabase/types";
 
-const SIZE_VALUES: RecipeRequestSize[] = ["wine", "single", "double", "liter", "batch_2_5_gal"];
+const SIZE_VALUES: RecipeRequestSize[] = ["wine", "single", "double", "liter", "batch_2_5_gal", "batch_5_gal"];
 
 export interface RecipeRequestLineInput {
   recipe_id: string;
