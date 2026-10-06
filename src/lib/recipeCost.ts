@@ -26,7 +26,7 @@ const TOP_OFF_DEFAULT_OZ = 2;
 // Flat packaging cost (cup + ice) added on top of ingredient cost for
 // every Serving -- cup+ice cost doesn't depend on which recipe or size
 // it is, so this is a single constant rather than a per-size setting.
-export const PACKAGING_COST = 0.5;
+export const PACKAGING_COST = 0.25;
 
 // Cost per fluid ounce for a product, derived from its case economics --
 // the same bottle-size math TOT Retail already uses for pour-based
