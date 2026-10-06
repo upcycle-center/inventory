@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import {
+  BASE_MULTIPLIER,
   ML_PER_OZ,
   RECIPE_SIZE_DEFS,
   resolveMeasuredIngredientsForSize,
@@ -80,6 +81,7 @@ const styles = StyleSheet.create({
   },
   colServing: { flex: 1.5, paddingLeft: 4 },
   colCost: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
+  baseText: { color: "#c2410c" },
   beoText: { color: "#1d4ed8" },
   msrpText: { color: "#15803d" },
 });
@@ -211,6 +213,7 @@ export function RecipeOpsSheetDocument({
             <Text style={styles.colServing}>Serving</Text>
             <Text style={styles.colCost}>Pour</Text>
             <Text style={styles.colCost}>Cost</Text>
+            <Text style={styles.colCost}>Base</Text>
             <Text style={styles.colCost}>BEO</Text>
             <Text style={styles.colCost}>MSRP</Text>
           </View>
@@ -219,6 +222,7 @@ export function RecipeOpsSheetDocument({
               <Text style={styles.colServing}>{s.label}</Text>
               <Text style={styles.colCost}>{s.totalOz} oz</Text>
               <Text style={styles.colCost}>{fmtCurrency(s.cost)}</Text>
+              <Text style={[styles.colCost, styles.baseText]}>{fmtCurrency(s.cost == null ? null : s.cost * BASE_MULTIPLIER)}</Text>
               <Text style={[styles.colCost, styles.beoText]}>{fmtRounded(s.beo)}</Text>
               <Text style={[styles.colCost, styles.msrpText]}>{fmtRounded(s.msrp)}</Text>
             </View>
