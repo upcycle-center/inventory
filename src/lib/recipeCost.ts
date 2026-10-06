@@ -55,8 +55,7 @@ export const RECIPE_SIZE_DEFS: { key: RecipeSizeKey; label: string; pourOz: numb
   { key: "single", label: "10oz Single", pourOz: 6 },
   { key: "double", label: "16oz Double", pourOz: 12 },
   { key: "liter", label: "1L Carafe", pourOz: 32 },
-  { key: "batch_2_5_gal", label: "2.5gal Bubbler", pourOz: 320 },
-  { key: "batch_5_gal", label: "5gal Bubbler", pourOz: 640 },
+  { key: "batch_3_gal", label: "3gal Bubbler", pourOz: 384 },
 ];
 
 export function recipeSizeLabel(key: RecipeSizeKey): string {

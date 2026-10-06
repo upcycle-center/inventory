@@ -16,7 +16,7 @@ export interface OpsSheetIngredientLine extends RecipeIngredientLine {
 
 // Which RECIPE_SIZE_DEFS keys are pre-made batches (BATCH PICK
 // LIST/SERVICE columns) rather than a single Serving pour.
-const BATCH_SIZE_KEYS = new Set(["liter", "batch_2_5_gal", "batch_5_gal"]);
+const BATCH_SIZE_KEYS = new Set(["liter", "batch_3_gal"]);
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },

@@ -323,7 +323,7 @@ export interface RecipeIngredient {
   created_at: string;
 }
 
-export type RecipeRequestSize = "wine" | "single" | "double" | "liter" | "batch_2_5_gal" | "batch_5_gal";
+export type RecipeRequestSize = "wine" | "single" | "double" | "liter" | "batch_3_gal";
 // "partial" = Warehouse pulled what was in stock and flagged the rest as
 // a PO Request -- the request stays visible (not fulfilled) until the
 // shortfall is received and the request is manually completed.
