@@ -212,7 +212,6 @@ export function RecipeOpsSheetDocument({
           <View style={styles.thRow}>
             <Text style={styles.colServing}>Serving</Text>
             <Text style={styles.colCost}>Pour</Text>
-            <Text style={styles.colCost}>Cost</Text>
             <Text style={styles.colCost}>Base</Text>
             <Text style={styles.colCost}>BEO</Text>
             <Text style={styles.colCost}>MSRP</Text>
@@ -220,8 +219,8 @@ export function RecipeOpsSheetDocument({
           {costSizes.map((s) => (
             <View key={s.key} style={styles.tr}>
               <Text style={styles.colServing}>{s.label}</Text>
-              <Text style={styles.colCost}>{s.totalOz} oz</Text>
-              <Text style={styles.colCost}>{fmtCurrency(s.cost)}</Text>
+              {/* Carafe/Bubbler rows are holding vessels, not an actual pour -- show a dash instead of their oz volume. */}
+              <Text style={styles.colCost}>{BATCH_SIZE_KEYS.has(s.key) ? "—" : `${s.totalOz} oz`}</Text>
               <Text style={[styles.colCost, styles.baseText]}>{fmtCurrency(s.cost == null ? null : s.cost * BASE_MULTIPLIER)}</Text>
               <Text style={[styles.colCost, styles.beoText]}>{fmtRounded(s.beo)}</Text>
               <Text style={[styles.colCost, styles.msrpText]}>{fmtRounded(s.msrp)}</Text>
