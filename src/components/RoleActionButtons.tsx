@@ -23,6 +23,24 @@ const BUTTONS: { viewKey: ViewKey; label: string; href: string; draftType?: Acti
   { viewKey: "transfer", label: "Transfer", href: "/transfer", draftType: "transfer", activeColor: "bg-purple-600" },
   { viewKey: "return", label: "Return", href: "/return", draftType: "return", activeColor: "bg-fuchsia-600" },
   { viewKey: "recovery", label: "Recovery", href: "/recovery", draftType: "recovery", activeColor: "bg-orange-600" },
+
+  // Admin-section pages granted via Permissions -- view-only for every
+  // non-admin role, so these never light up (no draftType).
+  { viewKey: "products", label: "Products", href: "/admin/products" },
+  { viewKey: "suppliers", label: "Suppliers", href: "/admin/suppliers" },
+  { viewKey: "categories", label: "Categories", href: "/admin/categories" },
+  { viewKey: "recipes", label: "Recipes", href: "/admin/recipes" },
+  { viewKey: "purchase_orders", label: "Purchase Orders", href: "/admin/purchase-orders" },
+  { viewKey: "admin_events", label: "Events", href: "/admin/events" },
+  { viewKey: "locations", label: "Locations", href: "/admin/locations" },
+  { viewKey: "storage_areas", label: "Storage Areas", href: "/admin/storage-areas" },
+  { viewKey: "beo", label: "BEO", href: "/admin/catering/beo" },
+  { viewKey: "reports_events", label: "Event Reports", href: "/admin/reports/events" },
+  { viewKey: "reports_month_end", label: "Month End Reports", href: "/admin/month-end-reports" },
+  { viewKey: "reports_year_end", label: "Year End Reports", href: "/admin/reports/year-end" },
+  { viewKey: "roster", label: "Roster", href: "/admin/roster" },
+  { viewKey: "yellow_dog_mapping", label: "Yellow Dog", href: "/admin/yellow-dog-mapping" },
+  { viewKey: "square_pos_mapping", label: "Square POS", href: "/admin/square-pos-mapping" },
 ];
 
 export function RoleActionButtons({
