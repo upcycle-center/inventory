@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, ProductCategory, Recipe, RecipeIngredient } from "@/lib/supabase/types";
-import { BASE_MULTIPLIER, computeRecipeSizes, costPerOz, DEFAULT_BEO_MARKUP_PCT, DEFAULT_TARGET_MARKUP_PCT, PACKAGING_COST } from "@/lib/recipeCost";
+import { BASE_MULTIPLIER, computeRecipeSizes, costPerOz, DEFAULT_BEO_MARKUP_PCT, DEFAULT_TARGET_MARKUP_PCT, PACKAGING_COST, roundUpToDime } from "@/lib/recipeCost";
 import { urlQrDataUri } from "@/lib/checkinQr";
 import type { ProductTypeValue } from "@/lib/productType";
 import { ActionForm } from "@/components/ActionForm";
@@ -23,6 +23,10 @@ function fmtCurrency(value: number | null) {
 
 function fmtMsrp(value: number | null) {
   return value == null ? "—" : `$${Math.ceil(value)}`;
+}
+
+function fmtBase(value: number | null) {
+  return value == null ? "—" : `$${roundUpToDime(value).toFixed(1)}`;
 }
 
 export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
@@ -285,7 +289,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
               <td className="px-3 py-2 font-medium">{s.label}</td>
               <td className="px-3 py-2 text-gray-500">{s.totalOz} oz</td>
               <td className="px-3 py-2 text-gray-500">{fmtCurrency(s.cost)}</td>
-              <td className="px-3 py-2 font-medium text-orange-700">{fmtCurrency(s.cost == null ? null : s.cost * BASE_MULTIPLIER)}</td>
+              <td className="px-3 py-2 font-medium text-orange-700">{fmtBase(s.cost == null ? null : s.cost * BASE_MULTIPLIER)}</td>
               <td className="px-3 py-2 font-medium text-blue-700">{fmtMsrp(s.beo)}</td>
               <td className="px-3 py-2 font-medium text-green-700">{fmtMsrp(s.msrp)}</td>
             </tr>

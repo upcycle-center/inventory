@@ -18,6 +18,14 @@ export const DEFAULT_BEO_MARKUP_PCT = 300;
 // multiplier of cost (not a per-recipe setting like Target/BEO Markup%).
 export const BASE_MULTIPLIER = 1.25;
 
+// Base is always rounded UP to the nearest dime and shown with exactly
+// one decimal digit (e.g. $1.51 -> $1.6), everywhere it's displayed --
+// the small epsilon guards against a value that's already exactly on a
+// dime boundary (e.g. 5.2) bumping up an extra dime due to float error.
+export function roundUpToDime(value: number): number {
+  return Math.ceil(value * 10 - 1e-9) / 10;
+}
+
 // A Top Off ingredient (quantityOz null -- no measured amount) stands in
 // at this amount when working out the recipe's ingredient ratios, before
 // everything gets scaled to each Serving's fixed pour size. Also used to
