@@ -20,8 +20,9 @@ export const BASE_MULTIPLIER = 1.25;
 
 // A Top Off ingredient (quantityOz null -- no measured amount) stands in
 // at this amount when working out the recipe's ingredient ratios, before
-// everything gets scaled to each Serving's fixed pour size.
-const TOP_OFF_DEFAULT_OZ = 2;
+// everything gets scaled to each Serving's fixed pour size. Also used to
+// size how much Top Off a batch needs (servings yielded x this amount).
+export const TOP_OFF_DEFAULT_OZ = 2;
 
 // Flat packaging cost (cup + ice) added on top of ingredient cost for
 // every Serving -- cup+ice cost doesn't depend on which recipe or size

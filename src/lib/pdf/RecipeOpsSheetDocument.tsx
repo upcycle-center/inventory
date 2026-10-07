@@ -1,5 +1,11 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { ML_PER_OZ, RECIPE_SIZE_DEFS, resolveMeasuredIngredientsForSize, type RecipeIngredientLine } from "@/lib/recipeCost";
+import {
+  ML_PER_OZ,
+  RECIPE_SIZE_DEFS,
+  resolveMeasuredIngredientsForSize,
+  TOP_OFF_DEFAULT_OZ,
+  type RecipeIngredientLine,
+} from "@/lib/recipeCost";
 import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
 
 export interface OpsSheetIngredientLine extends RecipeIngredientLine {
@@ -151,6 +157,15 @@ export function RecipeOpsSheetDocument({
   const batchYields = new Map(
     batchSizes.map((b) => [b.key, measuredIngredients.reduce((sum, i) => sum + (b.oz.get(i.productId) ?? 0), 0)])
   );
+  // Top Off has no fixed batch quantity (it's poured fresh per serving,
+  // not pre-mixed) -- the pick list instead works out how much is
+  // needed: the batch volume divided by the standard 3oz pour (9oz
+  // Squat, the smallest single-serving size) gives the number of
+  // servings the batch yields, times the standard 2oz Top Off per
+  // serving, for a total oz figure converted to a bottle count the
+  // same way as every other ingredient.
+  const topOffPourOz = RECIPE_SIZE_DEFS.find((s) => s.key === "wine")?.pourOz ?? 3;
+  const topOffOzNeeded = new Map(batchSizes.map((b) => [b.key, Math.ceil(b.maxOz / topOffPourOz) * TOP_OFF_DEFAULT_OZ]));
 
   // All ingredients -- including Top Off (e.g. a Mixer) -- grouped by
   // Product Type, in the same fixed order as the Products tabs. BATCH
@@ -218,7 +233,7 @@ export function RecipeOpsSheetDocument({
                 {ing.quantityOz == null
                   ? batchSizes.map((b) => (
                       <Text key={b.key} style={[styles.colBatch, styles.topOffText]}>
-                        Top Off
+                        {fmtBottleCount(topOffOzNeeded.get(b.key) ?? 0, ing.bottleSizeMl)}
                       </Text>
                     ))
                   : batchSizes.map((b) => (
