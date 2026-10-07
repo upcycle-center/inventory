@@ -31,10 +31,8 @@ const BATCH_SIZE_KEYS = new Set(["liter", "batch_3_gal"]);
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
-  topRow: { flexDirection: "row", marginBottom: 14 },
-  topLeftCol: { flex: 1, paddingRight: 16 },
-  topRightCol: {
-    flex: 1,
+  titleBlock: { marginBottom: 14 },
+  serviceBox: {
     borderWidth: 1,
     borderColor: "#000000",
     borderRadius: 4,
@@ -63,7 +61,6 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   instructionsText: { fontSize: 10, lineHeight: 1.5 },
-  sourceUrl: { fontSize: 8, color: "#555555", marginTop: 6 },
   thRow: {
     flexDirection: "row",
     borderWidth: 1,
@@ -143,8 +140,6 @@ export function RecipeOpsSheetDocument({
   photoUrl,
   instructions,
   batchInstructions,
-  originalRecipe,
-  sourceUrl,
   ingredients,
   generatedAt,
 }: {
@@ -154,8 +149,6 @@ export function RecipeOpsSheetDocument({
   photoUrl: string | null;
   instructions: string | null;
   batchInstructions: string | null;
-  originalRecipe: string | null;
-  sourceUrl: string | null;
   ingredients: OpsSheetIngredientLine[];
   generatedAt: string;
 }) {
@@ -206,26 +199,22 @@ export function RecipeOpsSheetDocument({
           Printed {generatedAt}
         </Text>
 
-        <View style={styles.topRow}>
-          <View style={styles.topLeftCol}>
-            <Text style={styles.title}>{name}</Text>
-            {!!category && <Text style={styles.subtitle}>{category}</Text>}
-            {!!description && <Text style={styles.subtitle}>{description}</Text>}
-            <Text style={styles.sectionTitle}>RECIPE</Text>
-            <Text style={styles.instructionsText}>{originalRecipe || "No original recipe on file."}</Text>
-            {sourceUrl && <Text style={styles.sourceUrl}>Source: {sourceUrl}</Text>}
-          </View>
-          <View style={styles.topRightCol}>
-            {photoUrl ? (
-              <Image src={photoUrl} style={styles.headerPhoto} />
-            ) : (
-              <View style={styles.headerPhotoPlaceholder}>
-                <Text style={styles.headerPhotoPlaceholderText}>No Photo</Text>
-              </View>
-            )}
-            <Text style={styles.sectionTitle}>SERVICE</Text>
-            <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
-          </View>
+        <View style={styles.titleBlock}>
+          <Text style={styles.title}>{name}</Text>
+          {!!category && <Text style={styles.subtitle}>{category}</Text>}
+          {!!description && <Text style={styles.subtitle}>{description}</Text>}
+        </View>
+
+        <View style={styles.serviceBox}>
+          {photoUrl ? (
+            <Image src={photoUrl} style={styles.headerPhoto} />
+          ) : (
+            <View style={styles.headerPhotoPlaceholder}>
+              <Text style={styles.headerPhotoPlaceholderText}>No Photo</Text>
+            </View>
+          )}
+          <Text style={styles.sectionTitle}>SERVICE</Text>
+          <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>BATCH PICK LIST</Text>
