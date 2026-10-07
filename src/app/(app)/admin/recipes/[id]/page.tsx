@@ -72,7 +72,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
         id="edit-recipe-form"
         action={updateRecipe}
         encType="multipart/form-data"
-        backOnSuccess
+        returnTo="/admin/recipes"
         className="mb-3 grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={recipe.id} />

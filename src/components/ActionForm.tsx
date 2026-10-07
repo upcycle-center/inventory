@@ -20,6 +20,11 @@ export const ActionForm = forwardRef<
     // rather than stay open -- navigates back through browser history.
     // Has no effect when the action itself redirects (that takes over).
     backOnSuccess?: boolean;
+    // Like backOnSuccess, but navigates to a specific path instead of
+    // through browser history -- for a page that must land on a known
+    // destination (e.g. a list) regardless of how it was reached, since
+    // history.back() depends on there being a matching entry to pop to.
+    returnTo?: string;
     // Fires on every status change -- lets a page show the saved/error
     // indicator somewhere other than right after this form (e.g. next
     // to an external submit button living elsewhere on the page).
@@ -29,7 +34,19 @@ export const ActionForm = forwardRef<
     hideStatus?: boolean;
   }
 >(function ActionForm(
-  { action, children, className, savedLabel = "Saved", id, encType, resetOnSuccess = false, backOnSuccess = false, onStatusChange, hideStatus = false },
+  {
+    action,
+    children,
+    className,
+    savedLabel = "Saved",
+    id,
+    encType,
+    resetOnSuccess = false,
+    backOnSuccess = false,
+    returnTo,
+    onStatusChange,
+    hideStatus = false,
+  },
   ref
 ) {
   const router = useRouter();
@@ -77,6 +94,10 @@ export const ActionForm = forwardRef<
               setStatus("saved");
               onStatusChange?.("saved");
               if (resetOnSuccess) formRef.current?.reset();
+              if (returnTo) {
+                router.push(returnTo);
+                return;
+              }
               if (backOnSuccess) {
                 router.back();
                 return;
