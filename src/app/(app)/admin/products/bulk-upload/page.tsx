@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ProductCsvEvent } from "@/lib/supabase/types";
 import { CsvUploadForm } from "../CsvUploadForm";
@@ -6,6 +7,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
 import { easternDateTimeString } from "@/lib/easternTime";
 import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
+import { requireProfile } from "@/lib/auth";
 
 const KIND_LABEL: Record<string, string> = {
   bulk_upload: "Upload",
@@ -14,6 +16,8 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 export default async function BulkUploadProductsPage() {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/admin/products");
   const supabase = createClient();
   const { data: eventsRaw } = await supabase
     .from("product_csv_events")

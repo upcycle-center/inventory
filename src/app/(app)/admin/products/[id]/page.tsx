@@ -8,6 +8,7 @@ import { LocationLabel } from "@/components/LocationLabel";
 import { ProductCoreFields } from "@/components/ProductCoreFields";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { requireProfile } from "@/lib/auth";
 import { updateProductAndLocations } from "./actions";
 import { toggleProductActive } from "../actions";
 import { DeleteProductButton } from "./DeleteProductButton";
@@ -19,6 +20,8 @@ export default async function ProductDetailPage({
   params: { id: string };
   searchParams: { recipeId?: string };
 }) {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const recipeId = searchParams.recipeId;
   const supabase = createClient();
 
@@ -67,134 +70,144 @@ export default async function ProductDetailPage({
         <input type="hidden" name="id" value={product.id} />
         {recipeId && <input type="hidden" name="return_to_recipe_id" value={recipeId} />}
 
-        <div className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
-          <div className="mb-1 flex aspect-square w-24 items-center justify-center overflow-hidden rounded bg-gray-100">
-            {product.photo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.photo_url} alt={product.description} className="h-full w-full object-contain" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <ProductPlaceholderIcon />
-              </div>
+        <fieldset disabled={!canEdit} className="contents">
+          <div className="grid max-w-xl gap-3 rounded-md border border-gray-200 bg-white p-4">
+            <div className="mb-1 flex aspect-square w-24 items-center justify-center overflow-hidden rounded bg-gray-100">
+              {product.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={product.photo_url} alt={product.description} className="h-full w-full object-contain" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <ProductPlaceholderIcon />
+                </div>
+              )}
+            </div>
+
+            <label className="text-sm text-gray-600">
+              IC (Internal Code)
+              <input name="sku" defaultValue={product.sku} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-sm text-gray-600">
+              UPC (optional)
+              <input name="upc" defaultValue={product.upc ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+            <label className="text-sm text-gray-600">
+              Description
+              <input name="description" defaultValue={product.description} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </label>
+            <ProductCoreFields
+              suppliers={(suppliers as Supplier[] | null) ?? []}
+              categories={(categories as ProductCategory[] | null) ?? []}
+              defaultProductType={product.product_type}
+              defaultSupplierId={product.supplier_id}
+              defaultBrand={product.brand}
+              defaultCategoryId={product.category_id}
+              defaultCaseCost={product.case_cost}
+              defaultSalePrice={product.sale_price}
+              defaultCaseSize={product.case_size}
+              defaultUnitOfMeasure={product.unit_of_measure}
+              defaultBottleSizeMl={product.bottle_size_ml}
+              defaultPourSizeOz={product.pour_size_oz}
+              defaultPourPrice={product.pour_price}
+              defaultMiddleUnitLabel={product.middle_unit_label}
+              defaultMiddleUnitSize={product.middle_unit_size}
+              defaultEachCountable={product.each_countable}
+              defaultPosSquare={product.pos_square}
+            />
+
+            {canEdit && (
+              <label className="text-sm text-gray-600">
+                Replace photo
+                <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
+              </label>
             )}
           </div>
 
-          <label className="text-sm text-gray-600">
-            IC (Internal Code)
-            <input name="sku" defaultValue={product.sku} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          </label>
-          <label className="text-sm text-gray-600">
-            UPC (optional)
-            <input name="upc" defaultValue={product.upc ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          </label>
-          <label className="text-sm text-gray-600">
-            Description
-            <input name="description" defaultValue={product.description} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-          </label>
-          <ProductCoreFields
-            suppliers={(suppliers as Supplier[] | null) ?? []}
-            categories={(categories as ProductCategory[] | null) ?? []}
-            defaultProductType={product.product_type}
-            defaultSupplierId={product.supplier_id}
-            defaultBrand={product.brand}
-            defaultCategoryId={product.category_id}
-            defaultCaseCost={product.case_cost}
-            defaultSalePrice={product.sale_price}
-            defaultCaseSize={product.case_size}
-            defaultUnitOfMeasure={product.unit_of_measure}
-            defaultBottleSizeMl={product.bottle_size_ml}
-            defaultPourSizeOz={product.pour_size_oz}
-            defaultPourPrice={product.pour_price}
-            defaultMiddleUnitLabel={product.middle_unit_label}
-            defaultMiddleUnitSize={product.middle_unit_size}
-            defaultEachCountable={product.each_countable}
-            defaultPosSquare={product.pos_square}
-          />
+          <p className="mb-3 mt-8 text-sm font-medium">Locations</p>
+          <p className="mb-6 text-sm text-gray-500">
+            Every location is checked (stocked) by default. Uncheck a location if this product isn&apos;t
+            stocked there — it will no longer show on that location&apos;s Count Sheet. Only checked
+            locations show the product on their Count Sheet.
+          </p>
 
-          <label className="text-sm text-gray-600">
-            Replace photo
-            <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
-          </label>
-        </div>
-
-        <p className="mb-3 mt-8 text-sm font-medium">Locations</p>
-        <p className="mb-6 text-sm text-gray-500">
-          Every location is checked (stocked) by default. Uncheck a location if this product isn&apos;t
-          stocked there — it will no longer show on that location&apos;s Count Sheet. Only checked
-          locations show the product on their Count Sheet.
-        </p>
-
-        <div className="max-w-2xl rounded-md border border-gray-200 bg-white p-4">
-          <table className="w-full text-left text-sm">
-            <thead className="text-gray-500">
-              <tr>
-                <th className="pb-2">Stock</th>
-                <th className="pb-2">Location</th>
-                <th className="pb-2">Storage area</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(locations as Location[] | null)?.map((l) => {
-                const existingAreaId = storageAreaIdByLocationId.get(l.id);
-                return (
-                  <tr key={l.id} className="border-t border-gray-100">
-                    <td className="py-2">
-                      <input
-                        type="checkbox"
-                        name={`sold_${l.id}`}
-                        defaultChecked={storageAreaIdByLocationId.has(l.id) || !locationProducts?.length}
-                        className="h-4 w-4"
-                      />
-                    </td>
-                    <td className="py-2">
-                      <LocationLabel location={l} />
-                    </td>
-                    <td className="py-2">
-                      <select
-                        name={`area_${l.id}`}
-                        defaultValue={existingAreaId ?? defaultAreaId}
-                        className="rounded-md border border-gray-300 px-2 py-1 text-sm"
-                      >
-                        {areas.map((a) => (
-                          <option key={a.id} value={a.id}>
-                            {a.name}
-                          </option>
-                        ))}
-                      </select>
+          <div className="max-w-2xl rounded-md border border-gray-200 bg-white p-4">
+            <table className="w-full text-left text-sm">
+              <thead className="text-gray-500">
+                <tr>
+                  <th className="pb-2">Stock</th>
+                  <th className="pb-2">Location</th>
+                  <th className="pb-2">Storage area</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(locations as Location[] | null)?.map((l) => {
+                  const existingAreaId = storageAreaIdByLocationId.get(l.id);
+                  return (
+                    <tr key={l.id} className="border-t border-gray-100">
+                      <td className="py-2">
+                        <input
+                          type="checkbox"
+                          name={`sold_${l.id}`}
+                          defaultChecked={storageAreaIdByLocationId.has(l.id) || !locationProducts?.length}
+                          className="h-4 w-4"
+                        />
+                      </td>
+                      <td className="py-2">
+                        <LocationLabel location={l} />
+                      </td>
+                      <td className="py-2">
+                        <select
+                          name={`area_${l.id}`}
+                          defaultValue={existingAreaId ?? defaultAreaId}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+                        >
+                          {areas.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!locations?.length && (
+                  <tr>
+                    <td colSpan={3} className="py-4 text-gray-400">
+                      No locations available.
                     </td>
                   </tr>
-                );
-              })}
-              {!locations?.length && (
-                <tr>
-                  <td colSpan={3} className="py-4 text-gray-400">
-                    No locations available.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </fieldset>
       </ActionForm>
 
       <div className="mt-6 flex items-center gap-3">
-        <button type="submit" form="edit-product-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Save
-        </button>
-        <Link
-          href={`/admin/products/new?from=${product.id}`}
-          className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Duplicate
-        </Link>
-        <ActionForm action={toggleProductActive} className="contents" savedLabel={product.active ? "Deactivated" : "Reactivated"}>
-          <input type="hidden" name="id" value={product.id} />
-          <input type="hidden" name="active" value={String(product.active)} />
-          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
-            {product.active ? "Deactivate" : "Reactivate"}
+        {canEdit && (
+          <button type="submit" form="edit-product-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            Save
           </button>
-        </ActionForm>
-        <DeleteProductButton productId={product.id} />
+        )}
+        {canEdit && (
+          <Link
+            href={`/admin/products/new?from=${product.id}`}
+            className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Duplicate
+          </Link>
+        )}
+        {canEdit && (
+          <ActionForm action={toggleProductActive} className="contents" savedLabel={product.active ? "Deactivated" : "Reactivated"}>
+            <input type="hidden" name="id" value={product.id} />
+            <input type="hidden" name="active" value={String(product.active)} />
+            <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+              {product.active ? "Deactivate" : "Reactivate"}
+            </button>
+          </ActionForm>
+        )}
+        {canEdit && <DeleteProductButton productId={product.id} />}
       </div>
     </div>
   );

@@ -1,14 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createLocation } from "../actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { requireProfile } from "@/lib/auth";
 
 export default async function NewLocationPage({
   searchParams,
 }: {
   searchParams: { from?: string };
 }) {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/admin/locations");
   const supabase = createClient();
 
   const from = searchParams.from

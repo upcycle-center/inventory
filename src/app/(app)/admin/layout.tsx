@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { getAllowedViewsForRole, viewKeyForPath } from "@/lib/permissions";
 
 const SECTION_GROUPS = [
   {
@@ -51,12 +53,28 @@ const SECTION_GROUPS = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireProfile(["admin"]);
+  // Any role can land here now -- middleware has already gated the
+  // specific page being requested against the permissions matrix (Admin
+  // always passes; Users/Permissions always fail for non-admin, since
+  // they have no matrix entry). This layout only needs to trim the
+  // sidebar to what the current role can actually reach.
+  const profile = await requireProfile();
+  const supabase = createClient();
+  const allowedViews = profile.role === "admin" ? null : await getAllowedViewsForRole(supabase, profile.role);
+
+  const visibleGroups = SECTION_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (!allowedViews) return true;
+      const key = viewKeyForPath(item.href);
+      return key != null && allowedViews.has(key);
+    }),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <div className="flex flex-col gap-6 sm:flex-row sm:gap-6">
       <nav className="space-y-4 text-sm sm:w-36 sm:shrink-0">
-        {SECTION_GROUPS.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label}>
             <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{group.label}</p>
             <div className="flex flex-wrap gap-1 sm:block sm:space-y-1">

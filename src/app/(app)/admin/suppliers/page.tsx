@@ -4,8 +4,11 @@ import type { Supplier } from "@/lib/supabase/types";
 import { markSupplierReviewed } from "./actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
+import { requireProfile } from "@/lib/auth";
 
 export default async function AdminSuppliersPage() {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const { data: suppliers } = await supabase
     .from("suppliers")
@@ -27,9 +30,11 @@ export default async function AdminSuppliersPage() {
             PDF
             <DownloadIcon />
           </a>
-          <Link href="/admin/suppliers/new" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-            Add New Supplier
-          </Link>
+          {canEdit && (
+            <Link href="/admin/suppliers/new" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+              Add New Supplier
+            </Link>
+          )}
         </div>
       </div>
       {needsReviewCount > 0 && (
@@ -68,7 +73,7 @@ export default async function AdminSuppliersPage() {
                 <td className="px-3 py-3 text-gray-500">{s.representative_phone || "—"}</td>
                 <td className="max-w-[160px] truncate px-3 py-3 text-gray-500">{s.website || "—"}</td>
                 <td className="px-3 py-3 text-right">
-                  {s.needs_review && (
+                  {s.needs_review && canEdit && (
                     <form action={markSupplierReviewed}>
                       <input type="hidden" name="id" value={s.id} />
                       <button type="submit" className="text-brand hover:underline">

@@ -7,8 +7,11 @@ import { createStaff, addCertificationType } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { OnboardingStatusBadge } from "@/components/OnboardingStatusBadge";
+import { requireProfile } from "@/lib/auth";
 
 export default async function AdminRosterPage() {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const [{ data: staffRaw }, { data: certTypesRaw }] = await Promise.all([
     supabase.from("staff").select("*").order("last_name").order("first_name"),
@@ -28,88 +31,92 @@ export default async function AdminRosterPage() {
         role, via the compliance requirements below.
       </p>
 
-      <ActionForm
-        action={createStaff}
-        savedLabel="Staff added"
-        resetOnSuccess
-        className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
-      >
-        <input name="first_name" placeholder="First name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="last_name" placeholder="Last name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="phone" placeholder="Phone (optional)" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <input name="email" type="email" placeholder="Email (optional)" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <select name="main_role" defaultValue="" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-          <option value="">Main role</option>
-          {STAFF_MAIN_ROLE_OPTIONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-        <select name="cover_role" defaultValue="" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-          <option value="">Cover role (optional)</option>
-          {STAFF_MAIN_ROLE_OPTIONS.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="col-span-2 w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Add
-        </button>
-      </ActionForm>
+      {canEdit && (
+        <ActionForm
+          action={createStaff}
+          savedLabel="Staff added"
+          resetOnSuccess
+          className="mb-8 grid grid-cols-2 gap-4 rounded-md border border-gray-200 bg-white p-4"
+        >
+          <input name="first_name" placeholder="First name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <input name="last_name" placeholder="Last name" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <input name="phone" placeholder="Phone (optional)" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <input name="email" type="email" placeholder="Email (optional)" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <select name="main_role" defaultValue="" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="">Main role</option>
+            {STAFF_MAIN_ROLE_OPTIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <select name="cover_role" defaultValue="" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="">Cover role (optional)</option>
+            {STAFF_MAIN_ROLE_OPTIONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <button type="submit" className="col-span-2 w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+            Add
+          </button>
+        </ActionForm>
+      )}
 
       <div className="mb-8 max-w-2xl">
         <p className="mb-3 text-sm font-medium">Compliance Requirements</p>
-        <ActionForm
-          action={addCertificationType}
-          savedLabel="Added"
-          resetOnSuccess
-          className="mb-3 grid gap-3 rounded-md border border-gray-200 bg-white p-4"
-        >
-          <div className="flex gap-3">
-            <input name="name" placeholder="e.g. T.E.A.M" required className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-              Add
-            </button>
-          </div>
-          <div className="flex gap-3">
-            <input
-              name="description"
-              placeholder="Description (optional) — what this certification is for"
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-            <input
-              name="validity_months"
-              type="number"
-              min={1}
-              step={1}
-              placeholder="Valid for (months)"
-              className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-gray-500">Applies to (none checked = everyone)</p>
-            <p className="mb-1 text-xs font-medium text-gray-400">Roster roles</p>
-            <div className="mb-2 flex flex-wrap gap-x-3 gap-y-1">
-              {ROSTER_ROLE_OPTIONS.map((r) => (
-                <label key={r.value} className="flex items-center gap-1 text-xs text-gray-600">
-                  <input type="checkbox" name="applicable_roles" value={r.value} className="h-3.5 w-3.5" />
-                  {r.label}
-                </label>
-              ))}
+        {canEdit && (
+          <ActionForm
+            action={addCertificationType}
+            savedLabel="Added"
+            resetOnSuccess
+            className="mb-3 grid gap-3 rounded-md border border-gray-200 bg-white p-4"
+          >
+            <div className="flex gap-3">
+              <input name="name" placeholder="e.g. T.E.A.M" required className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+                Add
+              </button>
             </div>
-            <p className="mb-1 text-xs font-medium text-gray-400">User roles</p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
-              {USER_ROLE_OPTIONS.map((r) => (
-                <label key={r.value} className="flex items-center gap-1 text-xs text-gray-600">
-                  <input type="checkbox" name="applicable_roles" value={r.value} className="h-3.5 w-3.5" />
-                  {r.label}
-                </label>
-              ))}
+            <div className="flex gap-3">
+              <input
+                name="description"
+                placeholder="Description (optional) — what this certification is for"
+                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+              <input
+                name="validity_months"
+                type="number"
+                min={1}
+                step={1}
+                placeholder="Valid for (months)"
+                className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
             </div>
-          </div>
-        </ActionForm>
+            <div>
+              <p className="mb-1 text-xs text-gray-500">Applies to (none checked = everyone)</p>
+              <p className="mb-1 text-xs font-medium text-gray-400">Roster roles</p>
+              <div className="mb-2 flex flex-wrap gap-x-3 gap-y-1">
+                {ROSTER_ROLE_OPTIONS.map((r) => (
+                  <label key={r.value} className="flex items-center gap-1 text-xs text-gray-600">
+                    <input type="checkbox" name="applicable_roles" value={r.value} className="h-3.5 w-3.5" />
+                    {r.label}
+                  </label>
+                ))}
+              </div>
+              <p className="mb-1 text-xs font-medium text-gray-400">User roles</p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {USER_ROLE_OPTIONS.map((r) => (
+                  <label key={r.value} className="flex items-center gap-1 text-xs text-gray-600">
+                    <input type="checkbox" name="applicable_roles" value={r.value} className="h-3.5 w-3.5" />
+                    {r.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </ActionForm>
+        )}
         <ul className="space-y-1">
           {certTypes.map((t) => (
             <li key={t.id} className="rounded-md border border-gray-100 bg-white px-3 py-2 text-sm">

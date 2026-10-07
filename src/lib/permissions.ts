@@ -1,20 +1,52 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { UserRole } from "./supabase/types";
 
-// The configurable, per-role "view" matrix -- each entry gates one
-// top-level route. Admin isn't a row here: it always has every view (see
+// The configurable, per-role "view" matrix -- each entry gates one route.
+// Admin isn't a row here: it always has every view (see
 // getAllowedViewsForRole), so the matrix can't lock an admin out of the
 // admin panel that manages it.
+//
+// Entries with no `group` are the original inventory-moving action pages
+// (Count, Request, Transfer, ...) -- fully usable by any role granted
+// them, same as always. Entries with a `group` are admin-section pages
+// (mirroring the admin left nav's SECTION_GROUPS) -- granting one of
+// these only ever gives view access; only Admin can add/edit/delete/
+// duplicate records on them (enforced per-page, not by this matrix).
+// Users and Permissions are intentionally left out of both the matrix
+// and the Access group below -- exposing admin/role management itself
+// as a togglable checkbox risks a role locking admins out of the panel
+// that controls it.
 export const VIEW_KEYS = [
-  { key: "count", label: "Count", href: "/count" },
-  { key: "month_end", label: "Month-End", href: "/month-end" },
-  { key: "request", label: "Request", href: "/request" },
-  { key: "recipe_request", label: "Recipe Request", href: "/request-recipe" },
-  { key: "transfer", label: "Transfer", href: "/transfer" },
-  { key: "recovery", label: "Recovery", href: "/recovery" },
-  { key: "return", label: "Return", href: "/return" },
-  { key: "receive", label: "Receive", href: "/receive" },
-  { key: "restock_requests", label: "RequestQ", href: "/restock-requests" },
+  { key: "count", label: "Count", href: "/count", group: null },
+  { key: "month_end", label: "Month-End", href: "/month-end", group: null },
+  { key: "request", label: "Request", href: "/request", group: null },
+  { key: "recipe_request", label: "Recipe Request", href: "/request-recipe", group: null },
+  { key: "transfer", label: "Transfer", href: "/transfer", group: null },
+  { key: "recovery", label: "Recovery", href: "/recovery", group: null },
+  { key: "return", label: "Return", href: "/return", group: null },
+  { key: "receive", label: "Receive", href: "/receive", group: null },
+
+  { key: "products", label: "Products", href: "/admin/products", group: "Catalog" },
+  { key: "suppliers", label: "Suppliers", href: "/admin/suppliers", group: "Catalog" },
+  { key: "categories", label: "Categories", href: "/admin/categories", group: "Catalog" },
+  { key: "recipes", label: "Recipes", href: "/admin/recipes", group: "Catalog" },
+
+  { key: "restock_requests", label: "RequestQ", href: "/restock-requests", group: "Operations" },
+  { key: "purchase_orders", label: "Purchase Orders", href: "/admin/purchase-orders", group: "Operations" },
+  { key: "admin_events", label: "Events", href: "/admin/events", group: "Operations" },
+  { key: "locations", label: "Locations", href: "/admin/locations", group: "Operations" },
+  { key: "storage_areas", label: "Storage Areas", href: "/admin/storage-areas", group: "Operations" },
+
+  { key: "beo", label: "BEO", href: "/admin/catering/beo", group: "Catering" },
+
+  { key: "reports_events", label: "Events", href: "/admin/reports/events", group: "Reports" },
+  { key: "reports_month_end", label: "Month End", href: "/admin/month-end-reports", group: "Reports" },
+  { key: "reports_year_end", label: "Year End", href: "/admin/reports/year-end", group: "Reports" },
+
+  { key: "roster", label: "Roster", href: "/admin/roster", group: "Access" },
+
+  { key: "yellow_dog_mapping", label: "Yellow Dog", href: "/admin/yellow-dog-mapping", group: "Data Maps" },
+  { key: "square_pos_mapping", label: "Square POS", href: "/admin/square-pos-mapping", group: "Data Maps" },
 ] as const;
 
 export type ViewKey = (typeof VIEW_KEYS)[number]["key"];

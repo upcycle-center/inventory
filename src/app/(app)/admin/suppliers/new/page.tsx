@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createSupplier } from "../actions";
 import { SupplierFields } from "../SupplierFields";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { requireProfile } from "@/lib/auth";
 
-export default function NewSupplierPage() {
+export default async function NewSupplierPage() {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/admin/suppliers");
   return (
     <div>
       <Breadcrumbs

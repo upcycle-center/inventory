@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createRecipe } from "../actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { requireProfile } from "@/lib/auth";
 
-export default function NewRecipePage() {
+export default async function NewRecipePage() {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/admin/recipes");
   return (
     <div>
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Recipes", href: "/admin/recipes" }, { label: "New Recipe" }]} />

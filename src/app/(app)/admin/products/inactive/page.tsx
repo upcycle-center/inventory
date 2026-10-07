@@ -5,8 +5,11 @@ import { CaseSizeLabel } from "@/components/CaseSizeLabel";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { productTypeLabel } from "@/lib/productType";
 import { toggleProductActive } from "../actions";
+import { requireProfile } from "@/lib/auth";
 
 export default async function InactiveProductsPage() {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const { data: products } = await supabase
     .from("products")
@@ -74,13 +77,15 @@ export default async function InactiveProductsPage() {
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap text-gray-500">{p.supplier?.name ?? "—"}</td>
                 <td className="px-4 py-2 text-right">
-                  <form action={toggleProductActive}>
-                    <input type="hidden" name="id" value={p.id} />
-                    <input type="hidden" name="active" value={String(p.active)} />
-                    <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                      Reactivate
-                    </button>
-                  </form>
+                  {canEdit && (
+                    <form action={toggleProductActive}>
+                      <input type="hidden" name="id" value={p.id} />
+                      <input type="hidden" name="active" value={String(p.active)} />
+                      <button type="submit" className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
+                        Reactivate
+                      </button>
+                    </form>
+                  )}
                 </td>
               </tr>
             ))}

@@ -4,8 +4,11 @@ import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { updateCategory } from "../actions";
 import { DeleteCategoryButton } from "../DeleteCategoryButton";
+import { requireProfile } from "@/lib/auth";
 
 export default async function CategoryDetailPage({ params }: { params: { id: string } }) {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const { data: category } = await supabase.from("product_categories").select("*").eq("id", params.id).single();
   if (!category) notFound();
@@ -23,21 +26,25 @@ export default async function CategoryDetailPage({ params }: { params: { id: str
         className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={category.id} />
-        <label className="text-sm text-gray-600">
-          Name
-          <input name="name" defaultValue={category.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
-        <label className="text-sm text-gray-600">
-          GL Code
-          <input name="gl_code" defaultValue={category.gl_code ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
+        <fieldset disabled={!canEdit} className="contents">
+          <label className="text-sm text-gray-600">
+            Name
+            <input name="name" defaultValue={category.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+          <label className="text-sm text-gray-600">
+            GL Code
+            <input name="gl_code" defaultValue={category.gl_code ?? ""} className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+        </fieldset>
       </ActionForm>
 
       <div className="mt-3 flex items-center gap-3">
-        <button type="submit" form="edit-category-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Save
-        </button>
-        <DeleteCategoryButton categoryId={category.id} />
+        {canEdit && (
+          <button type="submit" form="edit-category-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            Save
+          </button>
+        )}
+        {canEdit && <DeleteCategoryButton categoryId={category.id} />}
       </div>
     </div>
   );

@@ -7,12 +7,15 @@ import { CaseSizeLabel } from "@/components/CaseSizeLabel";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { DownloadIcon } from "@/components/DownloadIcon";
 import { DuplicateIcon } from "@/components/DuplicateIcon";
+import { requireProfile } from "@/lib/auth";
 
 export default async function AdminProductsPage({
   searchParams,
 }: {
   searchParams: { q?: string; supplier?: string; unit?: string; type?: string };
 }) {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const { q, supplier, unit } = searchParams;
   const type = searchParams.type && isProductTypeValue(searchParams.type) ? searchParams.type : "chargeable";
@@ -44,19 +47,23 @@ export default async function AdminProductsPage({
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Products</h1>
         <div className="flex items-center gap-4">
-          <Link href="/admin/products/bulk-upload" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
-            CSV
-            <DownloadIcon />
-          </Link>
+          {canEdit && (
+            <Link href="/admin/products/bulk-upload" className="inline-flex items-center gap-1 text-sm text-brand hover:underline">
+              CSV
+              <DownloadIcon />
+            </Link>
+          )}
           <Link href="/admin/products/cost-log" className="text-sm text-brand hover:underline">
             Cost variance log
           </Link>
           <Link href="/admin/products/inactive" className="text-sm text-brand hover:underline">
             View inactive
           </Link>
-          <Link href={`/admin/products/new?type=${type}`} className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-            Add product
-          </Link>
+          {canEdit && (
+            <Link href={`/admin/products/new?type=${type}`} className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+              Add product
+            </Link>
+          )}
         </div>
       </div>
 
@@ -154,14 +161,16 @@ export default async function AdminProductsPage({
                   {p.case_cost && p.case_size ? `$${(p.case_cost / p.case_size).toFixed(2)}` : "—"}
                 </td>
                 <td className="px-4 py-2 whitespace-nowrap">
-                  <Link
-                    href={`/admin/products/new?from=${p.id}`}
-                    aria-label="Duplicate"
-                    title="Duplicate"
-                    className="inline-flex items-center text-amber-600 hover:text-amber-700"
-                  >
-                    <DuplicateIcon />
-                  </Link>
+                  {canEdit && (
+                    <Link
+                      href={`/admin/products/new?from=${p.id}`}
+                      aria-label="Duplicate"
+                      title="Duplicate"
+                      className="inline-flex items-center text-amber-600 hover:text-amber-700"
+                    >
+                      <DuplicateIcon />
+                    </Link>
+                  )}
                 </td>
               </tr>
             ))}

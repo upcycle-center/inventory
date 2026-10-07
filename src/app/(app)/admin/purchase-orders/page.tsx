@@ -11,8 +11,16 @@ const NEXT_STATUS: Record<string, { value: string; label: string } | null> = {
 };
 
 export default async function PurchaseOrdersPage() {
-  const profile = await requireProfile(["admin", "warehouse"]);
+  const profile = await requireProfile();
   const isAdmin = profile.role === "admin";
+  // Mark Placed/Received and Remove call the matching Server Actions, which
+  // (per their own requireProfile guard in ./actions) accept admin OR
+  // warehouse -- warehouse has always had full operational control here,
+  // separate from the newer view-only grant other roles can get to this
+  // page. Anyone else reaching this page via a granted "purchase_orders"
+  // view sees the same read-only list, with no controls that would just
+  // bounce them when clicked.
+  const canEdit = isAdmin || profile.role === "warehouse";
   const supabase = createClient();
 
   const { data: ordersRaw } = await supabase
@@ -74,7 +82,7 @@ export default async function PurchaseOrdersPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        {next && (
+                        {canEdit && next && (
                           <form action={updatePurchaseOrderStatus}>
                             <input type="hidden" name="id" value={o.id} />
                             <input type="hidden" name="status" value={next.value} />
@@ -105,7 +113,7 @@ export default async function PurchaseOrdersPage() {
                             {item.quantity_oz != null && <span className="ml-2 text-gray-500">{Number(item.quantity_oz).toFixed(2)} oz</span>}
                             {item.note && <span className="ml-2 text-xs text-gray-400">{item.note}</span>}
                           </span>
-                          {o.status === "requested" && (
+                          {canEdit && o.status === "requested" && (
                             <form action={removePurchaseOrderItem}>
                               <input type="hidden" name="id" value={item.id} />
                               <button type="submit" className="text-xs text-red-600 hover:underline">

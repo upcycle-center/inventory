@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Location, ProductCategory, StorageArea, Supplier } from "@/lib/supabase/types";
 import { sortStorageAreas } from "@/lib/storageAreas";
@@ -8,12 +9,15 @@ import { createProduct } from "../actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ActionForm } from "@/components/ActionForm";
 import { NewProductFields } from "./NewProductFields";
+import { requireProfile } from "@/lib/auth";
 
 export default async function NewProductPage({
   searchParams,
 }: {
   searchParams: { from?: string; type?: string };
 }) {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/admin/products");
   const supabase = createClient();
 
   const [{ data: suppliers }, { data: locations }, { data: storageAreas }, { data: categories }, fromProductResult, fromLocationProductsResult] =

@@ -16,6 +16,7 @@ import { removeIngredient, updateIngredientQty, updateMarkups, updateRecipe } fr
 import { AddIngredientForm } from "./AddIngredientForm";
 import { SaveStatusIndicator, SaveStatusProvider } from "./SaveStatus";
 import { TopEditForm } from "./TopEditForm";
+import { requireProfile } from "@/lib/auth";
 
 function fmtCurrency(value: number | null) {
   return value == null ? "—" : `$${value.toFixed(2)}`;
@@ -30,6 +31,8 @@ function fmtBase(value: number | null) {
 }
 
 export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
 
   const [{ data: recipe }, { data: ingredientsRaw }, { data: products }, { data: categories }] = await Promise.all([
@@ -103,86 +106,92 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
             </a>
           </div>
         </div>
-        <label className="text-sm text-gray-600">
-          Name
-          <input name="name" defaultValue={recipe.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
-        <label className="text-sm text-gray-600">
-          Description
-          <input
-            name="description"
-            defaultValue={recipe.description ?? ""}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-sm text-gray-600">
-          Category
-          <select
-            name="category_id"
-            defaultValue={recipe.category_id ?? ""}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          >
-            <option value="">No category</option>
-            {((categories as ProductCategory[] | null) ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-                {c.gl_code ? ` (${c.gl_code})` : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm text-gray-600">
-          Source URL
-          <input
-            name="source_url"
-            type="url"
-            defaultValue={recipe.source_url ?? ""}
-            placeholder="https://..."
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-sm text-gray-600">
-          RECIPE
-          <textarea
-            name="original_recipe"
-            defaultValue={recipe.original_recipe ?? ""}
-            rows={4}
-            placeholder="Original ingredients/ratios as published, for reference..."
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-sm text-gray-600">
-          SERVICE
-          <textarea
-            name="instructions"
-            defaultValue={recipe.instructions ?? ""}
-            rows={5}
-            placeholder="Build order, glassware, garnish, ice, method..."
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-sm text-gray-600">
-          BATCH INSTRUCTIONS
-          <textarea
-            name="batch_instructions"
-            defaultValue={recipe.batch_instructions ?? ""}
-            rows={5}
-            placeholder="How to mix/store the pre-made batch itself..."
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-sm text-gray-600">
-          {recipe.photo_url ? "Replace photo" : "Add photo"}
-          <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
-        </label>
+        <fieldset disabled={!canEdit} className="contents">
+          <label className="text-sm text-gray-600">
+            Name
+            <input name="name" defaultValue={recipe.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+          <label className="text-sm text-gray-600">
+            Description
+            <input
+              name="description"
+              defaultValue={recipe.description ?? ""}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            Category
+            <select
+              name="category_id"
+              defaultValue={recipe.category_id ?? ""}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="">No category</option>
+              {((categories as ProductCategory[] | null) ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.gl_code ? ` (${c.gl_code})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm text-gray-600">
+            Source URL
+            <input
+              name="source_url"
+              type="url"
+              defaultValue={recipe.source_url ?? ""}
+              placeholder="https://..."
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            RECIPE
+            <textarea
+              name="original_recipe"
+              defaultValue={recipe.original_recipe ?? ""}
+              rows={4}
+              placeholder="Original ingredients/ratios as published, for reference..."
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            SERVICE
+            <textarea
+              name="instructions"
+              defaultValue={recipe.instructions ?? ""}
+              rows={5}
+              placeholder="Build order, glassware, garnish, ice, method..."
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            BATCH INSTRUCTIONS
+            <textarea
+              name="batch_instructions"
+              defaultValue={recipe.batch_instructions ?? ""}
+              rows={5}
+              placeholder="How to mix/store the pre-made batch itself..."
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </label>
+        </fieldset>
+        {canEdit && (
+          <label className="text-sm text-gray-600">
+            {recipe.photo_url ? "Replace photo" : "Add photo"}
+            <input name="photo" type="file" accept="image/*" className="mt-1 block w-full text-sm" />
+          </label>
+        )}
       </TopEditForm>
 
       <p className="mb-3 text-sm font-medium">BATCH PICK LIST</p>
 
-      <AddIngredientForm
-        recipeId={recipe.id}
-        products={(products as { id: string; description: string; product_type: ProductTypeValue }[] | null) ?? []}
-      />
+      {canEdit && (
+        <AddIngredientForm
+          recipeId={recipe.id}
+          products={(products as { id: string; description: string; product_type: ProductTypeValue }[] | null) ?? []}
+        />
+      )}
 
       <ul className="mb-8 space-y-1">
         {ingredientRows.map((row) =>
@@ -204,24 +213,29 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
                   step={0.01}
                   defaultValue={row.quantity_oz ?? ""}
                   placeholder="2 (Top Off)"
+                  disabled={!canEdit}
                   className="w-24 rounded-md border border-gray-300 px-2 py-1 text-xs"
                 />
                 <span className="text-xs text-gray-400">oz</span>
                 <label className="flex items-center gap-1 text-xs text-gray-500">
-                  <input type="checkbox" name="top_off" defaultChecked={row.quantity_oz == null} className="h-3.5 w-3.5" />
+                  <input type="checkbox" name="top_off" defaultChecked={row.quantity_oz == null} disabled={!canEdit} className="h-3.5 w-3.5" />
                   T/O
                 </label>
-                <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
-                  Save
-                </button>
+                {canEdit && (
+                  <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
+                    Save
+                  </button>
+                )}
               </ActionForm>
-              <form action={removeIngredient}>
-                <input type="hidden" name="id" value={row.id} />
-                <input type="hidden" name="recipe_id" value={recipe.id} />
-                <button type="submit" className="text-red-600 hover:underline">
-                  Remove
-                </button>
-              </form>
+              {canEdit && (
+                <form action={removeIngredient}>
+                  <input type="hidden" name="id" value={row.id} />
+                  <input type="hidden" name="recipe_id" value={recipe.id} />
+                  <button type="submit" className="text-red-600 hover:underline">
+                    Remove
+                  </button>
+                </form>
+              )}
             </li>
           ) : null
         )}
@@ -244,6 +258,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
               min={1}
               step={0.5}
               defaultValue={recipe.target_markup_pct ?? DEFAULT_TARGET_MARKUP_PCT}
+              disabled={!canEdit}
               className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
             />
             %
@@ -256,13 +271,16 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
               min={1}
               step={0.5}
               defaultValue={recipe.beo_markup_pct ?? DEFAULT_BEO_MARKUP_PCT}
+              disabled={!canEdit}
               className="w-20 rounded-md border border-gray-300 px-2 py-1 text-sm"
             />
             %
           </label>
-          <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
-            Save
-          </button>
+          {canEdit && (
+            <button type="submit" className="rounded-md bg-brand px-3 py-1 text-xs text-white">
+              Save
+            </button>
+          )}
         </ActionForm>
       </div>
 
@@ -298,18 +316,22 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
       </table>
 
       <div className="mt-6 flex items-center gap-3">
-        <button type="submit" form="edit-recipe-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Save
-        </button>
-        <SaveStatusIndicator />
-        <ActionForm action={toggleRecipeActive} className="contents" savedLabel={recipe.active ? "Deactivated" : "Reactivated"}>
-          <input type="hidden" name="id" value={recipe.id} />
-          <input type="hidden" name="active" value={String(recipe.active)} />
-          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
-            {recipe.active ? "Deactivate" : "Reactivate"}
+        {canEdit && (
+          <button type="submit" form="edit-recipe-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            Save
           </button>
-        </ActionForm>
-        <DeleteRecipeButton recipeId={recipe.id} />
+        )}
+        <SaveStatusIndicator />
+        {canEdit && (
+          <ActionForm action={toggleRecipeActive} className="contents" savedLabel={recipe.active ? "Deactivated" : "Reactivated"}>
+            <input type="hidden" name="id" value={recipe.id} />
+            <input type="hidden" name="active" value={String(recipe.active)} />
+            <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+              {recipe.active ? "Deactivate" : "Reactivate"}
+            </button>
+          </ActionForm>
+        )}
+        {canEdit && <DeleteRecipeButton recipeId={recipe.id} />}
       </div>
       </div>
     </SaveStatusProvider>

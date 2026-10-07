@@ -5,8 +5,11 @@ import { sortStorageAreas } from "@/lib/storageAreas";
 import { createStorageArea } from "./actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { requireProfile } from "@/lib/auth";
 
 export default async function AdminStorageAreasPage() {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const { data: rawAreas } = await supabase.from("storage_areas").select("*");
   const areas = sortStorageAreas((rawAreas as StorageArea[]) ?? []);
@@ -20,13 +23,15 @@ export default async function AdminStorageAreasPage() {
         Cage, etc.). Add more anytime — existing codes stay stable once products reference them.
       </p>
 
-      <ActionForm action={createStorageArea} savedLabel="Storage area added" resetOnSuccess className="mb-8 flex max-w-md items-center gap-3 rounded-md border border-gray-200 bg-white p-4">
-        <input name="code" placeholder="Code (e.g. WIC)" required maxLength={8} className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm uppercase" />
-        <input name="name" placeholder="Name (e.g. Walk-in Cooler)" required className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Add
-        </button>
-      </ActionForm>
+      {canEdit && (
+        <ActionForm action={createStorageArea} savedLabel="Storage area added" resetOnSuccess className="mb-8 flex max-w-md items-center gap-3 rounded-md border border-gray-200 bg-white p-4">
+          <input name="code" placeholder="Code (e.g. WIC)" required maxLength={8} className="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm uppercase" />
+          <input name="name" placeholder="Name (e.g. Walk-in Cooler)" required className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+            Add
+          </button>
+        </ActionForm>
+      )}
 
       <table className="w-full max-w-xl text-left text-sm">
         <thead className="text-gray-500">

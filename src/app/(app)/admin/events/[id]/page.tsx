@@ -18,8 +18,11 @@ import { CallOutsLog } from "./CallOutsLog";
 import { DeleteEventButton } from "./DeleteEventButton";
 import { effectiveCount, totalRecommendedStaff as totalRecommendedStaffAcross } from "@/lib/staffing";
 import { easternDateTimeString } from "@/lib/easternTime";
+import { requireProfile } from "@/lib/auth";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
 
   const [{ data: event }, { data: locations }, { data: users }, { data: assignments }, { data: eventLocations }, { data: activeStaff }] =
@@ -112,14 +115,16 @@ export default async function EventDetailPage({ params }: { params: { id: string
           <ActionForm action={updateEventStatus} savedLabel="Status updated" className="flex items-center gap-2">
             <input type="hidden" name="id" value={event.id} />
             <label className="text-sm text-gray-500">Status</label>
-            <select name="status" defaultValue={event.status} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
+            <select name="status" defaultValue={event.status} disabled={!canEdit} className="rounded-md border border-gray-300 px-2 py-1 text-sm">
               <option value="upcoming">Upcoming</option>
               <option value="open">Open</option>
               <option value="closed">Closed</option>
             </select>
-            <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
-              Update
-            </button>
+            {canEdit && (
+              <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-sm">
+                Update
+              </button>
+            )}
           </ActionForm>
           <a
             href={`/api/count-sheet/pdf/all?event=${event.id}`}
@@ -128,7 +133,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
             Download All Count Sheets
           </a>
         </div>
-        <DeleteEventButton eventId={event.id} />
+        {canEdit && <DeleteEventButton eventId={event.id} />}
       </div>
 
       <div className="mb-8 rounded-md border border-gray-200 bg-white p-4">
@@ -152,6 +157,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 step={1}
                 defaultValue={event.est_tickets ?? ""}
                 placeholder="e.g. 2500"
+                disabled={!canEdit}
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
@@ -167,6 +173,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 step={1}
                 defaultValue={event.tot_tickets ?? ""}
                 placeholder="e.g. 2650"
+                disabled={!canEdit}
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
@@ -182,6 +189,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 step={1}
                 defaultValue={event.grn_room_attendance ?? ""}
                 placeholder="e.g. 40"
+                disabled={!canEdit}
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
@@ -197,13 +205,16 @@ export default async function EventDetailPage({ params }: { params: { id: string
                 step={1}
                 defaultValue={event.vip_lounge_attendance ?? ""}
                 placeholder="e.g. 75"
+                disabled={!canEdit}
                 className="w-20 rounded-md border border-gray-300 px-2 py-1.5 text-sm"
               />
             </div>
           </div>
-          <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
-            Update
-          </button>
+          {canEdit && (
+            <button type="submit" className="w-fit rounded-md bg-brand px-4 py-2 text-sm text-white">
+              Update
+            </button>
+          )}
         </ActionForm>
       </div>
 
@@ -296,7 +307,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                   {rows.map(({ location, isOpen, eventLocation, confirmed, roleCounts, recommended, displayedStaff }) => (
                     <tr key={location.id} className="border-t border-gray-100">
                       <td className="whitespace-nowrap py-2 pr-3">
-                        {!confirmed && (
+                        {!confirmed && canEdit && (
                           <form id={`confirm-form-${location.id}`} action={confirmLocationStaffing}>
                             <input type="hidden" name="event_id" value={event.id} />
                             <input type="hidden" name="location_id" value={location.id} />
@@ -304,21 +315,33 @@ export default async function EventDetailPage({ params }: { params: { id: string
                         )}
                         <div className="flex flex-col items-start gap-1.5">
                           <div className="flex items-center gap-2">
-                            <form action={toggleLocationOpen} className="shrink-0">
-                              <input type="hidden" name="event_id" value={event.id} />
-                              <input type="hidden" name="location_id" value={location.id} />
-                              <input type="hidden" name="is_open" value={String(isOpen)} />
-                              <button
-                                type="submit"
+                            {canEdit ? (
+                              <form action={toggleLocationOpen} className="shrink-0">
+                                <input type="hidden" name="event_id" value={event.id} />
+                                <input type="hidden" name="location_id" value={location.id} />
+                                <input type="hidden" name="is_open" value={String(isOpen)} />
+                                <button
+                                  type="submit"
+                                  className={
+                                    isOpen
+                                      ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+                                      : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
+                                  }
+                                >
+                                  {isOpen ? "Open" : "Closed"}
+                                </button>
+                              </form>
+                            ) : (
+                              <span
                                 className={
                                   isOpen
-                                    ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
-                                    : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-300"
+                                    ? "rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white"
+                                    : "rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-600"
                                 }
                               >
                                 {isOpen ? "Open" : "Closed"}
-                              </button>
-                            </form>
+                              </span>
+                            )}
                             <Link href={`/admin/locations/${location.id}`} className="text-brand hover:underline">
                               {location.yellow_dog_code && (
                                 <span className="mr-1 font-mono text-xs text-gray-400">{location.yellow_dog_code}</span>
@@ -332,7 +355,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
                             currentLeadId={leadUserIdByLocationId.get(location.id) ?? null}
                             defaultLeadId={location.default_lead_user_id}
                             users={(users as Profile[] | null) ?? []}
-                            disabled={confirmed}
+                            disabled={confirmed || !canEdit}
                           />
                         </div>
                       </td>
@@ -348,44 +371,52 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           ))}
                           <td className="py-2 pr-3 font-medium">{displayedStaff}</td>
                           <td className="py-2">
-                            <form action={unlockLocationStaffing} className="flex flex-wrap items-start gap-2">
-                              <input type="hidden" name="event_id" value={event.id} />
-                              <input type="hidden" name="location_id" value={location.id} />
+                            {canEdit ? (
+                              <form action={unlockLocationStaffing} className="flex flex-wrap items-start gap-2">
+                                <input type="hidden" name="event_id" value={event.id} />
+                                <input type="hidden" name="location_id" value={location.id} />
+                                <div className="text-left text-xs leading-tight text-gray-400">
+                                  <p>🔒 Confirmed by:</p>
+                                  <p className="text-gray-600">{eventLocation?.confirmed_by_profile?.name ?? "—"}</p>
+                                  {eventLocation?.confirmed_at && <p>{easternDateTimeString(new Date(eventLocation.confirmed_at))}</p>}
+                                </div>
+                                <select
+                                  name="reason"
+                                  defaultValue="other"
+                                  title="Reason for unlocking — auto-logs any role you then reduce, once you save the change"
+                                  className="rounded-md border border-gray-300 px-1 py-1 text-xs"
+                                >
+                                  <option value="other">Adjustment</option>
+                                  <option value="call_out">Call-Out</option>
+                                  <option value="no_show">No-Show</option>
+                                </select>
+                                <select
+                                  name="staff_id"
+                                  defaultValue=""
+                                  title="Optional — who this Call-Out/No-Show is, if known"
+                                  className="rounded-md border border-gray-300 px-1 py-1 text-xs"
+                                >
+                                  <option value="">— Staff —</option>
+                                  {staffList.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                      {s.first_name} {s.last_name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
+                                  Unlock
+                                </button>
+                              </form>
+                            ) : (
                               <div className="text-left text-xs leading-tight text-gray-400">
                                 <p>🔒 Confirmed by:</p>
                                 <p className="text-gray-600">{eventLocation?.confirmed_by_profile?.name ?? "—"}</p>
                                 {eventLocation?.confirmed_at && <p>{easternDateTimeString(new Date(eventLocation.confirmed_at))}</p>}
                               </div>
-                              <select
-                                name="reason"
-                                defaultValue="other"
-                                title="Reason for unlocking — auto-logs any role you then reduce, once you save the change"
-                                className="rounded-md border border-gray-300 px-1 py-1 text-xs"
-                              >
-                                <option value="other">Adjustment</option>
-                                <option value="call_out">Call-Out</option>
-                                <option value="no_show">No-Show</option>
-                              </select>
-                              <select
-                                name="staff_id"
-                                defaultValue=""
-                                title="Optional — who this Call-Out/No-Show is, if known"
-                                className="rounded-md border border-gray-300 px-1 py-1 text-xs"
-                              >
-                                <option value="">— Staff —</option>
-                                {staffList.map((s) => (
-                                  <option key={s.id} value={s.id}>
-                                    {s.first_name} {s.last_name}
-                                  </option>
-                                ))}
-                              </select>
-                              <button type="submit" className="rounded-md border border-gray-300 px-3 py-1 text-xs">
-                                Unlock
-                              </button>
-                            </form>
+                            )}
                           </td>
                         </>
-                      ) : (
+                      ) : canEdit ? (
                         <WfmEditableCells
                           formId={`confirm-form-${location.id}`}
                           roleCounts={roleCounts}
@@ -394,6 +425,18 @@ export default async function EventDetailPage({ params }: { params: { id: string
                           confirmDisabled={isOpen && !leadUserIdByLocationId.get(location.id)}
                           isOpen={isOpen}
                         />
+                      ) : (
+                        <>
+                          {roleCounts.map(({ roleName, count, note }) => (
+                            <td key={roleName} className="py-2 pr-3 text-center" title={note ?? undefined}>
+                              {count == null ? <span className="text-gray-300">—</span> : count}
+                            </td>
+                          ))}
+                          <td className="py-2 pr-3 font-medium" title="Suggested total from current staffing rules">
+                            {recommended}
+                          </td>
+                          <td className="py-2" />
+                        </>
                       )}
                     </tr>
                   ))}

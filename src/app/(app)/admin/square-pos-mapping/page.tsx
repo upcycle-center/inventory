@@ -5,7 +5,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import type { Product } from "@/lib/supabase/types";
 
 export default async function SquarePosMappingPage() {
-  await requireProfile(["admin"]);
+  await requireProfile();
   const supabase = createClient();
 
   const { data: products } = await supabase

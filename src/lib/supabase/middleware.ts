@@ -6,12 +6,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
-// /admin/* stays hardcoded admin-only -- not part of the configurable
-// matrix, since exposing it as a togglable checkbox risks an admin
-// locking themselves out of the panel that manages the matrix itself.
-// Everything else that's gated (Count, Request, Transfer, Recovery,
-// Return, Receive, RequestQ) is looked up per-role from
-// role_view_permissions, editable at /admin/permissions.
+// /admin/* defaults to hardcoded admin-only -- EXCEPT for the specific
+// admin pages listed in VIEW_KEYS (Catalog, Operations extras, Catering,
+// Reports, Data Maps, Roster), which are matrix-gated like any other
+// view below. Users and Permissions have no VIEW_KEYS entry, so they
+// always fall through to this hard block -- exposing admin/role
+// management itself as a togglable checkbox risks a role locking
+// admins out of the panel that controls it.
 const ADMIN_ONLY_PREFIXES = ["/admin"];
 
 // Each role's landing page (/warehouse, /stand, etc.) is only for that role
@@ -25,16 +26,18 @@ function roleForLandingPrefix(pathname: string): UserRole | null {
 
 async function roleAllows(supabase: SupabaseClient, role: UserRole, pathname: string): Promise<boolean> {
   if (role === "admin") return true;
-  if (ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p))) return false;
 
   const landingRole = roleForLandingPrefix(pathname);
   if (landingRole) return role === landingRole;
 
   const viewKey = viewKeyForPath(pathname);
-  if (!viewKey) return true;
+  if (viewKey) {
+    const allowed = await getAllowedViewsForRole(supabase, role);
+    return allowed.has(viewKey);
+  }
 
-  const allowed = await getAllowedViewsForRole(supabase, role);
-  return allowed.has(viewKey);
+  if (ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p))) return false;
+  return true;
 }
 
 export async function updateSession(request: NextRequest) {

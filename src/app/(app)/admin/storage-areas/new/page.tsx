@@ -1,14 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createStorageArea } from "../actions";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { requireProfile } from "@/lib/auth";
 
 export default async function NewStorageAreaPage({
   searchParams,
 }: {
   searchParams: { from?: string };
 }) {
+  const profile = await requireProfile();
+  if (profile.role !== "admin") redirect("/admin/storage-areas");
   const supabase = createClient();
 
   const from = searchParams.from

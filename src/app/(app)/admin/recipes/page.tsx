@@ -8,6 +8,7 @@ import { DuplicateIcon } from "@/components/DuplicateIcon";
 import { ProductThumbnail } from "@/components/ProductThumbnail";
 import { ActionForm } from "@/components/ActionForm";
 import { duplicateRecipe } from "./actions";
+import { requireProfile } from "@/lib/auth";
 
 function CostCell({ cost, beo, msrp }: { cost: number | null; beo: number | null; msrp: number | null }) {
   if (cost == null || beo == null || msrp == null) return <span className="text-gray-400">—</span>;
@@ -23,6 +24,8 @@ function CostCell({ cost, beo, msrp }: { cost: number | null; beo: number | null
 }
 
 export default async function AdminRecipesPage() {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const [{ data: recipesRaw }, { data: ingredientsRaw }, { data: categoriesRaw }] = await Promise.all([
     supabase.from("recipes").select("*").order("name"),
@@ -53,9 +56,11 @@ export default async function AdminRecipesPage() {
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Recipes" }]} />
       <div className="mb-2 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Recipes</h1>
-        <Link href="/admin/recipes/new" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-          Add Recipe
-        </Link>
+        {canEdit && (
+          <Link href="/admin/recipes/new" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+            Add Recipe
+          </Link>
+        )}
       </div>
 
       <table className="w-full text-left text-sm">
@@ -98,17 +103,19 @@ export default async function AdminRecipesPage() {
                     >
                       <DownloadIcon />
                     </a>
-                    <ActionForm action={duplicateRecipe} className="contents">
-                      <input type="hidden" name="id" value={r.id} />
-                      <button
-                        type="submit"
-                        title="Duplicate"
-                        aria-label="Duplicate"
-                        className="inline-flex items-center text-amber-600 hover:text-amber-700"
-                      >
-                        <DuplicateIcon />
-                      </button>
-                    </ActionForm>
+                    {canEdit && (
+                      <ActionForm action={duplicateRecipe} className="contents">
+                        <input type="hidden" name="id" value={r.id} />
+                        <button
+                          type="submit"
+                          title="Duplicate"
+                          aria-label="Duplicate"
+                          className="inline-flex items-center text-amber-600 hover:text-amber-700"
+                        >
+                          <DuplicateIcon />
+                        </button>
+                      </ActionForm>
+                    )}
                   </div>
                   <div className="whitespace-nowrap">
                     <Link href={`/admin/recipes/${r.id}`} className="text-brand hover:underline">

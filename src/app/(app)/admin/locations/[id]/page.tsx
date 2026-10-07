@@ -22,6 +22,7 @@ import {
   upsertThreshold,
 } from "./actions";
 import { DeleteLocationButton } from "./DeleteLocationButton";
+import { requireProfile } from "@/lib/auth";
 
 function fmtQty(
   each: number | null | undefined,
@@ -38,6 +39,8 @@ function fmtQty(
 }
 
 export default async function LocationDetailPage({ params }: { params: { id: string } }) {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
 
   const [{ data: location }, { data: staffRoles }, { data: staffTiers }, { data: locationProducts }, { data: users }, { data: thresholds }] =
@@ -155,56 +158,64 @@ export default async function LocationDetailPage({ params }: { params: { id: str
       >
         <p className="text-sm font-medium">Location details</p>
         <input type="hidden" name="id" value={location.id} />
-        <input name="name" defaultValue={location.name} required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        <select name="type" defaultValue={location.type} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-          <option value="stand">Stand</option>
-          <option value="kitchen">Kitchen</option>
-          <option value="catering">Catering</option>
-          <option value="warehouse">Warehouse</option>
-        </select>
-        <input
-          name="description"
-          defaultValue={location.description ?? ""}
-          placeholder="Description (optional)"
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-        <label className="text-sm text-gray-600">
-          YDC (Yellow Dog Code)
+        <fieldset disabled={!canEdit} className="contents">
+          <input name="name" defaultValue={location.name} required className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <select name="type" defaultValue={location.type} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+            <option value="stand">Stand</option>
+            <option value="kitchen">Kitchen</option>
+            <option value="catering">Catering</option>
+            <option value="warehouse">Warehouse</option>
+          </select>
           <input
-            name="yellow_dog_code"
-            defaultValue={location.yellow_dog_code ?? ""}
-            placeholder="000"
-            maxLength={3}
-            pattern="\d{3}"
-            className="mt-1 w-24 rounded-md border border-gray-300 px-3 py-2 text-center font-mono text-sm"
+            name="description"
+            defaultValue={location.description ?? ""}
+            placeholder="Description (optional)"
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
           />
-        </label>
+          <label className="text-sm text-gray-600">
+            YDC (Yellow Dog Code)
+            <input
+              name="yellow_dog_code"
+              defaultValue={location.yellow_dog_code ?? ""}
+              placeholder="000"
+              maxLength={3}
+              pattern="\d{3}"
+              className="mt-1 w-24 rounded-md border border-gray-300 px-3 py-2 text-center font-mono text-sm"
+            />
+          </label>
+        </fieldset>
       </ActionForm>
 
       <div className="mb-8 flex items-center gap-3">
-        <button type="submit" form="edit-location-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Save
-        </button>
-        <Link
-          href={`/admin/locations/new?from=${location.id}`}
-          className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Duplicate
-        </Link>
+        {canEdit && (
+          <button type="submit" form="edit-location-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            Save
+          </button>
+        )}
+        {canEdit && (
+          <Link
+            href={`/admin/locations/new?from=${location.id}`}
+            className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Duplicate
+          </Link>
+        )}
         <Link
           href={`/api/count-sheet/pdf?location=${location.id}`}
           className="w-fit rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
           PDF Count Sheet
         </Link>
-        <ActionForm action={toggleLocationActive} className="contents" savedLabel={location.active ? "Deactivated" : "Reactivated"}>
-          <input type="hidden" name="id" value={location.id} />
-          <input type="hidden" name="active" value={String(location.active)} />
-          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
-            {location.active ? "Deactivate" : "Reactivate"}
-          </button>
-        </ActionForm>
-        <DeleteLocationButton locationId={location.id} />
+        {canEdit && (
+          <ActionForm action={toggleLocationActive} className="contents" savedLabel={location.active ? "Deactivated" : "Reactivated"}>
+            <input type="hidden" name="id" value={location.id} />
+            <input type="hidden" name="active" value={String(location.active)} />
+            <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+              {location.active ? "Deactivate" : "Reactivate"}
+            </button>
+          </ActionForm>
+        )}
+        {canEdit && <DeleteLocationButton locationId={location.id} />}
       </div>
 
       <div className="mb-8 flex items-start gap-4 rounded-md border border-gray-200 bg-white p-4">
@@ -240,7 +251,12 @@ export default async function LocationDetailPage({ params }: { params: { id: str
             <input type="hidden" name="id" value={location.id} />
             <div>
               <label className="mb-1 block text-xs text-gray-500">Default Lead</label>
-              <select name="default_lead_user_id" defaultValue={location.default_lead_user_id ?? ""} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <select
+                name="default_lead_user_id"
+                defaultValue={location.default_lead_user_id ?? ""}
+                disabled={!canEdit}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
                 <option value="">— Unassigned —</option>
                 {profileList.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -249,9 +265,11 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                 ))}
               </select>
             </div>
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-              Save
-            </button>
+            {canEdit && (
+              <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+                Save
+              </button>
+            )}
             <p className="w-full text-xs text-gray-400">
               Pre-fills the Lead dropdown on Event Details for this location when an event
               doesn&apos;t have its own assignment yet.
@@ -266,7 +284,12 @@ export default async function LocationDetailPage({ params }: { params: { id: str
             <input type="hidden" name="id" value={location.id} />
             <div>
               <label className="mb-1 block text-xs text-gray-500">Backup Lead</label>
-              <select name="backup_lead_user_id" defaultValue={location.backup_lead_user_id ?? ""} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <select
+                name="backup_lead_user_id"
+                defaultValue={location.backup_lead_user_id ?? ""}
+                disabled={!canEdit}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
                 <option value="">— Unassigned —</option>
                 {profileList.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -275,40 +298,44 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                 ))}
               </select>
             </div>
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-              Save
-            </button>
+            {canEdit && (
+              <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+                Save
+              </button>
+            )}
             <p className="w-full text-xs text-gray-400">
               Can open and submit counts for this stand at any event, without needing a separate
               per-event assignment — covers for the assigned Lead when needed.
             </p>
           </ActionForm>
 
-          <ActionForm
-            action={addStaffRole}
-            savedLabel="Role added"
-            resetOnSuccess
-            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-          >
-            <input type="hidden" name="location_id" value={location.id} />
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Role</label>
-              <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-                {STAFF_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Base count</label>
-              <input name="base_count" type="number" min={0} step={1} defaultValue={1} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-              Add role
-            </button>
-          </ActionForm>
+          {canEdit && (
+            <ActionForm
+              action={addStaffRole}
+              savedLabel="Role added"
+              resetOnSuccess
+              className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+            >
+              <input type="hidden" name="location_id" value={location.id} />
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Role</label>
+                <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  {STAFF_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Base count</label>
+                <input name="base_count" type="number" min={0} step={1} defaultValue={1} className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+                Add role
+              </button>
+            </ActionForm>
+          )}
 
           <ul className="mb-8 space-y-1">
             <li className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
@@ -322,13 +349,15 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                 <span>
                   ({r.base_count}) {r.role_name}
                 </span>
-                <form action={removeStaffRole}>
-                  <input type="hidden" name="id" value={r.id} />
-                  <input type="hidden" name="location_id" value={location.id} />
-                  <button type="submit" className="text-red-600 hover:underline">
-                    Remove
-                  </button>
-                </form>
+                {canEdit && (
+                  <form action={removeStaffRole}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <input type="hidden" name="location_id" value={location.id} />
+                    <button type="submit" className="text-red-600 hover:underline">
+                      Remove
+                    </button>
+                  </form>
+                )}
               </li>
             ))}
             {!roles.length && <li className="text-sm text-gray-400">No staffing roles set yet.</li>}
@@ -340,39 +369,41 @@ export default async function LocationDetailPage({ params }: { params: { id: str
             for a smaller show). Leave max blank for &ldquo;and up&rdquo;.
           </p>
 
-          <ActionForm
-            action={addStaffTier}
-            savedLabel="Tier added"
-            resetOnSuccess
-            className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
-          >
-            <input type="hidden" name="location_id" value={location.id} />
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Role</label>
-              <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-                {STAFF_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Min attendance</label>
-              <input name="min_attendance" type="number" min={0} step={1} defaultValue={0} className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Max attendance</label>
-              <input name="max_attendance" type="number" min={0} step={1} placeholder="and up" className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-500">Count</label>
-              <input name="count" type="number" min={0} step={1} required className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            </div>
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
-              Add tier
-            </button>
-          </ActionForm>
+          {canEdit && (
+            <ActionForm
+              action={addStaffTier}
+              savedLabel="Tier added"
+              resetOnSuccess
+              className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-gray-200 bg-white p-4"
+            >
+              <input type="hidden" name="location_id" value={location.id} />
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Role</label>
+                <select name="role_name" required className="rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  {STAFF_ROLES.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Min attendance</label>
+                <input name="min_attendance" type="number" min={0} step={1} defaultValue={0} className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Max attendance</label>
+                <input name="max_attendance" type="number" min={0} step={1} placeholder="and up" className="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">Count</label>
+                <input name="count" type="number" min={0} step={1} required className="w-24 rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              </div>
+              <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm text-white">
+                Add tier
+              </button>
+            </ActionForm>
+          )}
 
           <ul className="mb-8 space-y-1">
             {tiers.map((t) => (
@@ -381,13 +412,15 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                   {t.role_name}: {t.min_attendance}
                   {t.max_attendance ? `–${t.max_attendance}` : "+"} attendance → ({t.count})
                 </span>
-                <form action={removeStaffTier}>
-                  <input type="hidden" name="id" value={t.id} />
-                  <input type="hidden" name="location_id" value={location.id} />
-                  <button type="submit" className="text-red-600 hover:underline">
-                    Remove
-                  </button>
-                </form>
+                {canEdit && (
+                  <form action={removeStaffTier}>
+                    <input type="hidden" name="id" value={t.id} />
+                    <input type="hidden" name="location_id" value={location.id} />
+                    <button type="submit" className="text-red-600 hover:underline">
+                      Remove
+                    </button>
+                  </form>
+                )}
               </li>
             ))}
             {!tiers.length && <li className="text-sm text-gray-400">No attendance tiers set yet.</li>}
@@ -468,11 +501,14 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                             min={0}
                             placeholder="—"
                             defaultValue={threshold?.reorder_threshold ?? ""}
+                            disabled={!canEdit}
                             className="w-16 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
                           />
-                          <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
-                            Save
-                          </button>
+                          {canEdit && (
+                            <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
+                              Save
+                            </button>
+                          )}
                         </ActionForm>
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3">
@@ -494,6 +530,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                               step="0.01"
                               placeholder="EA"
                               defaultValue={physicalCurrent?.physical_qty_each ?? ""}
+                              disabled={!canEdit}
                               className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
                             />
                           )}
@@ -503,6 +540,7 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                             step="0.01"
                             placeholder="CS"
                             defaultValue={physicalCurrent?.physical_qty_cases ?? ""}
+                            disabled={!canEdit}
                             className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
                           />
                           {p.middle_unit_label && (
@@ -512,12 +550,15 @@ export default async function LocationDetailPage({ params }: { params: { id: str
                               step="0.01"
                               placeholder={p.middle_unit_label}
                               defaultValue={physicalCurrent?.physical_qty_middle_unit ?? ""}
+                              disabled={!canEdit}
                               className="w-14 rounded-md border border-gray-300 px-1.5 py-1 text-xs"
                             />
                           )}
-                          <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
-                            Post
-                          </button>
+                          {canEdit && (
+                            <button type="submit" className="rounded-md bg-brand px-2 py-1 text-xs text-white">
+                              Post
+                            </button>
+                          )}
                         </ActionForm>
                         {discrepancy && <p className="mt-1 text-xs font-medium text-orange-600">Discrepancy vs. calc</p>}
                       </td>

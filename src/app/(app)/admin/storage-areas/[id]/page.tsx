@@ -5,8 +5,11 @@ import { toggleStorageAreaActive, updateStorageArea } from "../actions";
 import { DeleteStorageAreaButton } from "./DeleteStorageAreaButton";
 import { ActionForm } from "@/components/ActionForm";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { requireProfile } from "@/lib/auth";
 
 export default async function StorageAreaDetailPage({ params }: { params: { id: string } }) {
+  const profile = await requireProfile();
+  const canEdit = profile.role === "admin";
   const supabase = createClient();
   const { data: area } = await supabase.from("storage_areas").select("*").eq("id", params.id).single();
 
@@ -30,40 +33,48 @@ export default async function StorageAreaDetailPage({ params }: { params: { id: 
         className="grid max-w-md gap-3 rounded-md border border-gray-200 bg-white p-4"
       >
         <input type="hidden" name="id" value={area.id} />
-        <label className="text-sm text-gray-600">
-          Code
-          <input
-            name="code"
-            defaultValue={area.code}
-            required
-            maxLength={8}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase"
-          />
-        </label>
-        <label className="text-sm text-gray-600">
-          Name
-          <input name="name" defaultValue={area.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
-        </label>
+        <fieldset disabled={!canEdit} className="contents">
+          <label className="text-sm text-gray-600">
+            Code
+            <input
+              name="code"
+              defaultValue={area.code}
+              required
+              maxLength={8}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase"
+            />
+          </label>
+          <label className="text-sm text-gray-600">
+            Name
+            <input name="name" defaultValue={area.name} required className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          </label>
+        </fieldset>
       </ActionForm>
 
       <div className="mt-3 flex items-center gap-3">
-        <button type="submit" form="edit-storage-area-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-          Save
-        </button>
-        <Link
-          href={`/admin/storage-areas/new?from=${area.id}`}
-          className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Duplicate
-        </Link>
-        <ActionForm action={toggleStorageAreaActive} className="contents" savedLabel={area.active ? "Deactivated" : "Reactivated"}>
-          <input type="hidden" name="id" value={area.id} />
-          <input type="hidden" name="active" value={String(area.active)} />
-          <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
-            {area.active ? "Deactivate" : "Reactivate"}
+        {canEdit && (
+          <button type="submit" form="edit-storage-area-form" className="w-fit rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
+            Save
           </button>
-        </ActionForm>
-        <DeleteStorageAreaButton storageAreaId={area.id} />
+        )}
+        {canEdit && (
+          <Link
+            href={`/admin/storage-areas/new?from=${area.id}`}
+            className="w-fit rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Duplicate
+          </Link>
+        )}
+        {canEdit && (
+          <ActionForm action={toggleStorageAreaActive} className="contents" savedLabel={area.active ? "Deactivated" : "Reactivated"}>
+            <input type="hidden" name="id" value={area.id} />
+            <input type="hidden" name="active" value={String(area.active)} />
+            <button type="submit" className="w-fit rounded-md bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600">
+              {area.active ? "Deactivate" : "Reactivate"}
+            </button>
+          </ActionForm>
+        )}
+        {canEdit && <DeleteStorageAreaButton storageAreaId={area.id} />}
       </div>
     </div>
   );
