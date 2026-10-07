@@ -43,6 +43,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, marginBottom: 2, fontFamily: "Helvetica-Bold" },
   subtitle: { fontSize: 11, color: "#555555" },
   headerPhoto: { width: 150, height: 150, borderRadius: 4, objectFit: "cover", alignSelf: "center" },
+  headerPhotoPlaceholder: {
+    width: 150,
+    height: 150,
+    borderRadius: 4,
+    backgroundColor: "#f0f0f0",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+  },
+  headerPhotoPlaceholderText: { fontSize: 9, color: "#999999" },
   printedAt: { position: "absolute", bottom: 20, left: 32, fontSize: 9, color: "#555555" },
   sectionTitle: {
     fontSize: 12,
@@ -206,7 +216,13 @@ export function RecipeOpsSheetDocument({
             {sourceUrl && <Text style={styles.sourceUrl}>Source: {sourceUrl}</Text>}
           </View>
           <View style={styles.topRightCol}>
-            {!!photoUrl && <Image src={photoUrl} style={styles.headerPhoto} />}
+            {photoUrl ? (
+              <Image src={photoUrl} style={styles.headerPhoto} />
+            ) : (
+              <View style={styles.headerPhotoPlaceholder}>
+                <Text style={styles.headerPhotoPlaceholderText}>No Photo</Text>
+              </View>
+            )}
             <Text style={styles.sectionTitle}>SERVICE</Text>
             <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
           </View>
