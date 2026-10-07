@@ -5,7 +5,7 @@
 -- at /admin/permissions. Users/Permissions are intentionally excluded
 -- (no view_key exists for them at all).
 insert into role_view_permissions (role, view_key, allowed)
-select r.role, k.view_key, false
+select r.role::user_role, k.view_key, false
 from (values ('warehouse'), ('kitchen'), ('catering'), ('ops'), ('stand_lead')) as r(role)
 cross join (
   values
