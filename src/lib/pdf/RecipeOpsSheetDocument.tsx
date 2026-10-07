@@ -46,16 +46,6 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     fontSize: 9,
   },
-  groupRow: {
-    backgroundColor: "#f0f0f0",
-    paddingVertical: 2,
-    paddingLeft: 4,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "#000000",
-  },
-  groupLabel: { fontSize: 9, fontFamily: "Helvetica-Bold", textTransform: "uppercase", color: "#333333" },
   tr: {
     flexDirection: "row",
     alignItems: "center",
@@ -221,9 +211,6 @@ export function RecipeOpsSheetDocument({
         </View>
         {pickListGroups.map((group) => (
           <View key={group.label} wrap={false}>
-            <View style={styles.groupRow}>
-              <Text style={styles.groupLabel}>{group.label}</Text>
-            </View>
             {group.items.map((ing) => (
               <View key={ing.productId} style={styles.tr}>
                 <View style={styles.colProduct}>
