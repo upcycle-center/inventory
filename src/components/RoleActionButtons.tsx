@@ -15,7 +15,7 @@ const IDLE_BUTTON = "w-full rounded-md border border-gray-300 px-2 py-2.5 text-c
 
 const BUTTONS: { viewKey: ViewKey; label: string; href: string; draftType?: ActionDraftType; activeColor?: string }[] = [
   { viewKey: "count", label: "Count", href: "/count" },
-  { viewKey: "month_end", label: "Month-End", href: "/month-end" },
+  { viewKey: "month_end", label: "moEND", href: "/month-end" },
   { viewKey: "receive", label: "Receive", href: "/receive" },
   { viewKey: "restock_requests", label: "RequestQ", href: "/restock-requests" },
   { viewKey: "request", label: "Request", href: "/request", draftType: "request", activeColor: "bg-yellow-400" },
@@ -36,7 +36,7 @@ const BUTTONS: { viewKey: ViewKey; label: string; href: string; draftType?: Acti
   { viewKey: "storage_areas", label: "Storage Areas", href: "/admin/storage-areas" },
   { viewKey: "beo", label: "BEO", href: "/admin/catering/beo" },
   { viewKey: "reports_events", label: "Event Reports", href: "/admin/reports/events" },
-  { viewKey: "reports_month_end", label: "Month End Reports", href: "/admin/month-end-reports" },
+  { viewKey: "reports_month_end", label: "moEND Reports", href: "/admin/month-end-reports" },
   { viewKey: "reports_year_end", label: "Year End Reports", href: "/admin/reports/year-end" },
   { viewKey: "roster", label: "Roster", href: "/admin/roster" },
   { viewKey: "yellow_dog_mapping", label: "Yellow Dog", href: "/admin/yellow-dog-mapping" },
