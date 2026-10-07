@@ -31,11 +31,18 @@ const BATCH_SIZE_KEYS = new Set(["liter", "batch_3_gal"]);
 
 const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 },
-  headerText: { flex: 1, paddingRight: 16 },
+  topRow: { flexDirection: "row", marginBottom: 14 },
+  topLeftCol: { flex: 1, paddingRight: 16 },
+  topRightCol: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#000000",
+    borderRadius: 4,
+    padding: 10,
+  },
   title: { fontSize: 18, marginBottom: 2, fontFamily: "Helvetica-Bold" },
   subtitle: { fontSize: 11, color: "#555555" },
-  headerPhoto: { width: 150, height: 150, borderRadius: 4, objectFit: "cover" },
+  headerPhoto: { width: 150, height: 150, borderRadius: 4, objectFit: "cover", alignSelf: "center" },
   printedAt: { position: "absolute", bottom: 20, left: 32, fontSize: 9, color: "#555555" },
   sectionTitle: {
     fontSize: 12,
@@ -46,9 +53,6 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   instructionsText: { fontSize: 10, lineHeight: 1.5 },
-  howToRow: { flexDirection: "row" },
-  howToCol: { flex: 1 },
-  howToColRight: { flex: 1, marginLeft: 16 },
   sourceUrl: { fontSize: 8, color: "#555555", marginTop: 6 },
   thRow: {
     flexDirection: "row",
@@ -188,26 +192,21 @@ export function RecipeOpsSheetDocument({
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        <View style={styles.headerRow}>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>{name}</Text>
-            {!!category && <Text style={styles.subtitle}>{category}</Text>}
-            {!!description && <Text style={styles.subtitle}>{description}</Text>}
-          </View>
-          {!!photoUrl && <Image src={photoUrl} style={styles.headerPhoto} />}
-        </View>
-
         <Text style={styles.printedAt} fixed>
           Printed {generatedAt}
         </Text>
 
-        <View style={styles.howToRow}>
-          <View style={styles.howToCol}>
+        <View style={styles.topRow}>
+          <View style={styles.topLeftCol}>
+            <Text style={styles.title}>{name}</Text>
+            {!!category && <Text style={styles.subtitle}>{category}</Text>}
+            {!!description && <Text style={styles.subtitle}>{description}</Text>}
             <Text style={styles.sectionTitle}>RECIPE</Text>
             <Text style={styles.instructionsText}>{originalRecipe || "No original recipe on file."}</Text>
             {sourceUrl && <Text style={styles.sourceUrl}>Source: {sourceUrl}</Text>}
           </View>
-          <View style={styles.howToColRight}>
+          <View style={styles.topRightCol}>
+            {!!photoUrl && <Image src={photoUrl} style={styles.headerPhoto} />}
             <Text style={styles.sectionTitle}>SERVICE</Text>
             <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
           </View>
