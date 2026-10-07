@@ -33,14 +33,17 @@ const styles = StyleSheet.create({
   page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
   titleBlock: { marginBottom: 14 },
   serviceBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
     borderWidth: 1,
     borderColor: "#000000",
     borderRadius: 4,
     padding: 10,
   },
+  serviceTextCol: { flex: 1, paddingRight: 16 },
   title: { fontSize: 18, marginBottom: 2, fontFamily: "Helvetica-Bold" },
   subtitle: { fontSize: 11, color: "#555555" },
-  headerPhoto: { width: 150, height: 150, borderRadius: 4, objectFit: "cover", alignSelf: "center" },
+  headerPhoto: { width: 150, height: 150, borderRadius: 4, objectFit: "cover" },
   headerPhotoPlaceholder: {
     width: 150,
     height: 150,
@@ -48,7 +51,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
   },
   headerPhotoPlaceholderText: { fontSize: 9, color: "#999999" },
   printedAt: { position: "absolute", bottom: 20, left: 32, fontSize: 9, color: "#555555" },
@@ -206,6 +208,10 @@ export function RecipeOpsSheetDocument({
         </View>
 
         <View style={styles.serviceBox}>
+          <View style={styles.serviceTextCol}>
+            <Text style={styles.sectionTitle}>SERVICE</Text>
+            <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
+          </View>
           {photoUrl ? (
             <Image src={photoUrl} style={styles.headerPhoto} />
           ) : (
@@ -213,8 +219,6 @@ export function RecipeOpsSheetDocument({
               <Text style={styles.headerPhotoPlaceholderText}>No Photo</Text>
             </View>
           )}
-          <Text style={styles.sectionTitle}>SERVICE</Text>
-          <Text style={styles.instructionsText}>{instructions || "No instructions on file."}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>BATCH PICK LIST</Text>
