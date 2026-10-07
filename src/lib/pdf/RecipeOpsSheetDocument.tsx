@@ -6,7 +6,19 @@ import {
   TOP_OFF_DEFAULT_OZ,
   type RecipeIngredientLine,
 } from "@/lib/recipeCost";
-import { PRODUCT_TYPE_OPTIONS } from "@/lib/productType";
+import type { ProductTypeValue } from "@/lib/productType";
+
+// Pick/Service order is independent of the Products tabs order
+// (PRODUCT_TYPE_OPTIONS) -- Bottles first since that's grabbed first,
+// then Chargeable, Mixers, Garnish, with Disposables last as a
+// catch-all so nothing silently drops off the list.
+const PICK_LIST_TYPE_ORDER: ProductTypeValue[] = [
+  "non_chargeable_bottle",
+  "chargeable",
+  "non_chargeable_mixer",
+  "garnish",
+  "disposable",
+];
 
 export interface OpsSheetIngredientLine extends RecipeIngredientLine {
   bottleSizeMl: number | null;
@@ -158,18 +170,19 @@ export function RecipeOpsSheetDocument({
   const topOffOzNeeded = new Map(batchSizes.map((b) => [b.key, Math.ceil(b.maxOz / topOffPourOz) * TOP_OFF_DEFAULT_OZ]));
 
   // All ingredients -- including Top Off (e.g. a Mixer) -- grouped by
-  // Product Type, in the same fixed order as the Products tabs. BATCH
-  // PICK LIST needs Top Off items too, so staff know to pull them for
-  // use at pour time, even though they have no fixed batch quantity.
-  const pickListGroups = PRODUCT_TYPE_OPTIONS.map((opt) => ({
-    label: opt.shortLabel,
-    items: ingredients.filter((i) => i.productType === opt.value).sort((a, b) => a.description.localeCompare(b.description)),
+  // Product Type in PICK_LIST_TYPE_ORDER, alphabetized within each
+  // group. BATCH PICK LIST needs Top Off items too, so staff know to
+  // pull them for use at pour time, even though they have no fixed
+  // batch quantity.
+  const pickListGroups = PICK_LIST_TYPE_ORDER.map((value) => ({
+    value,
+    items: ingredients.filter((i) => i.productType === value).sort((a, b) => a.description.localeCompare(b.description)),
   })).filter((g) => g.items.length > 0);
   // Same grouping, measured ingredients only -- Top Off is excluded
   // here since BATCH SERVICE states exact pre-batched amounts, and Top
   // Off is added fresh per serving, not pre-mixed and stored.
-  const measuredIngredientsGrouped = PRODUCT_TYPE_OPTIONS.flatMap((opt) =>
-    measuredIngredients.filter((i) => i.productType === opt.value).sort((a, b) => a.description.localeCompare(b.description))
+  const measuredIngredientsGrouped = PICK_LIST_TYPE_ORDER.flatMap((value) =>
+    measuredIngredients.filter((i) => i.productType === value).sort((a, b) => a.description.localeCompare(b.description))
   );
 
   return (
@@ -210,7 +223,7 @@ export function RecipeOpsSheetDocument({
           ))}
         </View>
         {pickListGroups.map((group) => (
-          <View key={group.label} wrap={false}>
+          <View key={group.value} wrap={false}>
             {group.items.map((ing) => (
               <View key={ing.productId} style={styles.tr}>
                 <View style={styles.colProduct}>
