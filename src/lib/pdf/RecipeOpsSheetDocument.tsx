@@ -21,6 +21,7 @@ const PICK_LIST_TYPE_ORDER: ProductTypeValue[] = [
 ];
 
 export interface OpsSheetIngredientLine extends RecipeIngredientLine {
+  brand: string | null;
   bottleSizeMl: number | null;
   productType: string;
 }
@@ -82,7 +83,9 @@ const styles = StyleSheet.create({
   },
   colProduct: { flex: 2, flexDirection: "row", alignItems: "center", paddingLeft: 4 },
   checkbox: { width: 8, height: 8, borderWidth: 1, borderColor: "#000000", marginRight: 6 },
+  colBrand: { flex: 1, paddingLeft: 4, borderLeftWidth: 1, borderLeftColor: "#000000" },
   colBatch: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
+  colBatchNarrow: { flex: 0.75, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
   yieldRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -224,8 +227,9 @@ export function RecipeOpsSheetDocument({
         <Text style={styles.sectionTitle}>BATCH PICK LIST</Text>
         <View style={styles.thRow}>
           <Text style={styles.colProduct}>Ingredient</Text>
+          <Text style={styles.colBrand}>Brand</Text>
           {batchSizes.map((b) => (
-            <Text key={b.key} style={styles.colBatch}>
+            <Text key={b.key} style={styles.colBatchNarrow}>
               {b.label} Batch
             </Text>
           ))}
@@ -238,14 +242,15 @@ export function RecipeOpsSheetDocument({
                   <View style={styles.checkbox} />
                   <Text>{ing.description}</Text>
                 </View>
+                <Text style={styles.colBrand}>{ing.brand || "—"}</Text>
                 {ing.quantityOz == null
                   ? batchSizes.map((b) => (
-                      <Text key={b.key} style={[styles.colBatch, styles.topOffText]}>
+                      <Text key={b.key} style={[styles.colBatchNarrow, styles.topOffText]}>
                         {fmtBottleCount(topOffOzNeeded.get(b.key) ?? 0, ing.bottleSizeMl)}
                       </Text>
                     ))
                   : batchSizes.map((b) => (
-                      <Text key={b.key} style={styles.colBatch}>
+                      <Text key={b.key} style={styles.colBatchNarrow}>
                         {fmtBottleCount(b.oz.get(ing.productId) ?? 0, ing.bottleSizeMl)}
                       </Text>
                     ))}
