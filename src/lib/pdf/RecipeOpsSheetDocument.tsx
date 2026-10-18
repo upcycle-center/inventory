@@ -167,7 +167,13 @@ export function RecipeOpsSheetDocument({
   // RECIPE_SIZE_DEFS so a new size needs no further changes here.
   const measuredIngredients = ingredients.filter((i) => i.quantityOz != null);
   const batchSizes = RECIPE_SIZE_DEFS.filter((s) => BATCH_SIZE_KEYS.has(s.key)).map((s) => {
-    const oz = roundToWholeOzSum(resolveMeasuredIngredientsForSize(ingredients, s.key), s.pourOz);
+    // Continuous (unrounded) shares, in the recipe's exact ratio, summing
+    // to s.pourOz -- the scale factor below is derived from THESE, not
+    // from an already-whole-number-rounded figure, so a later rounding
+    // step can't compound drift away from the recipe's true ratio.
+    const resolved = resolveMeasuredIngredientsForSize(ingredients, s.key);
+    const continuousByProduct = new Map(resolved.map((r) => [r.productId, r.quantityOz]));
+
     // A weight-based ingredient (a bag of coffee, not a pourable liquid)
     // can't be measured out as a fraction of a package -- it has to round
     // up to a whole package. Rather than bumping it alone (which would
@@ -178,23 +184,24 @@ export function RecipeOpsSheetDocument({
     let scale = 1;
     for (const ing of measuredIngredients) {
       if (ing.bottleSizeMl || !ing.weightOz) continue;
-      const fairShare = oz.get(ing.productId);
-      if (!fairShare) continue;
-      const roundedUp = Math.ceil(fairShare / ing.weightOz) * ing.weightOz;
-      scale = Math.max(scale, roundedUp / fairShare);
+      const share = continuousByProduct.get(ing.productId);
+      if (!share) continue;
+      const roundedUp = Math.ceil(share / ing.weightOz) * ing.weightOz;
+      scale = Math.max(scale, roundedUp / share);
     }
+
+    let oz: Map<string, number>;
     if (scale > 1) {
-      for (const ing of measuredIngredients) {
-        const fairShare = oz.get(ing.productId);
-        if (fairShare) oz.set(ing.productId, fairShare * scale);
-      }
-      // Re-snap each weight-based ingredient to an exact whole package
-      // at the new scale, clearing any float drift from the multiply.
+      oz = new Map(resolved.map((r) => [r.productId, r.quantityOz * scale]));
+      // Re-snap each weight-based ingredient to an exact whole package,
+      // clearing any float drift from the multiply.
       for (const ing of measuredIngredients) {
         if (ing.bottleSizeMl || !ing.weightOz) continue;
         const scaled = oz.get(ing.productId);
         if (scaled) oz.set(ing.productId, Math.round(scaled / ing.weightOz) * ing.weightOz);
       }
+    } else {
+      oz = roundToWholeOzSum(resolved, s.pourOz);
     }
     return { key: s.key, label: s.label, maxOz: s.pourOz, oz };
   });
