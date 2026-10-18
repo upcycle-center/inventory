@@ -37,20 +37,31 @@ export const TOP_OFF_DEFAULT_OZ = 2;
 // it is, so this is a single constant rather than a per-size setting.
 export const PACKAGING_COST = 0.25;
 
-// Cost per fluid ounce for a product, derived from its case economics --
-// the same bottle-size math TOT Retail already uses for pour-based
-// products. Returns null when the product is missing the fields needed
-// to compute it (e.g. not sold/costed by the bottle).
+// A product's size expressed in oz, for cost-per-oz and batch-pick-list
+// math -- bottle_size_ml (a fluid volume) when set, converted via
+// ML_PER_OZ, same as TOT Retail's bottle-pour math. Falls back to
+// weight_oz for products measured by weight instead (e.g. a bag of
+// coffee), which needs no conversion since it's already in oz. Returns
+// null when neither is set.
+export function sizeOzForProduct(product: { bottle_size_ml: number | null; weight_oz?: number | null }): number | null {
+  if (product.bottle_size_ml) return product.bottle_size_ml / ML_PER_OZ;
+  return product.weight_oz ?? null;
+}
+
+// Cost per oz for a product, derived from its case economics and
+// sizeOzForProduct(). Returns null when the product is missing the
+// fields needed to compute it (e.g. not sold/costed by the bottle/bag).
 export function costPerOz(product: {
   case_cost: number | null;
   case_size: number | null;
   bottle_size_ml: number | null;
+  weight_oz?: number | null;
 }): number | null {
-  if (!product.case_cost || !product.case_size || !product.bottle_size_ml) return null;
-  const costPerBottle = product.case_cost / product.case_size;
-  const bottleSizeOz = product.bottle_size_ml / ML_PER_OZ;
-  if (!bottleSizeOz) return null;
-  return costPerBottle / bottleSizeOz;
+  if (!product.case_cost || !product.case_size) return null;
+  const costPerUnit = product.case_cost / product.case_size;
+  const sizeOz = sizeOzForProduct(product);
+  if (!sizeOz) return null;
+  return costPerUnit / sizeOz;
 }
 
 export type RecipeSizeKey = RecipeRequestSize;

@@ -15,7 +15,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     supabase.from("recipes").select("*, category:product_categories(id, name)").eq("id", params.id).single(),
     supabase
       .from("recipe_ingredients")
-      .select("quantity_oz, product:products(id, description, brand, product_type, bottle_size_ml)")
+      .select("quantity_oz, product:products(id, description, brand, product_type, bottle_size_ml, weight_oz)")
       .eq("recipe_id", params.id)
       .order("sort_order"),
   ]);
@@ -30,6 +30,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
       brand: row.product.brand as string | null,
       quantityOz: row.quantity_oz == null ? null : Number(row.quantity_oz),
       bottleSizeMl: row.product.bottle_size_ml == null ? null : Number(row.product.bottle_size_ml),
+      weightOz: row.product.weight_oz == null ? null : Number(row.product.weight_oz),
       productType: row.product.product_type as string,
     }));
 

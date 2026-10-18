@@ -29,6 +29,7 @@ export async function updateProductAndLocations(formData: FormData) {
   const unitOfMeasure = String(formData.get("unit_of_measure") || "each").trim() || "each";
   const caseSizeRaw = String(formData.get("case_size") || "").trim();
   const bottleSizeRaw = String(formData.get("bottle_size_ml") || "").trim();
+  const weightOzRaw = String(formData.get("weight_oz") || "").trim();
   const pourSizeRaw = String(formData.get("pour_size_oz") || "").trim();
   const pourPriceRaw = String(formData.get("pour_price") || "").trim();
   const middleUnitLabel = String(formData.get("middle_unit_label") || "").trim() || null;
@@ -68,6 +69,7 @@ export async function updateProductAndLocations(formData: FormData) {
       unit_of_measure: unitOfMeasure,
       case_size: caseSizeRaw ? Number(caseSizeRaw) : null,
       bottle_size_ml: bottleSizeRaw ? Number(bottleSizeRaw) : null,
+      weight_oz: weightOzRaw ? Number(weightOzRaw) : null,
       pour_size_oz: pourSizeRaw ? Number(pourSizeRaw) : null,
       pour_price: pourPriceRaw ? Number(pourPriceRaw) : null,
       middle_unit_label: middleUnitLabel,

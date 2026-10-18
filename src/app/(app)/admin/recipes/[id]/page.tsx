@@ -39,7 +39,7 @@ export default async function RecipeDetailPage({ params }: { params: { id: strin
     supabase.from("recipes").select("*").eq("id", params.id).single(),
     supabase
       .from("recipe_ingredients")
-      .select("*, product:products(id, sku, description, case_cost, case_size, bottle_size_ml)")
+      .select("*, product:products(id, sku, description, case_cost, case_size, bottle_size_ml, weight_oz)")
       .eq("recipe_id", params.id)
       .order("sort_order"),
     supabase.from("products").select("id, description, product_type").eq("active", true).order("description"),

@@ -87,6 +87,7 @@ export default async function NewProductPage({
           defaultCaseSize={from?.case_size}
           defaultUnitOfMeasure={from?.unit_of_measure}
           defaultBottleSizeMl={from?.bottle_size_ml}
+          defaultWeightOz={from?.weight_oz}
           defaultPourSizeOz={from?.pour_size_oz}
           defaultPourPrice={from?.pour_price}
           defaultMiddleUnitLabel={from?.middle_unit_label}

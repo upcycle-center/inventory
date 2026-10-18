@@ -249,6 +249,10 @@ export interface Product {
   unit_of_measure: string;
   case_size: number | null;
   bottle_size_ml: number | null;
+  // Alternate sizing for products measured by weight rather than fluid
+  // volume (e.g. a bag of coffee) -- feeds Recipe cost-per-oz the same
+  // way bottle_size_ml does, when bottle_size_ml is null.
+  weight_oz: number | null;
   pour_size_oz: number | null;
   pour_price: number | null;
   middle_unit_label: string | null;

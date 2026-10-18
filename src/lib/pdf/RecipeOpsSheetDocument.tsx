@@ -1,8 +1,8 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import {
-  ML_PER_OZ,
   RECIPE_SIZE_DEFS,
   resolveMeasuredIngredientsForSize,
+  sizeOzForProduct,
   TOP_OFF_DEFAULT_OZ,
   type RecipeIngredientLine,
 } from "@/lib/recipeCost";
@@ -23,6 +23,7 @@ const PICK_LIST_TYPE_ORDER: ProductTypeValue[] = [
 export interface OpsSheetIngredientLine extends RecipeIngredientLine {
   brand: string | null;
   bottleSizeMl: number | null;
+  weightOz: number | null;
   productType: string;
 }
 
@@ -101,14 +102,14 @@ const styles = StyleSheet.create({
   topOffText: { color: "#6b7280", fontStyle: "italic" },
 });
 
-// Whole units (bottles/cans) needed to cover the resolved oz for a batch
-// size, rounded up -- just the count, since this is a pick list (how
-// many to grab), not a measurement reference.
-function fmtBottleCount(oz: number, bottleSizeMl: number | null) {
-  if (!(oz > 0) || !bottleSizeMl) return "—";
-  const bottleSizeOz = bottleSizeMl / ML_PER_OZ;
-  if (!bottleSizeOz) return "—";
-  return `${Math.ceil(oz / bottleSizeOz)}`;
+// Whole units (bottles/cans/bags) needed to cover the resolved oz for a
+// batch size, rounded up -- just the count, since this is a pick list
+// (how many to grab), not a measurement reference. unitSizeOz comes from
+// sizeOzForProduct(), so this works the same whether the product is
+// sized by fluid volume or by weight.
+function fmtBottleCount(oz: number, unitSizeOz: number | null) {
+  if (!(oz > 0) || !unitSizeOz) return "—";
+  return `${Math.ceil(oz / unitSizeOz)}`;
 }
 
 function fmtOz(oz: number) {
@@ -181,6 +182,13 @@ export function RecipeOpsSheetDocument({
   const topOffPourOz = RECIPE_SIZE_DEFS.find((s) => s.key === "wine")?.pourOz ?? 3;
   const topOffOzNeeded = new Map(batchSizes.map((b) => [b.key, Math.ceil(b.maxOz / topOffPourOz) * TOP_OFF_DEFAULT_OZ]));
 
+  // Each ingredient's container size in oz -- fluid (bottleSizeMl) or
+  // weight (weightOz) -- for converting a batch's oz needed into a
+  // bottle/bag count on the pick list.
+  const ingredientSizeOz = new Map(
+    ingredients.map((i) => [i.productId, sizeOzForProduct({ bottle_size_ml: i.bottleSizeMl, weight_oz: i.weightOz })])
+  );
+
   // All ingredients -- including Top Off (e.g. a Mixer) -- grouped by
   // Product Type in PICK_LIST_TYPE_ORDER, alphabetized within each
   // group. BATCH PICK LIST needs Top Off items too, so staff know to
@@ -246,12 +254,12 @@ export function RecipeOpsSheetDocument({
                 {ing.quantityOz == null
                   ? batchSizes.map((b) => (
                       <Text key={b.key} style={[styles.colBatchNarrow, styles.topOffText]}>
-                        {fmtBottleCount(topOffOzNeeded.get(b.key) ?? 0, ing.bottleSizeMl)}
+                        {fmtBottleCount(topOffOzNeeded.get(b.key) ?? 0, ingredientSizeOz.get(ing.productId) ?? null)}
                       </Text>
                     ))
                   : batchSizes.map((b) => (
                       <Text key={b.key} style={styles.colBatchNarrow}>
-                        {fmtBottleCount(b.oz.get(ing.productId) ?? 0, ing.bottleSizeMl)}
+                        {fmtBottleCount(b.oz.get(ing.productId) ?? 0, ingredientSizeOz.get(ing.productId) ?? null)}
                       </Text>
                     ))}
               </View>

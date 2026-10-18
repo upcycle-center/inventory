@@ -78,6 +78,7 @@ export function ProductCoreFields({
   defaultCaseSize,
   defaultUnitOfMeasure,
   defaultBottleSizeMl,
+  defaultWeightOz,
   defaultPourSizeOz,
   defaultPourPrice,
   defaultMiddleUnitLabel,
@@ -97,6 +98,7 @@ export function ProductCoreFields({
   defaultCaseSize: number | string | null | undefined;
   defaultUnitOfMeasure: string | null | undefined;
   defaultBottleSizeMl: number | string | null | undefined;
+  defaultWeightOz?: number | string | null;
   defaultPourSizeOz: number | string | null | undefined;
   defaultPourPrice: number | string | null | undefined;
   defaultMiddleUnitLabel?: string | null;
@@ -117,6 +119,7 @@ export function ProductCoreFields({
   const [bottleSizeOz, setBottleSizeOz] = useState(
     defaultBottleSizeMl ? String(round(Number(defaultBottleSizeMl) / ML_PER_OZ, 1)) : ""
   );
+  const [weightOz, setWeightOz] = useState(String(defaultWeightOz ?? ""));
   const [subUnitCount, setSubUnitCount] = useState(String(defaultMiddleUnitSize ?? ""));
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
   const pourFieldsActive = productType === POUR_FIELDS_ACTIVE_TYPE;
@@ -320,7 +323,7 @@ export function ProductCoreFields({
           <p className="mb-3 text-sm text-gray-500">
             {pourFieldsActive
               ? "For liquor/wine: TOT Retail projects a bottle's value off pours instead of Retail Value. Bottle size also feeds Recipe cost-per-oz."
-              : "Used to compute cost per fluid ounce for Recipes."}
+              : "Used to compute cost per oz for Recipes -- mL/fl oz for liquids, or Weight (oz) below for items sized by weight (e.g. coffee)."}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <label className="text-sm text-gray-600">
@@ -357,6 +360,21 @@ export function ProductCoreFields({
               />
             </label>
           </div>
+          {!pourFieldsActive && (
+            <label className="mt-3 block text-sm text-gray-600">
+              Weight (oz) -- instead of mL/oz above, for items sized by weight
+              <input
+                name="weight_oz"
+                type="number"
+                step="0.01"
+                min={0}
+                value={weightOz}
+                onChange={(e) => setWeightOz(e.target.value)}
+                placeholder="e.g. 16 (a 16oz bag of coffee)"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+          )}
           {pourFieldsActive && (
             <div className="mt-3 grid grid-cols-2 gap-3">
               <DisableableNumberField label="Pour size (oz)" name="pour_size_oz" defaultValue={defaultPourSizeOz} placeholder="e.g. 1.5" />

@@ -31,7 +31,7 @@ export default async function AdminRecipesPage() {
     supabase.from("recipes").select("*").order("name"),
     supabase
       .from("recipe_ingredients")
-      .select("recipe_id, quantity_oz, product:products(id, description, case_cost, case_size, bottle_size_ml)"),
+      .select("recipe_id, quantity_oz, product:products(id, description, case_cost, case_size, bottle_size_ml, weight_oz)"),
     supabase.from("product_categories").select("*"),
   ]);
 

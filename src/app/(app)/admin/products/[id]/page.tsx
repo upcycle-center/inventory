@@ -107,6 +107,7 @@ export default async function ProductDetailPage({
               defaultCaseSize={product.case_size}
               defaultUnitOfMeasure={product.unit_of_measure}
               defaultBottleSizeMl={product.bottle_size_ml}
+              defaultWeightOz={product.weight_oz}
               defaultPourSizeOz={product.pour_size_oz}
               defaultPourPrice={product.pour_price}
               defaultMiddleUnitLabel={product.middle_unit_label}

@@ -20,6 +20,7 @@ export function NewProductFields({
   defaultCaseSize,
   defaultUnitOfMeasure,
   defaultBottleSizeMl,
+  defaultWeightOz,
   defaultPourSizeOz,
   defaultPourPrice,
   defaultMiddleUnitLabel,
@@ -39,6 +40,7 @@ export function NewProductFields({
   defaultCaseSize?: number | string | null;
   defaultUnitOfMeasure?: string | null;
   defaultBottleSizeMl?: number | string | null;
+  defaultWeightOz?: number | string | null;
   defaultPourSizeOz?: number | string | null;
   defaultPourPrice?: number | string | null;
   defaultMiddleUnitLabel?: string | null;
@@ -115,6 +117,7 @@ export function NewProductFields({
         defaultCaseSize={defaultCaseSize}
         defaultUnitOfMeasure={defaultUnitOfMeasure}
         defaultBottleSizeMl={defaultBottleSizeMl}
+        defaultWeightOz={defaultWeightOz}
         defaultPourSizeOz={defaultPourSizeOz}
         defaultPourPrice={defaultPourPrice}
         defaultMiddleUnitLabel={defaultMiddleUnitLabel}
