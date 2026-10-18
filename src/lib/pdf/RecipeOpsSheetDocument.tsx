@@ -168,14 +168,33 @@ export function RecipeOpsSheetDocument({
   const measuredIngredients = ingredients.filter((i) => i.quantityOz != null);
   const batchSizes = RECIPE_SIZE_DEFS.filter((s) => BATCH_SIZE_KEYS.has(s.key)).map((s) => {
     const oz = roundToWholeOzSum(resolveMeasuredIngredientsForSize(ingredients, s.key), s.pourOz);
-    // Weight-based ingredients (a bag of coffee, not a pourable liquid)
-    // can't be measured out as a fraction of a package -- round each up
-    // to a whole package instead, accepting the batch running slightly
-    // over the nominal target. Fluid ingredients keep their exact share.
+    // A weight-based ingredient (a bag of coffee, not a pourable liquid)
+    // can't be measured out as a fraction of a package -- it has to round
+    // up to a whole package. Rather than bumping it alone (which would
+    // throw off the recipe's ratio), every measured ingredient scales up
+    // together by whatever factor the largest such bump requires, so the
+    // mix stays correct even though the batch now yields over the
+    // nominal target.
+    let scale = 1;
     for (const ing of measuredIngredients) {
       if (ing.bottleSizeMl || !ing.weightOz) continue;
-      const current = oz.get(ing.productId);
-      if (current) oz.set(ing.productId, Math.ceil(current / ing.weightOz) * ing.weightOz);
+      const fairShare = oz.get(ing.productId);
+      if (!fairShare) continue;
+      const roundedUp = Math.ceil(fairShare / ing.weightOz) * ing.weightOz;
+      scale = Math.max(scale, roundedUp / fairShare);
+    }
+    if (scale > 1) {
+      for (const ing of measuredIngredients) {
+        const fairShare = oz.get(ing.productId);
+        if (fairShare) oz.set(ing.productId, fairShare * scale);
+      }
+      // Re-snap each weight-based ingredient to an exact whole package
+      // at the new scale, clearing any float drift from the multiply.
+      for (const ing of measuredIngredients) {
+        if (ing.bottleSizeMl || !ing.weightOz) continue;
+        const scaled = oz.get(ing.productId);
+        if (scaled) oz.set(ing.productId, Math.round(scaled / ing.weightOz) * ing.weightOz);
+      }
     }
     return { key: s.key, label: s.label, maxOz: s.pourOz, oz };
   });
