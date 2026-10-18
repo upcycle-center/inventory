@@ -120,6 +120,7 @@ export function ProductCoreFields({
     defaultBottleSizeMl ? String(round(Number(defaultBottleSizeMl) / ML_PER_OZ, 1)) : ""
   );
   const [weightOz, setWeightOz] = useState(String(defaultWeightOz ?? ""));
+  const [weightLb, setWeightLb] = useState(defaultWeightOz ? String(round(Number(defaultWeightOz) / 16, 2)) : "");
   const [subUnitCount, setSubUnitCount] = useState(String(defaultMiddleUnitSize ?? ""));
   const retailValueDisabled = RETAIL_VALUE_DISABLED_TYPES.has(productType as ProductTypeValue);
   const pourFieldsActive = productType === POUR_FIELDS_ACTIVE_TYPE;
@@ -323,9 +324,9 @@ export function ProductCoreFields({
           <p className="mb-3 text-sm text-gray-500">
             {pourFieldsActive
               ? "For liquor/wine: TOT Retail projects a bottle's value off pours instead of Retail Value. Bottle size also feeds Recipe cost-per-oz."
-              : "Used to compute cost per oz for Recipes -- mL/fl oz for liquids, or Weight (oz) below for items sized by weight (e.g. coffee)."}
+              : "Used to compute cost per oz for Recipes -- mL/fl. oz for liquids, or weight (oz)/lb for items sized by weight (e.g. coffee)."}
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid gap-3 ${pourFieldsActive ? "grid-cols-2" : "grid-cols-4"}`}>
             <label className="text-sm text-gray-600">
               mL
               <input
@@ -344,7 +345,7 @@ export function ProductCoreFields({
               />
             </label>
             <label className="text-sm text-gray-600">
-              oz
+              fl. oz
               <input
                 type="number"
                 step="0.01"
@@ -359,22 +360,44 @@ export function ProductCoreFields({
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
             </label>
+            {!pourFieldsActive && (
+              <>
+                <label className="text-sm text-gray-600">
+                  weight (oz)
+                  <input
+                    name="weight_oz"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={weightOz}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setWeightOz(raw);
+                      setWeightLb(raw ? String(round(Number(raw) / 16, 2)) : "");
+                    }}
+                    placeholder="e.g. 16"
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm text-gray-600">
+                  lb
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={weightLb}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setWeightLb(raw);
+                      setWeightOz(raw ? String(round(Number(raw) * 16, 2)) : "");
+                    }}
+                    placeholder="e.g. 1"
+                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </label>
+              </>
+            )}
           </div>
-          {!pourFieldsActive && (
-            <label className="mt-3 block text-sm text-gray-600">
-              Weight (oz) -- instead of mL/oz above, for items sized by weight
-              <input
-                name="weight_oz"
-                type="number"
-                step="0.01"
-                min={0}
-                value={weightOz}
-                onChange={(e) => setWeightOz(e.target.value)}
-                placeholder="e.g. 16 (a 16oz bag of coffee)"
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-              />
-            </label>
-          )}
           {pourFieldsActive && (
             <div className="mt-3 grid grid-cols-2 gap-3">
               <DisableableNumberField label="Pour size (oz)" name="pour_size_oz" defaultValue={defaultPourSizeOz} placeholder="e.g. 1.5" />
