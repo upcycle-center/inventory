@@ -164,11 +164,20 @@ export function RecipeOpsSheetDocument({
   // Every batch-production size (1L through the largest Bubbler) gets
   // its own pick-list/service column, driven generically off
   // RECIPE_SIZE_DEFS so a new size needs no further changes here.
+  const measuredIngredients = ingredients.filter((i) => i.quantityOz != null);
   const batchSizes = RECIPE_SIZE_DEFS.filter((s) => BATCH_SIZE_KEYS.has(s.key)).map((s) => {
     const oz = roundToWholeOzSum(resolveMeasuredIngredientsForSize(ingredients, s.key), s.pourOz);
+    // Weight-based ingredients (a bag of coffee, not a pourable liquid)
+    // can't be measured out as a fraction of a package -- round each up
+    // to a whole package instead, accepting the batch running slightly
+    // over the nominal target. Fluid ingredients keep their exact share.
+    for (const ing of measuredIngredients) {
+      if (ing.bottleSizeMl || !ing.weightOz) continue;
+      const current = oz.get(ing.productId);
+      if (current) oz.set(ing.productId, Math.ceil(current / ing.weightOz) * ing.weightOz);
+    }
     return { key: s.key, label: s.label, maxOz: s.pourOz, oz };
   });
-  const measuredIngredients = ingredients.filter((i) => i.quantityOz != null);
   const batchYields = new Map(
     batchSizes.map((b) => [b.key, measuredIngredients.reduce((sum, i) => sum + (b.oz.get(i.productId) ?? 0), 0)])
   );
