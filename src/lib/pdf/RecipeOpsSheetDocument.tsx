@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   topOffText: { color: "#6b7280", fontStyle: "italic" },
+  yieldTarget: { fontSize: 8, fontStyle: "italic", fontFamily: "Helvetica", color: "#6b7280" },
 });
 
 // Whole units (bottles/cans/bags) needed to cover the resolved oz for a
@@ -302,7 +303,8 @@ export function RecipeOpsSheetDocument({
               <Text style={[styles.colProduct, { paddingLeft: 4 }]}>TOT Yield</Text>
               {batchSizes.map((b) => (
                 <Text key={b.key} style={styles.colBatch}>
-                  {fmtOz(batchYields.get(b.key) ?? 0)} / {b.maxOz} oz
+                  {fmtOz(batchYields.get(b.key) ?? 0)}
+                  <Text style={styles.yieldTarget}> / {b.maxOz} oz</Text>
                 </Text>
               ))}
             </View>
