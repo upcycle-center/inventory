@@ -31,77 +31,106 @@ export interface OpsSheetIngredientLine extends RecipeIngredientLine {
 // LIST/SERVICE columns) rather than a single Serving pour.
 const BATCH_SIZE_KEYS = new Set(["liter", "batch_3_gal"]);
 
-const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 10, fontFamily: "Helvetica" },
-  titleBlock: { marginBottom: 14 },
-  serviceBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    borderWidth: 1,
-    borderColor: "#000000",
-    borderRadius: 4,
-    padding: 10,
-  },
-  serviceTextCol: { flex: 1, paddingRight: 16 },
-  title: { fontSize: 18, marginBottom: 2, fontFamily: "Helvetica-Bold" },
-  subtitle: { fontSize: 11, color: "#555555" },
-  headerPhoto: { width: 150, height: 150, borderRadius: 4, objectFit: "cover" },
-  headerPhotoPlaceholder: {
-    width: 150,
-    height: 150,
-    borderRadius: 4,
-    backgroundColor: "#f0f0f0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerPhotoPlaceholderText: { fontSize: 9, color: "#999999" },
-  printedAt: { position: "absolute", bottom: 20, left: 32, fontSize: 9, color: "#555555" },
-  sectionTitle: {
-    fontSize: 12,
-    fontFamily: "Helvetica-Bold",
-    marginTop: 12,
-    marginBottom: 4,
-    backgroundColor: "#f0f0f0",
-    padding: 3,
-  },
-  instructionsText: { fontSize: 10, lineHeight: 1.5 },
-  thRow: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "#000000",
-    paddingVertical: 4,
-    fontFamily: "Helvetica-Bold",
-    fontSize: 9,
-  },
-  tr: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "#000000",
-    paddingVertical: 3,
-  },
-  colProduct: { flex: 2, flexDirection: "row", alignItems: "center", paddingLeft: 4 },
-  checkbox: { width: 8, height: 8, borderWidth: 1, borderColor: "#000000", marginRight: 6 },
-  colBrand: { flex: 1, paddingLeft: 4, borderLeftWidth: 1, borderLeftColor: "#000000" },
-  colBatch: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
-  colBatchNarrow: { flex: 0.75, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
-  yieldRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
-    borderTopWidth: 1,
-    borderColor: "#000000",
-    paddingVertical: 3,
-    backgroundColor: "#f0f0f0",
-    fontFamily: "Helvetica-Bold",
-  },
-  topOffText: { color: "#6b7280", fontStyle: "italic" },
-  yieldTarget: { fontSize: 8, fontStyle: "italic", fontFamily: "Helvetica", color: "#6b7280" },
-});
+// Best-effort "fit on one page": react-pdf has no real shrink-to-fit
+// (it just overflows to a second page), so instead every size-ish style
+// value below scales down together as a rough estimate of the sheet's
+// content volume grows -- a recipe with few ingredients and short
+// instructions renders at full size, a dense one renders smaller. Not a
+// hard guarantee for an extreme case (e.g. 20+ ingredients and a wall of
+// batch instructions), just the closest practical approximation.
+function createStyles(scale: number) {
+  return StyleSheet.create({
+    page: { padding: 32 * scale, fontSize: 10 * scale, fontFamily: "Helvetica" },
+    titleBlock: { marginBottom: 14 * scale },
+    serviceBox: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      borderWidth: 1,
+      borderColor: "#000000",
+      borderRadius: 4,
+      padding: 10 * scale,
+    },
+    serviceTextCol: { flex: 1, paddingRight: 16 * scale },
+    title: { fontSize: 18 * scale, marginBottom: 2 * scale, fontFamily: "Helvetica-Bold" },
+    subtitle: { fontSize: 11 * scale, color: "#555555" },
+    headerPhoto: { width: 150 * scale, height: 150 * scale, borderRadius: 4, objectFit: "cover" },
+    headerPhotoPlaceholder: {
+      width: 150 * scale,
+      height: 150 * scale,
+      borderRadius: 4,
+      backgroundColor: "#f0f0f0",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerPhotoPlaceholderText: { fontSize: 9 * scale, color: "#999999" },
+    printedAt: { position: "absolute", bottom: 20, left: 32, fontSize: 9 * scale, color: "#555555" },
+    sectionTitle: {
+      fontSize: 12 * scale,
+      fontFamily: "Helvetica-Bold",
+      marginTop: 12 * scale,
+      marginBottom: 4 * scale,
+      backgroundColor: "#f0f0f0",
+      padding: 3 * scale,
+    },
+    instructionsText: { fontSize: 10 * scale, lineHeight: 1.5 },
+    thRow: {
+      flexDirection: "row",
+      borderWidth: 1,
+      borderColor: "#000000",
+      paddingVertical: 4 * scale,
+      fontFamily: "Helvetica-Bold",
+      fontSize: 9 * scale,
+    },
+    tr: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: "#000000",
+      paddingVertical: 3 * scale,
+    },
+    colProduct: { flex: 2, flexDirection: "row", alignItems: "center", paddingLeft: 4 * scale },
+    checkbox: { width: 8 * scale, height: 8 * scale, borderWidth: 1, borderColor: "#000000", marginRight: 6 * scale },
+    colBrand: { flex: 1, paddingLeft: 4 * scale, borderLeftWidth: 1, borderLeftColor: "#000000" },
+    colBatch: { flex: 1, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
+    colBatchNarrow: { flex: 0.75, textAlign: "center", borderLeftWidth: 1, borderLeftColor: "#000000" },
+    yieldRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderBottomWidth: 1,
+      borderTopWidth: 1,
+      borderColor: "#000000",
+      paddingVertical: 3 * scale,
+      backgroundColor: "#f0f0f0",
+      fontFamily: "Helvetica-Bold",
+    },
+    topOffText: { color: "#6b7280", fontStyle: "italic" },
+    yieldTarget: { fontSize: 8 * scale, fontStyle: "italic", fontFamily: "Helvetica", color: "#6b7280" },
+  });
+}
+
+// Rough content-volume score driving the scale above -- counts pick
+// list + batch service rows (each ingredient appears in both, plus a
+// yield row), and estimates how many wrapped lines the two free-text
+// blocks will take at the full-size column widths.
+function estimateContentScore(ingredients: OpsSheetIngredientLine[], instructions: string | null, batchInstructions: string | null): number {
+  const measuredCount = ingredients.filter((i) => i.quantityOz != null).length;
+  const pickListRows = ingredients.length;
+  const serviceRows = measuredCount > 0 ? measuredCount + 1 : 0;
+  const instructionLines = Math.ceil((instructions?.length ?? 0) / 45);
+  const batchInstructionLines = Math.ceil((batchInstructions?.length ?? 0) / 100);
+  return pickListRows + serviceRows + instructionLines + batchInstructionLines;
+}
+
+function scaleForContentScore(score: number): number {
+  if (score <= 16) return 1;
+  if (score <= 24) return 0.92;
+  if (score <= 32) return 0.85;
+  return 0.78;
+}
 
 // Whole units (bottles/cans/bags) needed to cover the resolved oz for a
 // batch size, rounded up -- just the count, since this is a pick list
@@ -159,6 +188,8 @@ export function RecipeOpsSheetDocument({
   ingredients: OpsSheetIngredientLine[];
   generatedAt: string;
 }) {
+  const styles = createStyles(scaleForContentScore(estimateContentScore(ingredients, instructions, batchInstructions)));
+
   // The pre-made batch never includes Top Off -- that's added fresh per
   // serving at pour time, not pre-mixed and stored -- so only the
   // measured ingredients are scaled to fill the full batch volume.
